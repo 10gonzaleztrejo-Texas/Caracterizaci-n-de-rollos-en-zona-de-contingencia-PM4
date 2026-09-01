@@ -1,0 +1,1120 @@
+<style>
+  :root{
+    --bg:#EEF1F4;
+    --surface:#FFFFFF;
+    --ink:#1B222C;
+    --ink-soft:#5B6472;
+    --line:#D7DCE2;
+    --steel:#2C5B7C;
+    --steel-dark:#204158;
+    --conforme:#1F8A54;
+    --conforme-dark:#166B41;
+    --defecto:#C97A1B;
+    --defecto-dark:#A5620E;
+    --scrap:#C6362E;
+    --scrap-dark:#A32B24;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(27,34,44,.06), 0 4px 14px rgba(27,34,44,.06);
+  }
+  *{box-sizing:border-box;}
+  #rollo-app{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100%;
+    padding:0 0 90px 0;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #rollo-app *{box-sizing:border-box;}
+  .ra-header{
+    position:sticky;top:0;z-index:20;
+    background:var(--steel);
+    color:#fff;
+    padding:14px 16px 12px;
+    display:flex;align-items:center;justify-content:space-between;
+    box-shadow:var(--shadow);
+  }
+  .ra-header .title{font-size:17px;font-weight:700;letter-spacing:.2px;}
+  .ra-header .sub{font-size:12px;color:#CBD9E3;margin-top:2px;}
+  .ra-inspector-badge{
+    background:rgba(255,255,255,.14);
+    border-radius:999px;
+    padding:6px 12px;
+    font-size:13px;
+    font-weight:600;
+    border:none;color:#fff;
+  }
+  .ra-steps{display:flex;gap:5px;padding:10px 16px 0;background:var(--steel);}
+  .ra-step-dot{height:4px;flex:1;border-radius:3px;background:rgba(255,255,255,.25);}
+  .ra-step-dot.active{background:#fff;}
+  .ra-step-dot.done{background:#9FD3B4;}
+  .ra-body{padding:16px;max-width:520px;margin:0 auto;}
+  .ra-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+    box-shadow:var(--shadow);
+    margin-bottom:14px;
+  }
+  .ra-h1{font-size:20px;font-weight:700;margin:0 0 4px;}
+  .ra-h2{font-size:14px;font-weight:600;color:var(--ink-soft);margin:0 0 14px;}
+  .ra-label{font-size:12px;font-weight:600;color:var(--ink-soft);margin:0 0 6px;display:block;}
+  .ra-input{
+    width:100%;padding:14px;font-size:17px;border-radius:10px;
+    border:1.5px solid var(--line);background:#fff;color:var(--ink);
+    margin-bottom:12px;
+  }
+  .ra-input:focus{outline:none;border-color:var(--steel);}
+  .ra-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .ra-btn{
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    border:none;border-radius:12px;cursor:pointer;
+    font-size:16px;font-weight:700;color:#fff;
+    padding:18px 14px;min-height:58px;line-height:1.2;
+    transition:transform .06s ease;
+  }
+  .ra-btn:active{transform:scale(.97);}
+  .ra-btn-block{width:100%;margin-bottom:10px;}
+  .ra-btn-conforme{background:var(--conforme);}
+  .ra-btn-defecto{background:var(--defecto);}
+  .ra-btn-scrap{background:var(--scrap);}
+  .ra-btn-steel{background:var(--steel);}
+  .ra-btn-outline{
+    background:#fff;color:var(--ink);border:1.5px solid var(--line);
+    font-weight:600;
+  }
+  .ra-choice{
+    background:#fff;border:1.5px solid var(--line);border-radius:12px;
+    padding:15px 14px;margin-bottom:9px;display:flex;align-items:center;
+    justify-content:space-between;cursor:pointer;font-size:15px;font-weight:600;
+    text-transform:capitalize;
+  }
+  .ra-choice small{
+    display:block;font-weight:500;color:var(--ink-soft);font-size:11px;margin-top:2px;
+    text-transform:none;
+  }
+  .ra-choice:active{background:#F3F6F8;}
+  .ra-choice .code{
+    font-size:11px;color:var(--ink-soft);font-weight:700;
+    background:var(--bg);padding:2px 8px;border-radius:6px;margin-right:10px;
+    text-transform:none;
+  }
+  .ra-choice-row{display:flex;align-items:center;flex:1;min-width:0;}
+  .ra-choice-text{flex:1;min-width:0;}
+  .ra-topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .ra-back{
+    background:none;border:none;font-size:15px;font-weight:600;color:var(--steel);
+    padding:6px 0;cursor:pointer;
+  }
+  .ra-pill{
+    display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;
+    background:var(--bg);color:var(--ink-soft);margin-right:6px;text-transform:capitalize;
+  }
+  .ra-summary-line{display:flex;justify-content:space-between;padding:7px 0;font-size:14px;border-bottom:1px solid var(--line);}
+  .ra-summary-line:last-child{border-bottom:none;}
+  .ra-summary-line b{font-weight:700;text-align:right;text-transform:capitalize;}
+  .ra-nav{
+    position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);
+    display:flex;z-index:20;padding-bottom:env(safe-area-inset-bottom,0);
+  }
+  .ra-nav button{
+    flex:1;background:none;border:none;padding:11px 4px 8px;font-size:11px;font-weight:700;
+    color:var(--ink-soft);cursor:pointer;
+  }
+  .ra-nav button.active{color:var(--steel);}
+  .ra-nav .ico{display:block;font-size:19px;margin-bottom:2px;}
+  .ra-toast{
+    position:fixed;top:14px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;
+    font-size:14px;font-weight:600;z-index:100;box-shadow:var(--shadow);
+    opacity:0;pointer-events:none;transition:opacity .25s ease, top .25s ease;
+  }
+  .ra-toast.show{opacity:1;top:60px;}
+  .ra-photo-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+  .ra-photo-thumb{position:relative;width:74px;height:74px;border-radius:10px;overflow:hidden;border:1.5px solid var(--line);}
+  .ra-photo-thumb img{width:100%;height:100%;object-fit:cover;}
+  .ra-photo-thumb button{
+    position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:#fff;border:none;
+    border-radius:999px;width:20px;height:20px;font-size:12px;line-height:1;cursor:pointer;
+  }
+  .ra-add-photo{
+    width:74px;height:74px;border-radius:10px;border:1.5px dashed var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--ink-soft);
+    background:#fff;cursor:pointer;
+  }
+  .ra-empty{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+  .ra-empty .big{font-size:34px;margin-bottom:8px;}
+  .ra-history-item{
+    background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:10px;
+  }
+  .ra-history-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .ra-history-id{font-weight:700;font-size:15px;}
+  .ra-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;color:#fff;}
+  .ra-badge.conforme{background:var(--conforme);}
+  .ra-badge.defecto{background:var(--defecto);}
+  .ra-badge.scrap{background:var(--scrap);}
+  .ra-history-meta{font-size:12.5px;color:var(--ink-soft);}
+  .ra-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+  .ra-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;}
+  .ra-stat .n{font-size:20px;font-weight:800;}
+  .ra-stat .l{font-size:11px;color:var(--ink-soft);font-weight:600;}
+  .ra-section-title{font-size:13px;font-weight:700;color:var(--ink-soft);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.4px;}
+  .ra-tag-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+  .ra-tag{
+    background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px 12px 6px 14px;
+    font-size:13px;display:flex;align-items:center;gap:8px;
+  }
+  .ra-tag button{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;}
+  .ra-inline-form{display:flex;gap:8px;margin-bottom:6px;}
+  .ra-inline-form input{flex:1;}
+  .ra-small-btn{
+    border:none;background:var(--steel);color:#fff;border-radius:10px;padding:0 16px;font-weight:700;
+    font-size:14px;cursor:pointer;
+  }
+  .ra-link{color:var(--steel);font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;background:none;border:none;padding:0;}
+  .ra-video-modal{
+    position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column;
+  }
+  .ra-video-modal video{flex:1;width:100%;object-fit:cover;}
+  .ra-video-modal .close-scan{
+    position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);color:#fff;
+    border:none;border-radius:999px;width:36px;height:36px;font-size:18px;z-index:2;
+  }
+  .ra-video-modal .hint{
+    position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#fff;font-size:14px;
+    background:rgba(0,0,0,.35);padding:10px;margin:0 20px;border-radius:10px;
+  }
+  textarea.ra-input{resize:vertical;min-height:70px;font-family:inherit;}
+</style>
+
+<div id="rollo-app"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- CONFIG / CATALOG (official codes & names, unmodified) ----------
+  var FAMILIAS = [
+    {id:'SUP', name:'Defectos superficiales', defectos:[
+      {code:'101', name:'Agujeros'},
+      {code:'403/1019', name:'Caster fold / Grieta'},
+      {code:'2', name:'Escamas'},
+      {code:'205', name:'Inclusiones'},
+      {code:'705', name:'Manchas negras cal'},
+      {code:'8', name:'Marcas'},
+      {code:'14', name:'Óxido de laminado'},
+      {code:'1069', name:'Óxido de rodillos'},
+      {code:'1527', name:'Oxido por temperatura'},
+      {code:'414/510', name:'Óxido primario / Chispas de óxido'},
+      {code:'214', name:'Óxido rojo'},
+      {code:'1039', name:'Óxido sin descascarado'},
+      {code:'1523', name:'Pitting'},
+      {code:'1525', name:'Plastas'},
+      {code:'19', name:'Rayas'},
+      {code:'308', name:'Sombras'},
+      {code:'26', name:'Tableado'}
+    ]},
+    {id:'ORI', name:'Orilla', defectos:[
+      {code:'62', name:'Orilla defectuosa'},
+      {code:'765', name:'Orilla trozada'},
+      {code:'564', name:'Ramillado'}
+    ]},
+    {id:'ASP', name:'Aspecto físico', defectos:[
+      {code:'1154', name:'Cola de pescado'},
+      {code:'82', name:'Coleado'},
+      {code:'593', name:'Devanado'},
+      {code:'80/180', name:'Doblez transversal / Doblez pañuelo'},
+      {code:'73', name:'Mal enrollado'},
+      {code:'7', name:'Maltrato'},
+      {code:'83', name:'Ovalado'},
+      {code:'878', name:'Punta rasgada'},
+      {code:'747', name:'Rollo cabezón'},
+      {code:'573', name:'Rollo cazuela'},
+      {code:'774', name:'Rollo corcholata'},
+      {code:'106', name:'Rollo desenvuelto'},
+      {code:'81', name:'Telescopiado'},
+      {code:'78', name:'Tensión de enrollado'}
+    ]},
+    {id:'FOR', name:'Forma', defectos:[
+      {code:'22', name:'Aglobado'},
+      {code:'21', name:'Camber'},
+      {code:'23', name:'Comba'},
+      {code:'24', name:'Lomo'},
+      {code:'25', name:'Ondulación'}
+    ]},
+    {id:'DIM', name:'Dimensionales', defectos:[
+      {code:'32', name:'Ancho (-)'},
+      {code:'31', name:'Ancho (+)'},
+      {code:'133', name:'Ancho (+/-)'},
+      {code:'260', name:'Atorón molino caliente'},
+      {code:'34', name:'Espesor (-)'},
+      {code:'33', name:'Espesor (+)'},
+      {code:'36', name:'Espesor (+/-)'},
+      {code:'1014', name:'Fuera de espesor operativo'},
+      {code:'240', name:'Incumplimiento de diámetro interno'},
+      {code:'237', name:'Mal perfil'},
+      {code:'40', name:'Peso (-)'},
+      {code:'140', name:'Peso (+)'},
+      {code:'336', name:'Relieve antiderrapante (-)'}
+    ]},
+    {id:'FG', name:'Fuera de grilla', defectos:[
+      {code:'1528', name:'Alto potencial spring back'},
+      {code:'151', name:'Análisis químico fuera de rango (colada)'},
+      {code:'626', name:'Falta de muestra'},
+      {code:'1021', name:'Falta de propiedades mecánicas'},
+      {code:'49', name:'Fuera de propiedades mecánicas'},
+      {code:'1565', name:'Incumplimiento de temperatura intermedia'},
+      {code:'1566', name:'Incumplimiento de tiempo aire'},
+      {code:'711', name:'Temperatura de acabado (-)'},
+      {code:'611', name:'Temperatura de acabado (+)'},
+      {code:'198', name:'Temperatura de acabado (+/-)'},
+      {code:'601', name:'Temperatura de enrollado (-)'},
+      {code:'701', name:'Temperatura de enrollado (+)'},
+      {code:'199', name:'Temperatura de enrollado (+/-)'}
+    ]},
+    {id:'INT', name:'Defectos internos', defectos:[
+      {code:'902', name:'Cambio de espesor'},
+      {code:'190', name:'Carga corrida horno'},
+      {code:'1564', name:'Exceso de castillos en dummy'},
+      {code:'811', name:'Falla de equipo'},
+      {code:'576', name:'Falta grafica'},
+      {code:'1576', name:'Inconsistencia NCA-N'},
+      {code:'1038', name:'Material en enfriamiento'},
+      {code:'192', name:'Material mal identificado'},
+      {code:'392', name:'Material no localizado'},
+      {code:'44', name:'Over rolling'},
+      {code:'1575', name:'Problemas operativos cooling bay'},
+      {code:'1023', name:'Pruebas ing. de producto'},
+      {code:'891', name:'Retención por calidad de planta'},
+      {code:'886', name:'Retención por ing. de procesos'},
+      {code:'1016', name:'Retiro en molino caliente'},
+      {code:'1036', name:'Sin evaluación T-Expert'}
+    ]},
+    {id:'TEC', name:'Defectos tecnológicos', defectos:[
+      {code:'1540', name:'Diferencia entre medidores'},
+      {code:'1570', name:'Diferencia medidores ancho'},
+      {code:'1571', name:'Estrategia de enfriamiento'},
+      {code:'1574', name:'Temperatura desbaste'},
+      {code:'1568', name:'Temperatura enrollado entre caras'},
+      {code:'1573', name:'Temperatura salida de horno'}
+    ]}
+  ];
+
+  var DEFECT_INDEX = {};
+  FAMILIAS.forEach(function(f){ f.defectos.forEach(function(d){ DEFECT_INDEX[d.code] = {familia:f, defecto:d}; }); });
+
+  var UBICACIONES = ['DIC','DEX','Ambos','Centro','Cabeza','Cola','Todo el rollo'];
+  var SEVERIDADES = ['Leve','Moderado','Severo'];
+
+  var DEFAULT_VARIACIONES = { '593': ['Últimas vueltas flojas','Últimas vueltas corridas','Interior corrido','Varias vueltas corridas','DIC','DEX','Ambos lados'] };
+
+  // ---------- STORAGE HELPERS ----------
+  function safeParse(s, fallback){ try{ return JSON.parse(s); }catch(e){ return fallback; } }
+async function getVal(key){
+  return localStorage.getItem(key);
+}
+
+async function setVal(key, value){
+  try{
+    localStorage.setItem(key, value);
+    return true;
+  }catch(e){
+    console.error(e);
+    return false;
+  }
+}
+
+async function delVal(key){
+  try{
+    localStorage.removeItem(key);
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+async function listKeys(prefix){
+  return Object.keys(localStorage).filter(function(key){
+    return key.startsWith(prefix);
+  });
+}
+
+
+  var CATALOGS_KEY = 'catalogos_simples';
+  async function loadCatalogs(){
+    var raw = await getVal(CATALOGS_KEY, true);
+    var def = { grados:['A1010','A1011','A1018','A36'], enrolladores:['Enrollador 1','Enrollador 2','Enrollador 3'], inspectores:['Inspector 1','Inspector 2'] };
+    return raw ? Object.assign(def, safeParse(raw, {})) : def;
+  }
+  async function saveCatalogs(c){ return setVal(CATALOGS_KEY, JSON.stringify(c), true); }
+
+  var VARIACIONES_KEY = 'catalogo_variaciones';
+  async function loadVariaciones(){
+    var raw = await getVal(VARIACIONES_KEY, true);
+    return raw ? safeParse(raw, DEFAULT_VARIACIONES) : JSON.parse(JSON.stringify(DEFAULT_VARIACIONES));
+  }
+  async function saveVariaciones(v){ return setVal(VARIACIONES_KEY, JSON.stringify(v), true); }
+
+  async function loadRollosMaster(){
+    var keys = await listKeys('rollo:', true);
+    var out = {};
+    for(var i=0;i<keys.length;i++){
+      var v = await getVal(keys[i], true);
+      if(v){ var obj = safeParse(v, null); if(obj) out[obj.id] = obj; }
+    }
+    return out;
+  }
+  async function saveRolloMaster(rollo){ return setVal('rollo:'+rollo.id, JSON.stringify(rollo), true); }
+
+  async function loadRegistros(){
+    var keys = await listKeys('registro:', true);
+    var out = [];
+    for(var i=0;i<keys.length;i++){
+      var v = await getVal(keys[i], true);
+      if(v){ var obj = safeParse(v, null); if(obj) out.push(obj); }
+    }
+    out.sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+    return out;
+  }
+  async function saveRegistro(reg){ return setVal('registro:'+reg.id, JSON.stringify(reg), true); }
+  async function deleteRegistro(id){ return delVal('registro:'+id, true); }
+
+  async function getCurrentInspector(){ return getVal('current_inspector', false); }
+  async function setCurrentInspector(name){ return setVal('current_inspector', name, false); }
+
+  // ---------- APP STATE ----------
+  var root = document.getElementById('rollo-app');
+  var S = {
+    tab:'captura',            // captura | historial | catalogo
+    step:'id',                // id | rollo_info | resultado | familia | defecto | variacion | ubicacion | severidad | evidencia
+    inspector:null,
+    rolloId:'',
+    rolloData:{},              // grado, espesor, ancho, peso, fecha, enrollador
+    resultado:null,            // Conforme | Defecto | Scrap
+    familia:null,
+    defecto:null,
+    variacion:null,
+    ubicacion:null,
+    severidad:null,
+    fotos:[],                  // array of {dataUrl}
+    comentario:'',
+    rollosMaster:{},
+    catalogs:null,
+    variacionesCat:null,
+    registros:[],
+    loading:true
+  };
+
+  function toast(msg){
+    var t = document.createElement('div');
+    t.className = 'ra-toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){ t.classList.add('show'); });
+    setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ t.remove(); }, 300); }, 1800);
+  }
+
+  function resetCaptureFlow(){
+    S.step = 'id';
+    S.rolloId = '';
+    S.rolloData = {};
+    S.resultado = null;
+    S.familia = null;
+    S.defecto = null;
+    S.variacion = null;
+    S.ubicacion = null;
+    S.severidad = null;
+    S.fotos = [];
+    S.comentario = '';
+  }
+
+  async function init(){
+    S.inspector = await getCurrentInspector();
+    S.catalogs = await loadCatalogs();
+    S.variacionesCat = await loadVariaciones();
+    S.rollosMaster = await loadRollosMaster();
+    S.registros = await loadRegistros();
+    S.loading = false;
+    render();
+  }
+
+  // ---------- RENDER ----------
+  function el(html){ var d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; }
+
+  function stepOrder(){
+    var steps = ['id','resultado'];
+    if(S.resultado === 'Defecto' || S.resultado === 'Scrap'){
+      steps.push('familia','defecto');
+      var defs = currentDefectVariaciones();
+      if(defs && defs.length) steps.push('variacion');
+      steps.push('ubicacion');
+      if(S.resultado === 'Defecto') steps.push('severidad');
+      steps.push('evidencia');
+    }
+    return steps;
+  }
+
+  function currentDefectVariaciones(){
+    if(!S.defecto) return null;
+    return S.variacionesCat[S.defecto.code] || null;
+  }
+
+  function renderHeader(){
+    var order = stepOrder();
+    var idx = order.indexOf(S.step);
+    var dots = order.map(function(s,i){
+      var cls = 'ra-step-dot' + (i < idx ? ' done' : (i === idx ? ' active' : ''));
+      return '<div class="' + cls + '"></div>';
+    }).join('');
+    return '' +
+      '<div class="ra-header">' +
+        '<div>' +
+          '<div class="title">Inspección de rollos</div>' +
+          '<div class="sub">' + (S.tab==='captura' ? 'Captura rápida' : S.tab==='historial' ? 'Historial' : 'Catálogos') + '</div>' +
+        '</div>' +
+        '<button class="ra-inspector-badge" id="btn-inspector">' + (S.inspector || 'Elegir inspector') + '</button>' +
+      '</div>' +
+      (S.tab==='captura' ? ('<div class="ra-steps">' + dots + '</div>') : '');
+  }
+
+  function renderNav(){
+    return '' +
+      '<div class="ra-nav">' +
+        '<button data-tab="captura" class="' + (S.tab==='captura'?'active':'') + '"><span class="ico">◧</span>Capturar</button>' +
+        '<button data-tab="historial" class="' + (S.tab==='historial'?'active':'') + '"><span class="ico">≡</span>Historial</button>' +
+        '<button data-tab="catalogo" class="' + (S.tab==='catalogo'?'active':'') + '"><span class="ico">⚙</span>Catálogos</button>' +
+      '</div>';
+  }
+
+  function render(){
+    if(S.loading){
+      root.innerHTML = '<div class="ra-empty"><div class="big">⏳</div>Cargando…</div>';
+      return;
+    }
+    var body = '';
+    if(S.tab === 'captura') body = renderCaptura();
+    else if(S.tab === 'historial') body = renderHistorial();
+    else body = renderCatalogo();
+
+    root.innerHTML = renderHeader() + '<div class="ra-body">' + body + '</div>' + renderNav();
+    bindEvents();
+  }
+
+  // ---------- CAPTURA FLOW SCREENS ----------
+  function renderCaptura(){
+    if(!S.inspector) return renderInspectorGate();
+    switch(S.step){
+      case 'id': return screenId();
+      case 'resultado': return screenResultado();
+      case 'familia': return screenFamilia();
+      case 'defecto': return screenDefecto();
+      case 'variacion': return screenVariacion();
+      case 'ubicacion': return screenUbicacion();
+      case 'severidad': return screenSeveridad();
+      case 'evidencia': return screenEvidencia();
+      default: return screenId();
+    }
+  }
+
+  function renderInspectorGate(){
+    var opts = (S.catalogs.inspectores||[]).map(function(n){
+      return '<button class="ra-btn ra-btn-outline ra-btn-block" data-pick-inspector="' + escAttr(n) + '">' + escHtml(n) + '</button>';
+    }).join('');
+    return '' +
+      '<div class="ra-card">' +
+        '<div class="ra-h1">¿Quién eres?</div>' +
+        '<div class="ra-h2">Selecciona tu nombre para comenzar a inspeccionar</div>' +
+        opts +
+        '<div class="ra-inline-form" style="margin-top:8px;">' +
+          '<input class="ra-input" id="new-inspector" placeholder="Agregar inspector nuevo" style="margin-bottom:0;">' +
+          '<button class="ra-small-btn" id="btn-add-inspector">Agregar</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function screenId(){
+    var master = S.rolloId ? S.rollosMaster[S.rolloId.trim().toUpperCase()] : null;
+    return '' +
+      '<div class="ra-card">' +
+        '<div class="ra-h1">Identificar rollo</div>' +
+        '<div class="ra-h2">Escanea el código o captúralo manualmente</div>' +
+        '<button class="ra-btn ra-btn-steel ra-btn-block" id="btn-scan">📷 Escanear código</button>' +
+        '<label class="ra-label">ID de rollo</label>' +
+        '<input class="ra-input" id="input-rollo-id" placeholder="Ej. 4A695767PM400" value="' + escAttr(S.rolloId) + '" autocapitalize="characters">' +
+        (master ? renderMasterPreview(master) : (S.rolloId.trim() ? '<div class="ra-h2" style="margin-bottom:10px;">Sin datos previos — se guardará solo con el ID. Puedes añadir datos del rollo abajo si lo deseas.</div>' + renderManualMasterFields() : '')) +
+        '<button class="ra-btn ra-btn-conforme ra-btn-block" id="btn-continue-id" ' + (S.rolloId.trim()?'':'disabled style="opacity:.45"') + '>Continuar</button>' +
+      '</div>';
+  }
+
+  function renderMasterPreview(m){
+    return '' +
+      '<div class="ra-card" style="background:#F3F8F5;border-color:#BFE3CC;box-shadow:none;margin:4px 0 14px;">' +
+        '<div class="ra-label" style="color:#1F8A54;">Datos recuperados automáticamente</div>' +
+        row('Grado', m.grado) + row('Espesor', m.espesor) + row('Ancho', m.ancho) + row('Peso', m.peso) + row('Fecha producción', m.fecha) + row('Enrollador', m.enrollador) +
+      '</div>';
+    function row(l,v){ return v ? ('<div class="ra-summary-line"><span>'+l+'</span><b>'+escHtml(String(v))+'</b></div>') : ''; }
+  }
+
+  function renderManualMasterFields(){
+    var gradosOpts = (S.catalogs.grados||[]).map(function(g){ return '<option value="'+escAttr(g)+'"'+(S.rolloData.grado===g?' selected':'')+'>'+escHtml(g)+'</option>'; }).join('');
+    var enrolladoresOpts = (S.catalogs.enrolladores||[]).map(function(g){ return '<option value="'+escAttr(g)+'"'+(S.rolloData.enrollador===g?' selected':'')+'>'+escHtml(g)+'</option>'; }).join('');
+    return '' +
+      '<details style="margin-bottom:12px;">' +
+        '<summary class="ra-link" style="cursor:pointer;">+ Agregar datos del rollo (opcional)</summary>' +
+        '<div style="margin-top:10px;">' +
+          '<label class="ra-label">Grado</label>' +
+          '<select class="ra-input" id="field-grado"><option value="">—</option>' + gradosOpts + '</select>' +
+          '<label class="ra-label">Enrollador</label>' +
+          '<select class="ra-input" id="field-enrollador"><option value="">—</option>' + enrolladoresOpts + '</select>' +
+          '<div class="ra-grid">' +
+            '<div><label class="ra-label">Espesor</label><input class="ra-input" id="field-espesor" value="' + escAttr(S.rolloData.espesor||'') + '"></div>' +
+            '<div><label class="ra-label">Ancho</label><input class="ra-input" id="field-ancho" value="' + escAttr(S.rolloData.ancho||'') + '"></div>' +
+            '<div><label class="ra-label">Peso</label><input class="ra-input" id="field-peso" value="' + escAttr(S.rolloData.peso||'') + '"></div>' +
+            '<div><label class="ra-label">Fecha prod.</label><input class="ra-input" type="date" id="field-fecha" value="' + escAttr(S.rolloData.fecha||'') + '"></div>' +
+          '</div>' +
+        '</div>' +
+      '</details>';
+  }
+
+  function screenResultado(){
+    return '' +
+      backRow('id') +
+      '<div class="ra-card">' +
+        '<div class="ra-h1">' + escHtml(S.rolloId) + '</div>' +
+        '<div class="ra-h2">¿Cuál es la condición del rollo?</div>' +
+        '<button class="ra-btn ra-btn-conforme ra-btn-block" data-resultado="Conforme" style="min-height:76px;font-size:18px;">✔ Conforme</button>' +
+        '<button class="ra-btn ra-btn-defecto ra-btn-block" data-resultado="Defecto" style="min-height:76px;font-size:18px;">⚠ Defecto</button>' +
+        '<button class="ra-btn ra-btn-scrap ra-btn-block" data-resultado="Scrap" style="min-height:76px;font-size:18px;">✕ Scrap</button>' +
+      '</div>';
+  }
+
+  function screenFamilia(){
+    var items = FAMILIAS.map(function(f){
+      return '<button class="ra-btn ra-btn-outline ra-btn-block" data-familia="' + f.id + '" style="text-transform:capitalize;justify-content:space-between;">' + escHtml(f.name) + '<span style="color:var(--ink-soft);font-size:12px;">' + f.defectos.length + '</span></button>';
+    }).join('');
+    return backRow('resultado') + '<div class="ra-card"><div class="ra-h1">Familia del defecto</div><div class="ra-h2">Selecciona la categoría</div>' + items + '</div>';
+  }
+
+  function screenDefecto(){
+    var items = S.familia.defectos.map(function(d){
+      return '<div class="ra-choice" data-defecto="' + d.code + '"><div class="ra-choice-row"><span class="code">' + d.code + '</span><span class="ra-choice-text">' + escHtml(d.name) + '</span></div><span>›</span></div>';
+    }).join('');
+    return backRow('familia') + '<div class="ra-card"><div class="ra-h1">' + escHtml(S.familia.name) + '</div><div class="ra-h2">Selecciona el defecto</div>' + items + '</div>';
+  }
+
+  function screenVariacion(){
+    var vs = currentDefectVariaciones() || [];
+    var items = vs.map(function(v){
+      return '<div class="ra-choice" data-variacion="' + escAttr(v) + '">' + escHtml(v) + '<span>›</span></div>';
+    }).join('');
+    return backRow('defecto') + '<div class="ra-card"><div class="ra-h1">' + escHtml(S.defecto.name) + '</div><div class="ra-h2">Variación del defecto</div>' + items + '</div>';
+  }
+
+  function screenUbicacion(){
+    var items = UBICACIONES.map(function(u){
+      return '<button class="ra-btn ra-btn-outline" data-ubicacion="' + escAttr(u) + '" style="text-transform:capitalize;">' + escHtml(u) + '</button>';
+    }).join('');
+    return backRow(currentDefectVariaciones() ? 'variacion' : 'defecto') +
+      '<div class="ra-card"><div class="ra-h1">Ubicación</div><div class="ra-h2">¿Dónde está el defecto en el rollo?</div>' +
+      '<div class="ra-grid">' + items + '</div></div>';
+  }
+
+  function screenSeveridad(){
+    var items = SEVERIDADES.map(function(s){
+      var cls = s==='Severo' ? 'ra-btn-scrap' : s==='Moderado' ? 'ra-btn-defecto' : 'ra-btn-conforme';
+      return '<button class="ra-btn ' + cls + ' ra-btn-block" data-severidad="' + s + '">' + s + '</button>';
+    }).join('');
+    return backRow('ubicacion') + '<div class="ra-card"><div class="ra-h1">Severidad</div><div class="ra-h2">Selecciona el nivel</div>' + items + '</div>';
+  }
+
+  function screenEvidencia(){
+    var fotos = S.fotos.map(function(f,i){
+      return '<div class="ra-photo-thumb"><img src="' + f + '"><button data-remove-foto="' + i + '">✕</button></div>';
+    }).join('');
+    return backRow(S.resultado === 'Defecto' ? 'severidad' : 'ubicacion') +
+      '<div class="ra-card">' +
+        '<div class="ra-h1">Evidencia y comentario</div>' +
+        '<div class="ra-h2">Ambos son opcionales</div>' +
+        '<label class="ra-label">Fotografía</label>' +
+        '<div class="ra-photo-row">' + fotos + '<label class="ra-add-photo">＋<input type="file" accept="image/*" capture="environment" id="input-foto" style="display:none;"></label></div>' +
+        '<label class="ra-label">Comentario</label>' +
+        '<textarea class="ra-input" id="input-comentario" placeholder="Información adicional (opcional)">' + escHtml(S.comentario) + '</textarea>' +
+        renderResumen() +
+        '<button class="ra-btn ra-btn-conforme ra-btn-block" id="btn-guardar" style="margin-top:14px;">Guardar rollo</button>' +
+      '</div>';
+  }
+
+  function renderResumen(){
+    var lines = [];
+    lines.push(['Rollo', S.rolloId]);
+    lines.push(['Resultado', S.resultado]);
+    if(S.familia) lines.push(['Familia', S.familia.name]);
+    if(S.defecto) lines.push(['Defecto', S.defecto.code + ' — ' + S.defecto.name]);
+    if(S.variacion) lines.push(['Variación', S.variacion]);
+    if(S.ubicacion) lines.push(['Ubicación', S.ubicacion]);
+    if(S.severidad) lines.push(['Severidad', S.severidad]);
+    return '<div class="ra-card" style="background:var(--bg);box-shadow:none;">' +
+      lines.map(function(l){ return '<div class="ra-summary-line"><span>'+l[0]+'</span><b>'+escHtml(String(l[1]))+'</b></div>'; }).join('') +
+      '</div>';
+  }
+
+  function backRow(target){
+    return '<div class="ra-topbar"><button class="ra-back" data-goto="' + target + '">‹ Atrás</button></div>';
+  }
+
+  // ---------- HISTORIAL ----------
+  function renderHistorial(){
+    var regs = S.registros;
+    var total = regs.length;
+    var defectos = regs.filter(function(r){ return r.resultado==='Defecto'; }).length;
+    var scrap = regs.filter(function(r){ return r.resultado==='Scrap'; }).length;
+    var items = regs.length ? regs.map(historyItem).join('') :
+      '<div class="ra-empty"><div class="big">📋</div>Aún no hay rollos capturados</div>';
+    return '' +
+      '<div class="ra-stats">' +
+        stat(total,'Total') + stat(defectos,'Defecto') + stat(scrap,'Scrap') +
+      '</div>' +
+      '<button class="ra-btn ra-btn-steel ra-btn-block" id="btn-export">⬇ Exportar a Excel</button>' +
+      items;
+    function stat(n,l){ return '<div class="ra-stat"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
+  }
+
+  function historyItem(r){
+    var badgeCls = r.resultado==='Conforme'?'conforme':r.resultado==='Defecto'?'defecto':'scrap';
+    var meta = [r.familia, r.defecto, r.variacion, r.ubicacion, r.severidad].filter(Boolean).join(' · ');
+    return '' +
+      '<div class="ra-history-item">' +
+        '<div class="ra-history-top"><span class="ra-history-id">' + escHtml(r.rolloId) + '</span><span class="ra-badge ' + badgeCls + '">' + r.resultado + '</span></div>' +
+        '<div class="ra-history-meta">' + (meta || 'Sin defecto') + '</div>' +
+        '<div class="ra-history-meta">' + (r.fecha||'') + ' ' + (r.hora||'') + ' · ' + escHtml(r.inspector||'') + (r.fotos && r.fotos.length ? ' · 📷 ' + r.fotos.length : '') + '</div>' +
+        '<button class="ra-link" style="margin-top:8px;color:var(--scrap);" data-delete-registro="' + r.id + '">Eliminar</button>' +
+      '</div>';
+  }
+
+  // ---------- CATALOGO / ADMIN ----------
+  function renderCatalogo(){
+    var v = S.variacionesCat;
+    var variacionSections = FAMILIAS.map(function(f){
+      var withDefects = f.defectos.map(function(d){
+        var list = v[d.code] || [];
+        var tags = list.map(function(item, i){
+          return '<div class="ra-tag">' + escHtml(item) + '<button data-del-var="' + d.code + '" data-idx="' + i + '">✕</button></div>';
+        }).join('');
+        return '<div style="margin-bottom:14px;">' +
+          '<div style="font-size:13.5px;font-weight:700;text-transform:capitalize;margin-bottom:6px;">' + d.code + ' — ' + escHtml(d.name) + '</div>' +
+          '<div class="ra-tag-list">' + (tags || '<span style="font-size:12.5px;color:var(--ink-soft);">Sin variaciones — se omite ese paso</span>') + '</div>' +
+          '<div class="ra-inline-form">' +
+            '<input class="ra-input" placeholder="Nueva variación" id="newvar-' + d.code + '" style="margin-bottom:0;">' +
+            '<button class="ra-small-btn" data-add-var="' + d.code + '">Agregar</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      return '<details><summary class="ra-section-title" style="cursor:pointer;">' + escHtml(f.name) + '</summary>' + withDefects + '</details>';
+    }).join('');
+
+    return '' +
+      '<div class="ra-card">' +
+        '<div class="ra-h1">Inspector actual</div>' +
+        '<div class="ra-h2">' + (S.inspector || 'Ninguno seleccionado') + '</div>' +
+        '<button class="ra-link" id="btn-change-inspector">Cambiar inspector</button>' +
+      '</div>' +
+      '<div class="ra-card">' +
+        '<div class="ra-h1">Grados</div>' +
+        '<div class="ra-tag-list">' + (S.catalogs.grados||[]).map(function(g,i){ return '<div class="ra-tag">' + escHtml(g) + '<button data-del-simple="grados" data-idx="'+i+'">✕</button></div>'; }).join('') + '</div>' +
+        '<div class="ra-inline-form"><input class="ra-input" id="new-grado" placeholder="Nuevo grado" style="margin-bottom:0;"><button class="ra-small-btn" data-add-simple="grados">Agregar</button></div>' +
+      '</div>' +
+      '<div class="ra-card">' +
+        '<div class="ra-h1">Enrolladores</div>' +
+        '<div class="ra-tag-list">' + (S.catalogs.enrolladores||[]).map(function(g,i){ return '<div class="ra-tag">' + escHtml(g) + '<button data-del-simple="enrolladores" data-idx="'+i+'">✕</button></div>'; }).join('') + '</div>' +
+        '<div class="ra-inline-form"><input class="ra-input" id="new-enrollador" placeholder="Nuevo enrollador" style="margin-bottom:0;"><button class="ra-small-btn" data-add-simple="enrolladores">Agregar</button></div>' +
+      '</div>' +
+      '<div class="ra-card">' +
+        '<div class="ra-h1">Inspectores</div>' +
+        '<div class="ra-tag-list">' + (S.catalogs.inspectores||[]).map(function(g,i){ return '<div class="ra-tag">' + escHtml(g) + '<button data-del-simple="inspectores" data-idx="'+i+'">✕</button></div>'; }).join('') + '</div>' +
+        '<div class="ra-inline-form"><input class="ra-input" id="new-inspector-cat" placeholder="Nuevo inspector" style="margin-bottom:0;"><button class="ra-small-btn" data-add-simple="inspectores">Agregar</button></div>' +
+      '</div>' +
+      '<div class="ra-card">' +
+        '<div class="ra-h1">Variaciones por defecto</div>' +
+        '<div class="ra-h2">Solo el devanado (593) viene precargado con los datos que diste. Agrega el resto aquí — sin código nuevos ni cambios de nombre, solo variaciones.</div>' +
+        variacionSections +
+      '</div>' +
+      '<div class="ra-card" style="background:#fff7ec;border-color:#F0D9AE;">' +
+        '<div class="ra-h1" style="font-size:15px;">Nota sobre datos compartidos</div>' +
+        '<div class="ra-h2" style="margin-bottom:0;">Los registros y catálogos de esta app se comparten entre todos los inspectores que la usan — así el Excel final junta el trabajo de todo el equipo.</div>' +
+      '</div>';
+  }
+
+  // ---------- UTIL ----------
+  function escHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function escAttr(s){ return escHtml(s); }
+
+  function compressImage(file){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(e){
+        var img = new Image();
+        img.onload = function(){
+          var maxW = 900;
+          var scale = Math.min(1, maxW / img.width);
+          var canvas = document.createElement('canvas');
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---------- SCANNER ----------
+  function openScanner(){
+    if(!('BarcodeDetector' in window)){
+      toast('Escaneo no disponible en este dispositivo — captura el ID manualmente');
+      return;
+    }
+    var modal = el('<div class="ra-video-modal"><button class="close-scan" id="scan-close">✕</button><video autoplay playsinline muted></video><div class="hint">Apunta al código de barras o QR del rollo</div></div>');
+    document.body.appendChild(modal);
+    var video = modal.querySelector('video');
+    var stream = null;
+    var stop = false;
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(function(s){
+      stream = s;
+      video.srcObject = s;
+      var detector = new window.BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']});
+      function loop(){
+        if(stop) return;
+        detector.detect(video).then(function(codes){
+          if(codes && codes.length){
+            S.rolloId = codes[0].rawValue;
+            closeScanner();
+            render();
+          } else if(!stop){
+            requestAnimationFrame(loop);
+          }
+        }).catch(function(){ if(!stop) requestAnimationFrame(loop); });
+      }
+      requestAnimationFrame(loop);
+    }).catch(function(){
+      toast('No se pudo acceder a la cámara — captura el ID manualmente');
+      modal.remove();
+    });
+    function closeScanner(){
+      stop = true;
+      if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
+      modal.remove();
+    }
+    modal.querySelector('#scan-close').addEventListener('click', closeScanner);
+  }
+
+  // ---------- EXPORT TO EXCEL ----------
+  function loadSheetJS(){
+    return new Promise(function(resolve, reject){
+      if(window.XLSX) return resolve();
+      var s = document.createElement('script');
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function exportExcel(){
+    toast('Preparando archivo…');
+    try{ await loadSheetJS(); }catch(e){ toast('No se pudo cargar el generador de Excel'); return; }
+    var XLSX = window.XLSX;
+
+    var registroRows = S.registros.slice().reverse().map(function(r){
+      return {
+        'Fecha': r.fecha||'', 'Hora': r.hora||'', 'ID Rollo': r.rolloId||'',
+        'Resultado': r.resultado||'', 'Familia': r.familia||'', 'Código defecto': r.defectoCode||'',
+        'Defecto': r.defecto||'', 'Variación': r.variacion||'', 'Ubicación': r.ubicacion||'',
+        'Severidad': r.severidad||'', 'Inspector': r.inspector||'',
+        'Grado': r.grado||'', 'Espesor': r.espesor||'', 'Ancho': r.ancho||'', 'Peso': r.peso||'',
+        'Fecha producción': r.fechaProduccion||'', 'Enrollador': r.enrollador||'',
+        'Fotos (cantidad)': (r.fotos||[]).length, 'Comentario': r.comentario||''
+      };
+    });
+    var wsRegistro = XLSX.utils.json_to_sheet(registroRows);
+
+    var catDefectos = [];
+    FAMILIAS.forEach(function(f){ f.defectos.forEach(function(d){ catDefectos.push({'Código':d.code,'Familia':f.name,'Defecto':d.name}); }); });
+    var wsDefectos = XLSX.utils.json_to_sheet(catDefectos);
+
+    var catVariaciones = [];
+    Object.keys(S.variacionesCat).forEach(function(code){
+      (S.variacionesCat[code]||[]).forEach(function(v){ catVariaciones.push({'Código de defecto':code, 'Variación':v}); });
+    });
+    var wsVariaciones = XLSX.utils.json_to_sheet(catVariaciones);
+
+    var wsUbicaciones = XLSX.utils.json_to_sheet(UBICACIONES.map(function(u,i){ return {'Código':i+1,'Ubicación':u}; }));
+    var wsInspectores = XLSX.utils.json_to_sheet((S.catalogs.inspectores||[]).map(function(n,i){ return {'ID':i+1,'Nombre':n}; }));
+
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, wsRegistro, 'REGISTRO');
+    XLSX.utils.book_append_sheet(wb, wsDefectos, 'CATALOGO_DEFECTOS');
+    XLSX.utils.book_append_sheet(wb, wsVariaciones, 'CATALOGO_VARIACIONES');
+    XLSX.utils.book_append_sheet(wb, wsUbicaciones, 'CATALOGO_UBICACIONES');
+    XLSX.utils.book_append_sheet(wb, wsInspectores, 'CATALOGO_INSPECTORES');
+
+    XLSX.writeFile(wb, 'inspeccion_rollos_' + (new Date().toISOString().slice(0,10)) + '.xlsx');
+    toast('Excel generado');
+  }
+
+  // ---------- EVENTS ----------
+  function bindEvents(){
+    // nav
+    root.querySelectorAll('.ra-nav [data-tab]').forEach(function(b){
+      b.addEventListener('click', function(){ S.tab = b.getAttribute('data-tab'); render(); });
+    });
+
+    var inspectorBtn = root.querySelector('#btn-inspector');
+    if(inspectorBtn) inspectorBtn.addEventListener('click', function(){ S.tab='catalogo'; render(); });
+
+    // inspector gate
+    root.querySelectorAll('[data-pick-inspector]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        S.inspector = b.getAttribute('data-pick-inspector');
+        await setCurrentInspector(S.inspector);
+        render();
+      });
+    });
+    var addInspBtn = root.querySelector('#btn-add-inspector');
+    if(addInspBtn) addInspBtn.addEventListener('click', async function(){
+      var input = root.querySelector('#new-inspector');
+      var name = input.value.trim();
+      if(!name) return;
+      S.catalogs.inspectores.push(name);
+      await saveCatalogs(S.catalogs);
+      S.inspector = name;
+      await setCurrentInspector(name);
+      render();
+    });
+
+    // id screen
+    var idInput = root.querySelector('#input-rollo-id');
+    if(idInput) idInput.addEventListener('input', function(){ S.rolloId = idInput.value; renderIdOnly(); });
+    var scanBtn = root.querySelector('#btn-scan');
+    if(scanBtn) scanBtn.addEventListener('click', openScanner);
+    var contBtn = root.querySelector('#btn-continue-id');
+    if(contBtn) contBtn.addEventListener('click', function(){
+      collectManualFields();
+      S.step = 'resultado';
+      render();
+    });
+
+    // resultado
+    root.querySelectorAll('[data-resultado]').forEach(function(b){
+      b.addEventListener('click', function(){
+        S.resultado = b.getAttribute('data-resultado');
+        if(S.resultado === 'Conforme'){ guardarRegistro(); return; }
+        S.step = 'familia';
+        render();
+      });
+    });
+
+    // familia
+    root.querySelectorAll('[data-familia]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var fid = b.getAttribute('data-familia');
+        S.familia = FAMILIAS.filter(function(f){ return f.id===fid; })[0];
+        S.step = 'defecto';
+        render();
+      });
+    });
+
+    // defecto
+    root.querySelectorAll('[data-defecto]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var code = b.getAttribute('data-defecto');
+        S.defecto = S.familia.defectos.filter(function(d){ return d.code===code; })[0];
+        var vs = currentDefectVariaciones();
+        S.step = (vs && vs.length) ? 'variacion' : 'ubicacion';
+        render();
+      });
+    });
+
+    // variacion
+    root.querySelectorAll('[data-variacion]').forEach(function(b){
+      b.addEventListener('click', function(){
+        S.variacion = b.getAttribute('data-variacion');
+        S.step = 'ubicacion';
+        render();
+      });
+    });
+
+    // ubicacion
+    root.querySelectorAll('[data-ubicacion]').forEach(function(b){
+      b.addEventListener('click', function(){
+        S.ubicacion = b.getAttribute('data-ubicacion');
+        S.step = (S.resultado === 'Defecto') ? 'severidad' : 'evidencia';
+        render();
+      });
+    });
+
+    // severidad
+    root.querySelectorAll('[data-severidad]').forEach(function(b){
+      b.addEventListener('click', function(){
+        S.severidad = b.getAttribute('data-severidad');
+        S.step = 'evidencia';
+        render();
+      });
+    });
+
+    // back
+    root.querySelectorAll('[data-goto]').forEach(function(b){
+      b.addEventListener('click', function(){ S.step = b.getAttribute('data-goto'); render(); });
+    });
+
+    // evidencia
+    var fotoInput = root.querySelector('#input-foto');
+    if(fotoInput) fotoInput.addEventListener('change', async function(){
+      if(fotoInput.files && fotoInput.files[0]){
+        try{
+          var dataUrl = await compressImage(fotoInput.files[0]);
+          S.fotos.push(dataUrl);
+          render();
+        }catch(e){ toast('No se pudo procesar la foto'); }
+      }
+    });
+    root.querySelectorAll('[data-remove-foto]').forEach(function(b){
+      b.addEventListener('click', function(){ S.fotos.splice(parseInt(b.getAttribute('data-remove-foto'),10),1); render(); });
+    });
+    var comentarioInput = root.querySelector('#input-comentario');
+    if(comentarioInput) comentarioInput.addEventListener('input', function(){ S.comentario = comentarioInput.value; });
+    var guardarBtn = root.querySelector('#btn-guardar');
+    if(guardarBtn) guardarBtn.addEventListener('click', guardarRegistro);
+
+    // historial
+    var exportBtn = root.querySelector('#btn-export');
+    if(exportBtn) exportBtn.addEventListener('click', exportExcel);
+    root.querySelectorAll('[data-delete-registro]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        var id = b.getAttribute('data-delete-registro');
+        await deleteRegistro(id);
+        S.registros = S.registros.filter(function(r){ return r.id!==id; });
+        render();
+      });
+    });
+
+    // catalogo
+    var changeInspBtn = root.querySelector('#btn-change-inspector');
+    if(changeInspBtn) changeInspBtn.addEventListener('click', async function(){ S.inspector=null; await setCurrentInspector(''); render(); });
+
+    root.querySelectorAll('[data-add-simple]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        var kind = b.getAttribute('data-add-simple');
+        var inputId = kind==='grados' ? '#new-grado' : kind==='enrolladores' ? '#new-enrollador' : '#new-inspector-cat';
+        var input = root.querySelector(inputId);
+        var val = input.value.trim();
+        if(!val) return;
+        S.catalogs[kind] = S.catalogs[kind] || [];
+        S.catalogs[kind].push(val);
+        await saveCatalogs(S.catalogs);
+        render();
+      });
+    });
+    root.querySelectorAll('[data-del-simple]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        var kind = b.getAttribute('data-del-simple');
+        var idx = parseInt(b.getAttribute('data-idx'),10);
+        S.catalogs[kind].splice(idx,1);
+        await saveCatalogs(S.catalogs);
+        render();
+      });
+    });
+    root.querySelectorAll('[data-add-var]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        var code = b.getAttribute('data-add-var');
+        var input = root.querySelector('#newvar-' + code);
+        var val = input.value.trim();
+        if(!val) return;
+        S.variacionesCat[code] = S.variacionesCat[code] || [];
+        S.variacionesCat[code].push(val);
+        await saveVariaciones(S.variacionesCat);
+        render();
+      });
+    });
+    root.querySelectorAll('[data-del-var]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        var code = b.getAttribute('data-del-var');
+        var idx = parseInt(b.getAttribute('data-idx'),10);
+        S.variacionesCat[code].splice(idx,1);
+        await saveVariaciones(S.variacionesCat);
+        render();
+      });
+    });
+  }
+
+  function renderIdOnly(){
+    // lightweight re-render just for the id step to avoid losing focus on every keystroke
+    var body = root.querySelector('.ra-body');
+    if(body){ body.innerHTML = screenId(); bindEvents(); var inp = root.querySelector('#input-rollo-id'); if(inp){ inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }
+  }
+
+  function collectManualFields(){
+    var g = root.querySelector('#field-grado'); if(g && g.value) S.rolloData.grado = g.value;
+    var e = root.querySelector('#field-enrollador'); if(e && e.value) S.rolloData.enrollador = e.value;
+    var esp = root.querySelector('#field-espesor'); if(esp && esp.value) S.rolloData.espesor = esp.value;
+    var anc = root.querySelector('#field-ancho'); if(anc && anc.value) S.rolloData.ancho = anc.value;
+    var pes = root.querySelector('#field-peso'); if(pes && pes.value) S.rolloData.peso = pes.value;
+    var fec = root.querySelector('#field-fecha'); if(fec && fec.value) S.rolloData.fecha = fec.value;
+  }
+
+  async function guardarRegistro(){
+    var now = new Date();
+    var master = S.rollosMaster[S.rolloId.trim().toUpperCase()] || {};
+    var reg = {
+      id: 'r' + now.getTime() + Math.random().toString(36).slice(2,7),
+      ts: now.getTime(),
+      fecha: now.toISOString().slice(0,10),
+      hora: now.toTimeString().slice(0,5),
+      rolloId: S.rolloId.trim(),
+      resultado: S.resultado || 'Conforme',
+      familia: S.familia ? S.familia.name : '',
+      defectoCode: S.defecto ? S.defecto.code : '',
+      defecto: S.defecto ? S.defecto.name : '',
+      variacion: S.variacion || '',
+      ubicacion: S.ubicacion || '',
+      severidad: S.severidad || '',
+      inspector: S.inspector || '',
+      grado: master.grado || S.rolloData.grado || '',
+      espesor: master.espesor || S.rolloData.espesor || '',
+      ancho: master.ancho || S.rolloData.ancho || '',
+      peso: master.peso || S.rolloData.peso || '',
+      fechaProduccion: master.fecha || S.rolloData.fecha || '',
+      enrollador: master.enrollador || S.rolloData.enrollador || '',
+      fotos: S.fotos,
+      comentario: S.comentario || ''
+    };
+    var ok = await saveRegistro(reg);
+    if(!ok){ toast('Error al guardar — intenta de nuevo'); return; }
+
+    // persist any newly-typed master data for next time this rollo id appears
+    if(!master.id && (S.rolloData.grado || S.rolloData.enrollador || S.rolloData.espesor)){
+      await saveRolloMaster({ id: S.rolloId.trim().toUpperCase(), grado:S.rolloData.grado||'', espesor:S.rolloData.espesor||'', ancho:S.rolloData.ancho||'', peso:S.rolloData.peso||'', fecha:S.rolloData.fecha||'', enrollador:S.rolloData.enrollador||'' });
+     S.rollosMaster[S.rolloId.trim().toUpperCase()] = {
+  id: S.rolloId.trim().toUpperCase(),
+  grado: S.rolloData.grado || '',
+  espesor: S.rolloData.espesor || '',
+  ancho: S.rolloData.ancho || '',
+  peso: S.rolloData.peso || '',
+  fecha: S.rolloData.fecha || '',
+  enrollador: S.rolloData.enrollador || ''
+};
+    }
+
+    S.registros.unshift(reg);
+    toast('Rollo guardado');
+    resetCaptureFlow();
+    render();
+  }
+
+  init();
+})();
+</script>

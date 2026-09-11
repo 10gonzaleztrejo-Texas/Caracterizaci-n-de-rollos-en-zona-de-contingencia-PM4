@@ -1,303 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0E1114">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Inspección de rollos · Ternium</title>
 <style>
   :root{
-    --bg:#EEF1F4;
-    --surface:#FFFFFF;
-    --ink:#1B222C;
-    --ink-soft:#5B6472;
-    --line:#D7DCE2;
-    --steel:#2C5B7C;
-    --steel-dark:#204158;
-    --conforme:#1F8A54;
-    --conforme-dark:#166B41;
-    --defecto:#C97A1B;
-    --defecto-dark:#A5620E;
-    --scrap:#C6362E;
-    --scrap-dark:#A32B24;
-    --radius:14px;
-    --shadow:0 1px 2px rgba(27,34,44,.06), 0 4px 14px rgba(27,34,44,.06);
+    --bg:#F1F2F4; --surface:#FFFFFF; --ink:#0E1114; --ink-mid:#3C444E; --ink-soft:#6B7481;
+    --line:#DDE0E5; --line-strong:#C3C8D0; --brand:#0E1114;
+    --conforme:#1F7A4C; --defecto:#B26A12; --scrap:#B32D25; --info:#2C5B7C;
+    --radius:4px; --radius-lg:6px;
   }
-  *{box-sizing:border-box;}
-  #rollo-app{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:var(--bg);
-    color:var(--ink);
-    min-height:100%;
-    padding:0 0 90px 0;
-    -webkit-tap-highlight-color:transparent;
-  }
-  #rollo-app *{box-sizing:border-box;}
-  .ra-header{
-    position:sticky;top:0;z-index:20;
-    background:var(--steel);
-    color:#fff;
-    padding:14px 16px 12px;
-    display:flex;align-items:center;justify-content:space-between;
-    box-shadow:var(--shadow);
-  }
-  .ra-header .title{font-size:17px;font-weight:700;letter-spacing:.2px;}
-  .ra-header .sub{font-size:12px;color:#CBD9E3;margin-top:2px;}
-  .ra-inspector-badge{
-    background:rgba(255,255,255,.14);
-    border-radius:999px;
-    padding:6px 12px;
-    font-size:13px;
-    font-weight:600;
-    border:none;color:#fff;
-  }
-  .ra-steps{display:flex;gap:5px;padding:10px 16px 0;background:var(--steel);}
-  .ra-step-dot{height:4px;flex:1;border-radius:3px;background:rgba(255,255,255,.25);}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);}
+  body{font-family:"Helvetica Neue",Helvetica,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    color:var(--ink);overscroll-behavior-y:contain;-webkit-text-size-adjust:100%;}
+  #rollo-app{min-height:100%;padding:0 0 96px 0;}
+
+  .ra-logo{display:block;height:26px;width:auto;}
+  .ra-logo-lg{height:52px;}
+
+  .ra-header{position:sticky;top:0;z-index:20;background:var(--brand);color:#fff;
+    padding:calc(13px + env(safe-area-inset-top,0px)) 16px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .ra-header .sub{font-size:10.5px;color:#98A1AC;margin-top:6px;letter-spacing:.1em;}
+  .ra-user{background:none;border:1px solid rgba(255,255,255,.3);border-radius:2px;padding:8px 12px;
+    font-size:12.5px;font-weight:600;color:#fff;cursor:pointer;max-width:40vw;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;font-family:inherit;}
+  .ra-steps{display:flex;background:var(--brand);padding:0 16px;}
+  .ra-step-dot{height:3px;flex:1;background:rgba(255,255,255,.18);}
   .ra-step-dot.active{background:#fff;}
-  .ra-step-dot.done{background:#9FD3B4;}
-  .ra-body{padding:16px;max-width:520px;margin:0 auto;}
-  .ra-card{
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:18px;
-    box-shadow:var(--shadow);
-    margin-bottom:14px;
-  }
-  .ra-h1{font-size:20px;font-weight:700;margin:0 0 4px;}
-  .ra-h2{font-size:14px;font-weight:600;color:var(--ink-soft);margin:0 0 14px;}
-  .ra-label{font-size:12px;font-weight:600;color:var(--ink-soft);margin:0 0 6px;display:block;}
-  .ra-input{
-    width:100%;padding:14px;font-size:17px;border-radius:10px;
-    border:1.5px solid var(--line);background:#fff;color:var(--ink);
-    margin-bottom:12px;
-  }
-  .ra-input:focus{outline:none;border-color:var(--steel);}
-  .ra-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .ra-btn{
-    display:flex;align-items:center;justify-content:center;text-align:center;
-    border:none;border-radius:12px;cursor:pointer;
-    font-size:16px;font-weight:700;color:#fff;
-    padding:18px 14px;min-height:58px;line-height:1.2;
-    transition:transform .06s ease;
-  }
-  .ra-btn:active{transform:scale(.97);}
-  .ra-btn-block{width:100%;margin-bottom:10px;}
+  .ra-step-dot.done{background:rgba(255,255,255,.55);}
+
+  .ra-body{padding:18px 16px;max-width:540px;margin:0 auto;animation:raEnter .22s ease;}
+  .ra-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:20px 18px;margin-bottom:14px;}
+  .ra-h1{font-size:21px;font-weight:700;margin:0 0 5px;letter-spacing:-.01em;}
+  .ra-h2{font-size:13.5px;color:var(--ink-soft);margin:0 0 16px;line-height:1.5;}
+  .ra-label{font-size:11px;font-weight:700;color:var(--ink-soft);margin:0 0 7px;display:block;letter-spacing:.06em;}
+  .ra-input{width:100%;padding:14px;font-size:16px;border-radius:var(--radius);border:1px solid var(--line-strong);
+    background:#fff;color:var(--ink);margin-bottom:12px;font-family:inherit;}
+  .ra-input:focus{outline:none;border-color:var(--ink);}
+  .ra-pin-input{text-align:center;font-size:24px;letter-spacing:10px;font-weight:700;}
+  .ra-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+
+  .ra-idbox{display:flex;align-items:stretch;border:1px solid var(--line-strong);border-radius:var(--radius);overflow:hidden;margin-bottom:9px;background:#fff;}
+  .ra-idbox:focus-within{border-color:var(--ink);box-shadow:inset 0 -2px 0 var(--ink);}
+  .ra-idbox.ok{border-color:var(--conforme);box-shadow:inset 0 -2px 0 var(--conforme);}
+  .ra-idfix{display:flex;align-items:center;padding:0 13px;background:#F4F5F7;font-size:18px;font-weight:700;
+    color:var(--ink-mid);border-right:1px solid var(--line);flex:none;}
+  .ra-idfix.suffix{border-right:none;border-left:1px solid var(--line);}
+  .ra-idmid{flex:1;min-width:0;border:none;outline:none;padding:16px 6px;font-size:23px;font-weight:700;
+    text-align:center;letter-spacing:.12em;font-family:inherit;color:var(--ink);background:transparent;}
+  .ra-idpreview{font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;}
+  .ra-idpreview b{color:var(--ink);font-weight:700;letter-spacing:.05em;}
+  .ra-idpreview.warn{color:var(--defecto);}
+
+  .ra-btn{display:flex;align-items:center;justify-content:center;text-align:center;gap:9px;border:none;
+    border-radius:var(--radius);cursor:pointer;font-family:inherit;font-size:15.5px;font-weight:700;color:#fff;
+    padding:17px 14px;min-height:56px;line-height:1.2;transition:opacity .12s ease;}
+  .ra-btn:active{opacity:.82;}
+  .ra-btn:disabled{opacity:.35;cursor:default;}
+  .ra-btn-block{width:100%;margin-bottom:9px;}
+  .ra-btn-sm{min-height:44px;font-size:13.5px;padding:11px 12px;}
+  .ra-btn-primary{background:var(--brand);}
   .ra-btn-conforme{background:var(--conforme);}
   .ra-btn-defecto{background:var(--defecto);}
   .ra-btn-scrap{background:var(--scrap);}
-  .ra-btn-steel{background:var(--steel);}
-  .ra-btn-outline{
-    background:#fff;color:var(--ink);border:1.5px solid var(--line);
-    font-weight:600;
-  }
-  .ra-choice{
-    background:#fff;border:1.5px solid var(--line);border-radius:12px;
-    padding:15px 14px;margin-bottom:9px;display:flex;align-items:center;
-    justify-content:space-between;cursor:pointer;font-size:15px;font-weight:600;
-    text-transform:capitalize;
-  }
-  .ra-choice small{
-    display:block;font-weight:500;color:var(--ink-soft);font-size:11px;margin-top:2px;
-    text-transform:none;
-  }
-  .ra-choice:active{background:#F3F6F8;}
-  .ra-choice .code{
-    font-size:11px;color:var(--ink-soft);font-weight:700;
-    background:var(--bg);padding:2px 8px;border-radius:6px;margin-right:10px;
-    text-transform:none;
-  }
+  .ra-btn-info{background:var(--info);}
+  .ra-btn-outline{background:#fff;color:var(--ink);border:1px solid var(--line-strong);font-weight:600;}
+  .ra-btn-outline:active{background:#F4F5F7;}
+
+  .ra-choice{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:15px 14px;margin-bottom:7px;
+    display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:15px;font-weight:600;gap:10px;}
+  .ra-choice:active{background:#F4F5F7;}
+  .ra-choice .code{font-size:11.5px;color:var(--ink-soft);font-weight:700;background:#F1F2F4;padding:4px 8px;
+    border-radius:2px;margin-right:11px;flex:none;min-width:54px;text-align:center;}
   .ra-choice-row{display:flex;align-items:center;flex:1;min-width:0;}
   .ra-choice-text{flex:1;min-width:0;}
-  .ra-topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-  .ra-back{
-    background:none;border:none;font-size:15px;font-weight:600;color:var(--steel);
-    padding:6px 0;cursor:pointer;
-  }
-  .ra-pill{
-    display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;
-    background:var(--bg);color:var(--ink-soft);margin-right:6px;text-transform:capitalize;
-  }
-  .ra-summary-line{display:flex;justify-content:space-between;padding:7px 0;font-size:14px;border-bottom:1px solid var(--line);}
+  .ra-chev{color:var(--ink-soft);font-size:13px;flex:none;font-weight:600;}
+
+  .ra-topbar{display:flex;align-items:center;margin-bottom:14px;}
+  .ra-back{background:none;border:none;font-size:14px;font-weight:600;color:var(--ink-mid);padding:8px 0;cursor:pointer;font-family:inherit;}
+  .ra-pill{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:2px;background:var(--ink);color:#fff;margin-left:8px;letter-spacing:.08em;}
+  .ra-summary-line{display:flex;justify-content:space-between;gap:14px;padding:9px 0;font-size:13.5px;border-bottom:1px solid var(--line);}
   .ra-summary-line:last-child{border-bottom:none;}
-  .ra-summary-line b{font-weight:700;text-align:right;text-transform:capitalize;}
-  .ra-nav{
-    position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);
-    display:flex;z-index:20;padding-bottom:env(safe-area-inset-bottom,0);
-  }
-  .ra-nav button{
-    flex:1;background:none;border:none;padding:11px 4px 8px;font-size:11px;font-weight:700;
-    color:var(--ink-soft);cursor:pointer;
-  }
-  .ra-nav button.active{color:var(--steel);}
-  .ra-nav .ico{display:block;font-size:19px;margin-bottom:2px;}
-  .ra-toast{
-    position:fixed;top:14px;left:50%;transform:translateX(-50%);
-    background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;
-    font-size:14px;font-weight:600;z-index:100;box-shadow:var(--shadow);
-    opacity:0;pointer-events:none;transition:opacity .25s ease, top .25s ease;
-  }
-  .ra-toast.show{opacity:1;top:60px;}
-  .ra-photo-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
-  .ra-photo-thumb{position:relative;width:74px;height:74px;border-radius:10px;overflow:hidden;border:1.5px solid var(--line);}
-  .ra-photo-thumb img{width:100%;height:100%;object-fit:cover;}
-  .ra-photo-thumb button{
-    position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:#fff;border:none;
-    border-radius:999px;width:20px;height:20px;font-size:12px;line-height:1;cursor:pointer;
-  }
-  .ra-add-photo{
-    width:74px;height:74px;border-radius:10px;border:1.5px dashed var(--line);
-    display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--ink-soft);
-    background:#fff;cursor:pointer;
-  }
-  .ra-empty{text-align:center;padding:50px 20px;color:var(--ink-soft);}
-  .ra-empty .big{font-size:34px;margin-bottom:8px;}
-  .ra-history-item{
-    background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:10px;
-  }
-  .ra-history-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-  .ra-history-id{font-weight:700;font-size:15px;}
-  .ra-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;color:#fff;}
+  .ra-summary-line span{color:var(--ink-soft);}
+  .ra-summary-line b{font-weight:700;text-align:right;}
+
+  .ra-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;z-index:20;padding-bottom:env(safe-area-inset-bottom,0);}
+  .ra-nav button{flex:1;background:none;border:none;padding:12px 2px 10px;font-size:9.5px;font-weight:700;
+    color:var(--ink-soft);cursor:pointer;font-family:inherit;letter-spacing:.05em;border-top:2px solid transparent;margin-top:-1px;}
+  .ra-nav button.active{color:var(--ink);border-top-color:var(--ink);}
+  .ra-nav .ico{display:block;font-size:16px;margin-bottom:4px;font-weight:400;}
+
+  .ra-toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+    padding:13px 22px;border-radius:2px;font-size:13.5px;font-weight:600;z-index:300;opacity:0;pointer-events:none;
+    transition:opacity .22s ease, top .22s ease;max-width:88vw;text-align:center;}
+  .ra-toast.show{opacity:1;top:calc(58px + env(safe-area-inset-top,0px));}
+
+  .ra-photo-row{display:flex;gap:9px;margin-bottom:14px;flex-wrap:wrap;}
+  .ra-photo-thumb{position:relative;width:78px;height:78px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line-strong);}
+  .ra-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .ra-photo-thumb button{position:absolute;top:3px;right:3px;background:rgba(14,17,20,.78);color:#fff;border:none;
+    border-radius:2px;width:22px;height:22px;font-size:12px;line-height:1;cursor:pointer;}
+  .ra-add-photo{width:78px;height:78px;border-radius:var(--radius);border:1px dashed var(--line-strong);display:flex;
+    align-items:center;justify-content:center;font-size:22px;color:var(--ink-soft);background:#fff;cursor:pointer;}
+  .ra-empty{text-align:center;padding:48px 20px;color:var(--ink-soft);font-size:13.5px;line-height:1.6;}
+  .ra-empty .big{font-size:28px;margin-bottom:10px;opacity:.35;}
+
+  .ra-item{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:9px;}
+  .ra-item-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:10px;}
+  .ra-item-id{font-weight:700;font-size:15px;word-break:break-all;letter-spacing:.02em;}
+  .ra-badge{font-size:10px;font-weight:700;padding:4px 9px;border-radius:2px;color:#fff;white-space:nowrap;letter-spacing:.07em;}
   .ra-badge.conforme{background:var(--conforme);}
   .ra-badge.defecto{background:var(--defecto);}
   .ra-badge.scrap{background:var(--scrap);}
-  .ra-history-meta{font-size:12.5px;color:var(--ink-soft);}
-  .ra-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
-  .ra-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;}
-  .ra-stat .n{font-size:20px;font-weight:800;}
-  .ra-stat .l{font-size:11px;color:var(--ink-soft);font-weight:600;}
-  .ra-section-title{font-size:13px;font-weight:700;color:var(--ink-soft);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.4px;}
-  .ra-tag-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
-  .ra-tag{
-    background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px 12px 6px 14px;
-    font-size:13px;display:flex;align-items:center;gap:8px;
-  }
-  .ra-tag button{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;}
-  .ra-inline-form{display:flex;gap:8px;margin-bottom:6px;}
-  .ra-inline-form input{flex:1;}
-  .ra-small-btn{
-    border:none;background:var(--steel);color:#fff;border-radius:10px;padding:0 16px;font-weight:700;
-    font-size:14px;cursor:pointer;
-  }
-  .ra-link{color:var(--steel);font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;background:none;border:none;padding:0;}
-  .ra-video-modal{
-    position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column;
-  }
-  .ra-video-modal video{flex:1;width:100%;object-fit:cover;}
-  .ra-video-modal .close-scan{
-    position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);color:#fff;
-    border:none;border-radius:999px;width:36px;height:36px;font-size:18px;z-index:2;
-  }
-  .ra-video-modal .hint{
-    position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#fff;font-size:14px;
-    background:rgba(0,0,0,.35);padding:10px;margin:0 20px;border-radius:10px;
-  }
-  textarea.ra-input{resize:vertical;min-height:70px;font-family:inherit;}
-</style>
+  .ra-badge.zona{background:var(--info);}
+  .ra-meta{font-size:12.5px;color:var(--ink-soft);line-height:1.55;}
+  .ra-actions{display:flex;gap:16px;margin-top:9px;flex-wrap:wrap;}
 
+  .ra-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-bottom:14px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  .ra-stat{background:#fff;padding:14px 6px;text-align:center;}
+  .ra-stat .n{font-size:20px;font-weight:800;letter-spacing:-.02em;}
+  .ra-stat .l{font-size:9.5px;color:var(--ink-soft);font-weight:700;letter-spacing:.08em;margin-top:3px;}
+
+  .ra-section-title{font-size:12.5px;font-weight:700;color:var(--ink-mid);margin:14px 0 8px;}
+  .ra-tag-list{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px;}
+  .ra-tag{background:#F4F5F7;border:1px solid var(--line);border-radius:2px;padding:7px 10px 7px 12px;font-size:13px;display:flex;align-items:center;gap:9px;}
+  .ra-tag button{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;padding:0;line-height:1;}
+  .ra-inline-form{display:flex;gap:7px;margin-bottom:8px;}
+  .ra-inline-form input{flex:1;min-width:0;}
+  .ra-small-btn{border:none;background:var(--brand);color:#fff;border-radius:var(--radius);padding:0 17px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;flex:none;}
+  .ra-link{color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;background:none;border:none;padding:5px 0;font-family:inherit;text-decoration:underline;text-underline-offset:3px;}
+  .ra-link.danger{color:var(--scrap);}
+
+  /* Timeline estilo tracking */
+  .ra-tl{position:relative;padding-left:30px;margin-top:6px;}
+  .ra-tl:before{content:"";position:absolute;left:8px;top:8px;bottom:12px;width:2px;background:var(--line);}
+  .ra-tl-item{position:relative;padding-bottom:22px;}
+  .ra-tl-item:last-child{padding-bottom:4px;}
+  .ra-tl-dot{position:absolute;left:-30px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;
+    border:2px solid var(--line-strong);}
+  .ra-tl-item.done .ra-tl-dot{background:var(--ink-soft);border-color:var(--ink-soft);}
+  .ra-tl-item.current .ra-tl-dot{background:var(--conforme);border-color:var(--conforme);box-shadow:0 0 0 4px rgba(31,122,76,.16);}
+  .ra-tl-zona{font-size:15px;font-weight:700;}
+  .ra-tl-item.current .ra-tl-zona{color:var(--conforme);}
+  .ra-tl-meta{font-size:12.5px;color:var(--ink-soft);margin-top:3px;line-height:1.5;}
+  .ra-tl-nota{font-size:12.5px;color:var(--ink-mid);margin-top:4px;font-style:italic;}
+  .ra-zona-actual{background:#F0F5F9;border-left:3px solid var(--info);padding:14px 15px;margin-bottom:14px;}
+  .ra-zona-actual .z{font-size:19px;font-weight:700;margin-top:3px;}
+
+  .ra-video-modal{position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column;}
+  .ra-video-modal video{flex:1;width:100%;object-fit:cover;}
+  .ra-scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(68vw,280px);aspect-ratio:1;border:2px solid #fff;box-shadow:0 0 0 100vmax rgba(0,0,0,.55);pointer-events:none;}
+  .ra-video-modal .close-scan,.ra-video-modal .torch-btn{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));
+    background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:2px;width:42px;height:42px;font-size:17px;z-index:3;cursor:pointer;}
+  .ra-video-modal .close-scan{right:16px;}
+  .ra-video-modal .torch-btn{left:16px;}
+  .ra-video-modal .torch-btn.on{background:#fff;color:#000;}
+  .ra-video-modal .hint{position:absolute;bottom:calc(28px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;
+    color:#fff;font-size:13.5px;background:rgba(0,0,0,.55);padding:12px;margin:0 20px;z-index:3;}
+
+  .ra-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:250;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+  .ra-lightbox img{max-width:100%;max-height:74vh;object-fit:contain;}
+  .ra-lightbox .lb-close{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));right:16px;background:rgba(255,255,255,.16);
+    color:#fff;border:none;border-radius:2px;width:42px;height:42px;font-size:17px;cursor:pointer;}
+  .ra-lightbox .lb-meta{color:#C3C8D0;font-size:12.5px;margin-top:16px;text-align:center;}
+  .ra-photos-mini{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap;}
+  .ra-photos-mini img{width:54px;height:54px;object-fit:cover;border-radius:2px;border:1px solid var(--line);cursor:pointer;}
+
+  .ra-zchips{display:flex;flex-wrap:wrap;gap:7px;}
+  .ra-zchip{background:#fff;border:1px solid var(--line-strong);border-radius:2px;padding:9px 12px;font-size:13px;
+    font-weight:600;font-family:inherit;color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:8px;}
+  .ra-zchip b{background:#F1F2F4;border-radius:2px;padding:2px 7px;font-size:11.5px;color:var(--ink-soft);}
+  .ra-zchip.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .ra-zchip.on b{background:rgba(255,255,255,.2);color:#fff;}
+  .ra-zchip.alerta{border-color:var(--defecto);color:var(--defecto);}
+  .ra-zchip.alerta b{background:#FDF6E9;color:var(--defecto);}
+  .ra-zchip.alerta.on{background:var(--defecto);color:#fff;border-color:var(--defecto);}
+  .ra-zchip.alerta.on b{background:rgba(255,255,255,.22);color:#fff;}
+  .ra-item.detenido{border-left:3px solid var(--defecto);}
+  .ra-item.sel{border-color:var(--ink);background:#F7F8F9;}
+  .ra-check{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1.5px solid var(--line-strong);
+    border-radius:2px;margin-right:9px;font-size:12px;vertical-align:middle;color:#fff;}
+  .ra-check.on{background:var(--ink);border-color:var(--ink);}
+  .ra-combo{position:relative;}
+  .ra-combo-clear{position:absolute;right:8px;top:9px;background:#F1F2F4;border:1px solid var(--line);
+    border-radius:2px;width:30px;height:30px;font-size:13px;color:var(--ink-soft);cursor:pointer;}
+  .ra-combo-list{border:1px solid var(--line-strong);border-top:none;border-radius:0 0 var(--radius) var(--radius);
+    max-height:238px;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px;background:#fff;}
+  .ra-combo-opt{padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;
+    justify-content:space-between;align-items:center;gap:12px;font-size:15px;}
+  .ra-combo-opt:last-child{border-bottom:none;}
+  .ra-combo-opt:active{background:#F4F5F7;}
+  .ra-combo-opt b{font-weight:700;letter-spacing:.03em;}
+  .ra-combo-opt span{font-size:11.5px;color:var(--ink-soft);text-align:right;flex:none;max-width:56%;}
+  .ra-combo-empty{padding:16px 14px;font-size:13px;color:var(--ink-soft);}
+  textarea.ra-input{resize:vertical;min-height:76px;}
+  select.ra-input{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'><path d='M3 5l4 4 4-4' fill='none' stroke='%236B7481' stroke-width='2'/></svg>");background-repeat:no-repeat;background-position:right 14px center;}
+  .ra-warn{background:#FDF6E9;border-left:3px solid var(--defecto);padding:13px 14px;font-size:12.5px;color:#6E4B10;line-height:1.55;margin-bottom:14px;}
+  .ra-note{background:#F4F5F7;border-left:3px solid var(--line-strong);padding:13px 14px;font-size:12.5px;color:var(--ink-mid);line-height:1.55;margin-bottom:14px;}
+  .ra-err{color:var(--scrap);font-size:12.5px;margin:-6px 0 12px;font-weight:600;}
+  button:focus-visible,.ra-choice:focus-visible,.ra-input:focus-visible,.ra-idmid:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+
+  /* Bienvenida */
+  .ra-welcome{position:fixed;inset:0;z-index:400;background:var(--brand);color:#fff;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:26px;animation:raFadeOut .55s ease forwards;animation-delay:1.75s;}
+  .ra-welcome .w-logo{opacity:0;animation:raRise .55s cubic-bezier(.2,.7,.3,1) forwards;}
+  .ra-welcome .w-hi{opacity:0;font-size:12.5px;letter-spacing:.22em;color:#98A1AC;text-align:center;
+    animation:raRise .55s cubic-bezier(.2,.7,.3,1) .2s forwards;}
+  .ra-welcome .w-name{display:block;font-size:27px;letter-spacing:-.01em;color:#fff;font-weight:700;margin-top:10px;}
+  .ra-welcome .w-bar{width:130px;height:2px;background:rgba(255,255,255,.18);overflow:hidden;}
+  .ra-welcome .w-bar i{display:block;height:100%;width:0;background:#fff;animation:raBar 1.45s cubic-bezier(.3,.6,.3,1) .25s forwards;}
+  @keyframes raRise{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+  @keyframes raFadeOut{to{opacity:0;visibility:hidden;}}
+  @keyframes raBar{to{width:100%;}}
+  @keyframes raEnter{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .ra-shake{animation:raShake .34s ease;}
+  @keyframes raShake{0%,100%{transform:none;}20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
+
+  .ra-gate{min-height:100vh;background:var(--brand);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:32px 20px calc(32px + env(safe-area-inset-bottom,0px));}
+  .ra-gate-inner{width:100%;max-width:400px;}
+  .ra-gate-brand{text-align:center;margin-bottom:32px;color:#fff;}
+  .ra-gate-brand .app-name{font-size:12px;font-weight:600;letter-spacing:.2em;margin-top:20px;color:#98A1AC;}
+  .ra-gate-card{background:#fff;border-radius:var(--radius-lg);padding:24px 20px;animation:raEnter .26s ease;}
+
+  @media (min-width:700px){
+    .ra-body{max-width:700px;}
+    .ra-grid{grid-template-columns:repeat(3,1fr);}
+    .ra-header,.ra-steps{padding-left:28px;padding-right:28px;}
+    .ra-nav{max-width:700px;left:50%;transform:translateX(-50%);right:auto;}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
 <div id="rollo-app"></div>
 
 <script>
 (function(){
   "use strict";
 
-  // ---------- CONFIG / CATALOG (official codes & names, unmodified) ----------
   var FAMILIAS = [
     {id:'SUP', name:'Defectos superficiales', defectos:[
-      {code:'101', name:'Agujeros'},
-      {code:'403/1019', name:'Caster fold / Grieta'},
-      {code:'2', name:'Escamas'},
-      {code:'205', name:'Inclusiones'},
-      {code:'705', name:'Manchas negras cal'},
-      {code:'8', name:'Marcas'},
-      {code:'14', name:'Óxido de laminado'},
-      {code:'1069', name:'Óxido de rodillos'},
-      {code:'1527', name:'Oxido por temperatura'},
-      {code:'414/510', name:'Óxido primario / Chispas de óxido'},
-      {code:'214', name:'Óxido rojo'},
-      {code:'1039', name:'Óxido sin descascarado'},
-      {code:'1523', name:'Pitting'},
-      {code:'1525', name:'Plastas'},
-      {code:'19', name:'Rayas'},
-      {code:'308', name:'Sombras'},
-      {code:'26', name:'Tableado'}
+      {code:'101', name:'Agujeros'},{code:'403/1019', name:'Caster fold / Grieta'},{code:'2', name:'Escamas'},
+      {code:'205', name:'Inclusiones'},{code:'705', name:'Manchas negras cal'},{code:'8', name:'Marcas'},
+      {code:'14', name:'Óxido de laminado'},{code:'1069', name:'Óxido de rodillos'},{code:'1527', name:'Oxido por temperatura'},
+      {code:'414/510', name:'Óxido primario / Chispas de óxido'},{code:'214', name:'Óxido rojo'},
+      {code:'1039', name:'Óxido sin descascarado'},{code:'1523', name:'Pitting'},{code:'1525', name:'Plastas'},
+      {code:'19', name:'Rayas'},{code:'308', name:'Sombras'},{code:'26', name:'Tableado'}
     ]},
     {id:'ORI', name:'Orilla', defectos:[
-      {code:'62', name:'Orilla defectuosa'},
-      {code:'765', name:'Orilla trozada'},
-      {code:'564', name:'Ramillado'}
+      {code:'62', name:'Orilla defectuosa'},{code:'765', name:'Orilla trozada'},{code:'564', name:'Ramillado'}
     ]},
     {id:'ASP', name:'Aspecto físico', defectos:[
-      {code:'1154', name:'Cola de pescado'},
-      {code:'82', name:'Coleado'},
-      {code:'593', name:'Devanado'},
-      {code:'80/180', name:'Doblez transversal / Doblez pañuelo'},
-      {code:'73', name:'Mal enrollado'},
-      {code:'7', name:'Maltrato'},
-      {code:'83', name:'Ovalado'},
-      {code:'878', name:'Punta rasgada'},
-      {code:'747', name:'Rollo cabezón'},
-      {code:'573', name:'Rollo cazuela'},
-      {code:'774', name:'Rollo corcholata'},
-      {code:'106', name:'Rollo desenvuelto'},
-      {code:'81', name:'Telescopiado'},
-      {code:'78', name:'Tensión de enrollado'}
+      {code:'1154', name:'Cola de pescado'},{code:'82', name:'Coleado'},{code:'593', name:'Devanado'},
+      {code:'80/180', name:'Doblez transversal / Doblez pañuelo'},{code:'73', name:'Mal enrollado'},{code:'7', name:'Maltrato'},
+      {code:'83', name:'Ovalado'},{code:'878', name:'Punta rasgada'},{code:'747', name:'Rollo cabezón'},
+      {code:'573', name:'Rollo cazuela'},{code:'774', name:'Rollo corcholata'},{code:'106', name:'Rollo desenvuelto'},
+      {code:'81', name:'Telescopiado'},{code:'78', name:'Tensión de enrollado'}
     ]},
     {id:'FOR', name:'Forma', defectos:[
-      {code:'22', name:'Aglobado'},
-      {code:'21', name:'Camber'},
-      {code:'23', name:'Comba'},
-      {code:'24', name:'Lomo'},
-      {code:'25', name:'Ondulación'}
+      {code:'22', name:'Aglobado'},{code:'21', name:'Camber'},{code:'23', name:'Comba'},{code:'24', name:'Lomo'},{code:'25', name:'Ondulación'}
     ]},
     {id:'DIM', name:'Dimensionales', defectos:[
-      {code:'32', name:'Ancho (-)'},
-      {code:'31', name:'Ancho (+)'},
-      {code:'133', name:'Ancho (+/-)'},
-      {code:'260', name:'Atorón molino caliente'},
-      {code:'34', name:'Espesor (-)'},
-      {code:'33', name:'Espesor (+)'},
-      {code:'36', name:'Espesor (+/-)'},
-      {code:'1014', name:'Fuera de espesor operativo'},
-      {code:'240', name:'Incumplimiento de diámetro interno'},
-      {code:'237', name:'Mal perfil'},
-      {code:'40', name:'Peso (-)'},
-      {code:'140', name:'Peso (+)'},
-      {code:'336', name:'Relieve antiderrapante (-)'}
+      {code:'32', name:'Ancho (-)'},{code:'31', name:'Ancho (+)'},{code:'133', name:'Ancho (+/-)'},
+      {code:'260', name:'Atorón molino caliente'},{code:'34', name:'Espesor (-)'},{code:'33', name:'Espesor (+)'},
+      {code:'36', name:'Espesor (+/-)'},{code:'1014', name:'Fuera de espesor operativo'},
+      {code:'240', name:'Incumplimiento de diámetro interno'},{code:'237', name:'Mal perfil'},
+      {code:'40', name:'Peso (-)'},{code:'140', name:'Peso (+)'},{code:'336', name:'Relieve antiderrapante (-)'}
     ]},
     {id:'FG', name:'Fuera de grilla', defectos:[
-      {code:'1528', name:'Alto potencial spring back'},
-      {code:'151', name:'Análisis químico fuera de rango (colada)'},
-      {code:'626', name:'Falta de muestra'},
-      {code:'1021', name:'Falta de propiedades mecánicas'},
-      {code:'49', name:'Fuera de propiedades mecánicas'},
-      {code:'1565', name:'Incumplimiento de temperatura intermedia'},
-      {code:'1566', name:'Incumplimiento de tiempo aire'},
-      {code:'711', name:'Temperatura de acabado (-)'},
-      {code:'611', name:'Temperatura de acabado (+)'},
-      {code:'198', name:'Temperatura de acabado (+/-)'},
-      {code:'601', name:'Temperatura de enrollado (-)'},
-      {code:'701', name:'Temperatura de enrollado (+)'},
+      {code:'1528', name:'Alto potencial spring back'},{code:'151', name:'Análisis químico fuera de rango (colada)'},
+      {code:'626', name:'Falta de muestra'},{code:'1021', name:'Falta de propiedades mecánicas'},
+      {code:'49', name:'Fuera de propiedades mecánicas'},{code:'1565', name:'Incumplimiento de temperatura intermedia'},
+      {code:'1566', name:'Incumplimiento de tiempo aire'},{code:'711', name:'Temperatura de acabado (-)'},
+      {code:'611', name:'Temperatura de acabado (+)'},{code:'198', name:'Temperatura de acabado (+/-)'},
+      {code:'601', name:'Temperatura de enrollado (-)'},{code:'701', name:'Temperatura de enrollado (+)'},
       {code:'199', name:'Temperatura de enrollado (+/-)'}
     ]},
     {id:'INT', name:'Defectos internos', defectos:[
-      {code:'902', name:'Cambio de espesor'},
-      {code:'190', name:'Carga corrida horno'},
-      {code:'1564', name:'Exceso de castillos en dummy'},
-      {code:'811', name:'Falla de equipo'},
-      {code:'576', name:'Falta grafica'},
-      {code:'1576', name:'Inconsistencia NCA-N'},
-      {code:'1038', name:'Material en enfriamiento'},
-      {code:'192', name:'Material mal identificado'},
-      {code:'392', name:'Material no localizado'},
-      {code:'44', name:'Over rolling'},
-      {code:'1575', name:'Problemas operativos cooling bay'},
-      {code:'1023', name:'Pruebas ing. de producto'},
-      {code:'891', name:'Retención por calidad de planta'},
-      {code:'886', name:'Retención por ing. de procesos'},
-      {code:'1016', name:'Retiro en molino caliente'},
-      {code:'1036', name:'Sin evaluación T-Expert'}
+      {code:'902', name:'Cambio de espesor'},{code:'190', name:'Carga corrida horno'},{code:'1564', name:'Exceso de castillos en dummy'},
+      {code:'811', name:'Falla de equipo'},{code:'576', name:'Falta grafica'},{code:'1576', name:'Inconsistencia NCA-N'},
+      {code:'1038', name:'Material en enfriamiento'},{code:'192', name:'Material mal identificado'},
+      {code:'392', name:'Material no localizado'},{code:'44', name:'Over rolling'},
+      {code:'1575', name:'Problemas operativos cooling bay'},{code:'1023', name:'Pruebas ing. de producto'},
+      {code:'891', name:'Retención por calidad de planta'},{code:'886', name:'Retención por ing. de procesos'},
+      {code:'1016', name:'Retiro en molino caliente'},{code:'1036', name:'Sin evaluación T-Expert'}
     ]},
     {id:'TEC', name:'Defectos tecnológicos', defectos:[
-      {code:'1540', name:'Diferencia entre medidores'},
-      {code:'1570', name:'Diferencia medidores ancho'},
-      {code:'1571', name:'Estrategia de enfriamiento'},
-      {code:'1574', name:'Temperatura desbaste'},
-      {code:'1568', name:'Temperatura enrollado entre caras'},
-      {code:'1573', name:'Temperatura salida de horno'}
+      {code:'1540', name:'Diferencia entre medidores'},{code:'1570', name:'Diferencia medidores ancho'},
+      {code:'1571', name:'Estrategia de enfriamiento'},{code:'1574', name:'Temperatura desbaste'},
+      {code:'1568', name:'Temperatura enrollado entre caras'},{code:'1573', name:'Temperatura salida de horno'}
     ]}
   ];
 
@@ -306,815 +303,1994 @@
 
   var UBICACIONES = ['DIC','DEX','Ambos','Centro','Cabeza','Cola','Todo el rollo'];
   var SEVERIDADES = ['Leve','Moderado','Severo'];
-
   var DEFAULT_VARIACIONES = { '593': ['Últimas vueltas flojas','Últimas vueltas corridas','Interior corrido','Varias vueltas corridas','DIC','DEX','Ambos lados'] };
+  var DEFAULT_ADMIN_PASS = 'Ternium2026';
+  var PREFIX = 'ternium_rollos_';
 
-  // ---------- STORAGE HELPERS ----------
-  function safeParse(s, fallback){ try{ return JSON.parse(s); }catch(e){ return fallback; } }
-async function getVal(key){
-  return localStorage.getItem(key);
-}
+  var ID_PREFIX = '4A', ID_SUFFIX = 'PM400', ID_MID_LEN = 6;
+  var ZONA_ORIGEN = 'Zona de contingencia';
+  var HORAS_DETENIDO = 24;      /* aviso de rollo sin movimiento */
+  var MINUTOS_INACTIVIDAD = 15; /* cierre de sesión automático */
+  var DEFAULT_ZONAS = [ZONA_ORIGEN,'Cooling Bay','Playa','Nave 1','Laminación'];
+  /* Catálogo grado de acero (grado de planchón) → SGF y familia. Editable desde Ajustes. */
+  var DEFAULT_GRADOS = [
+    {grado:'APMJ55', sgf:'41', familia:'< X70'},
+    {grado:'HICX52', sgf:'41', familia:'< X70'},
+    {grado:'S05NI7', sgf:'41', familia:'< X70'},
+    {grado:'T04CN5', sgf:'41', familia:'< X70'},
+    {grado:'T08CR7', sgf:'41', familia:'< X70'},
+    {grado:'T12MC4', sgf:'41', familia:'< X70'},
+    {grado:'T25SI5', sgf:'41', familia:'< X70'},
+    {grado:'TER52A', sgf:'41', familia:'< X70'},
+    {grado:'TER52M', sgf:'41', familia:'< X70'},
+    {grado:'T05CR7', sgf:'41', familia:'> X70'},
+    {grado:'T05CR8', sgf:'41', familia:'> X70'},
+    {grado:'T05LA6', sgf:'41', familia:'> X70'},
+    {grado:'T08CR8', sgf:'41', familia:'> X70'},
+    {grado:'T08NI8', sgf:'41', familia:'> X70'},
+    {grado:'T07CU8', sgf:'41', familia:''},
+    {grado:'T07MO8', sgf:'41', familia:''},
+    {grado:'T07VA8', sgf:'41', familia:''},
+    {grado:'A06CR5', sgf:'31', familia:'AHSS'},
+    {grado:'A07CR9', sgf:'31', familia:'AHSS'},
+    {grado:'A4TCRA', sgf:'31', familia:'AHSS'},
+    {grado:'A4TCUA', sgf:'31', familia:'AHSS'},
+    {grado:'A4TMOA', sgf:'31', familia:'AHSS'},
+    {grado:'A05CRA', sgf:'31', familia:'Complex Steel'},
+    {grado:'A05MOA', sgf:'31', familia:'Complex Steel'},
+    {grado:'A11MOA', sgf:'31', familia:'Complex Steel'},
+    {grado:'A12TIA', sgf:'31', familia:'Complex Steel'},
+    {grado:'A13CRA', sgf:'42', familia:'Complex Steel'},
+    {grado:'E00SI5', sgf:'25', familia:'Eléctricos'},
+    {grado:'UBC12',  sgf:'25', familia:'Eléctricos'},
+    {grado:'C6BPM5', sgf:'27', familia:'Eléctricos'},
+    {grado:'E01SI4', sgf:'27', familia:'Eléctricos'},
+    {grado:'EBC392', sgf:'27', familia:'Eléctricos'},
+    {grado:'EBCML1', sgf:'27', familia:'Eléctricos'},
+    {grado:'SIAL10', sgf:'27', familia:'Eléctricos'},
+    {grado:'SIAL20', sgf:'27', familia:'Eléctricos'},
+    {grado:'SIAL50', sgf:'27', familia:'Eléctricos'},
+    {grado:'UBC2E',  sgf:'27', familia:'Eléctricos'},
+    {grado:'UBSIOV', sgf:'27', familia:'Eléctricos'},
+    {grado:'A07BC4', sgf:'3',  familia:'Grados comerciales Medios'},
+    {grado:'C08REF', sgf:'3',  familia:'Grados comerciales Medios'},
+    {grado:'C121TM', sgf:'4',  familia:'Grados comerciales Medios'},
+    {grado:'1012SI', sgf:'5',  familia:'Grados comerciales Medios'},
+    {grado:'APM420', sgf:'5',  familia:'Grados comerciales Medios'},
+    {grado:'C12MC5', sgf:'5',  familia:'Grados comerciales Medios'},
+    {grado:'G05BC4', sgf:'5',  familia:'Grados comerciales Medios'},
+    {grado:'A15MI4', sgf:'6',  familia:'Grados comerciales Medios'},
+    {grado:'C14MC4', sgf:'6',  familia:'Grados comerciales Medios'},
+    {grado:'C20EST', sgf:'6',  familia:'Grados comerciales Medios'},
+    {grado:'C362ED', sgf:'6',  familia:'Grados comerciales Medios'},
+    {grado:'I22MC4', sgf:'6',  familia:'Grados comerciales Medios'},
+    {grado:'I23CU3', sgf:'6',  familia:'Grados comerciales Medios'},
+    {grado:'R20MC4', sgf:'6',  familia:'Grados comerciales Medios'},
+    {grado:'TR420T', sgf:'6',  familia:'Grados comerciales Medios'},
+    {grado:'A22MC4', sgf:'8',  familia:'Grados comerciales Medios'},
+    {grado:'440FNB', sgf:'30', familia:'Grados comerciales Medios'}
+  ];
 
-async function setVal(key, value){
-  try{
-    localStorage.setItem(key, value);
-    return true;
-  }catch(e){
-    console.error(e);
-    return false;
+  function logoSVG(cls){
+    return '<svg class="ra-logo ' + (cls||'') + '" viewBox="440 216 1176 340" role="img" aria-label="Ternium">' +
+      '<rect x="459" y="235" width="1131" height="298" fill="none" stroke="currentColor" stroke-width="15"/>' +
+      '<line x1="815" y1="235" x2="815" y2="533" stroke="currentColor" stroke-width="15"/>' +
+      '<path d="M462 449 L622 271 L806 470 L806 500 L688 375 Z" fill="currentColor"/>' +
+      '<text x="855" y="465" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="197" letter-spacing="1" fill="currentColor">Ternium</text>' +
+    '</svg>';
   }
-}
 
-async function delVal(key){
-  try{
-    localStorage.removeItem(key);
-    return true;
-  }catch(e){
-    return false;
+  /* ============ ALMACENAMIENTO ============ */
+  function safeParse(s, fb){ try{ return JSON.parse(s); }catch(e){ return fb; } }
+  var storageOK = (function(){
+    try{ localStorage.setItem(PREFIX+'__t','1'); localStorage.removeItem(PREFIX+'__t'); return true; }catch(e){ return false; }
+  })();
+  function get(key, fb){
+    if(!storageOK) return fb;
+    var raw = localStorage.getItem(PREFIX+key);
+    return raw === null ? fb : safeParse(raw, fb);
   }
-}
-
-async function listKeys(prefix){
-  return Object.keys(localStorage).filter(function(key){
-    return key.startsWith(prefix);
-  });
-}
-
-
-  var CATALOGS_KEY = 'catalogos_simples';
-  async function loadCatalogs(){
-    var raw = await getVal(CATALOGS_KEY, true);
-    var def = { grados:['A1010','A1011','A1018','A36'], enrolladores:['Enrollador 1','Enrollador 2','Enrollador 3'], inspectores:['Inspector 1','Inspector 2'] };
-    return raw ? Object.assign(def, safeParse(raw, {})) : def;
+  function set(key, val){
+    if(!storageOK) throw new Error('sin almacenamiento');
+    localStorage.setItem(PREFIX+key, JSON.stringify(val));
   }
-  async function saveCatalogs(c){ return setVal(CATALOGS_KEY, JSON.stringify(c), true); }
-
-  var VARIACIONES_KEY = 'catalogo_variaciones';
-  async function loadVariaciones(){
-    var raw = await getVal(VARIACIONES_KEY, true);
-    return raw ? safeParse(raw, DEFAULT_VARIACIONES) : JSON.parse(JSON.stringify(DEFAULT_VARIACIONES));
+  function persistAll(){
+    set('usuarios',S.usuarios); set('adminPassword',S.adminPassword); set('catalogs',S.catalogs);
+    set('variaciones',S.variacionesCat); set('registros',S.registros); set('rollosMaster',S.rollosMaster);
+    set('tracking',S.tracking); set('auditoria',S.auditoria);
   }
-  async function saveVariaciones(v){ return setVal(VARIACIONES_KEY, JSON.stringify(v), true); }
-
-  async function loadRollosMaster(){
-    var keys = await listKeys('rollo:', true);
-    var out = {};
-    for(var i=0;i<keys.length;i++){
-      var v = await getVal(keys[i], true);
-      if(v){ var obj = safeParse(v, null); if(obj) out[obj.id] = obj; }
-    }
-    return out;
+  function estimateUsage(){
+    var t=0;
+    try{ for(var k in localStorage){ if(Object.prototype.hasOwnProperty.call(localStorage,k) && k.indexOf(PREFIX)===0) t+=(localStorage.getItem(k)||'').length; } }catch(e){}
+    return t;
   }
-  async function saveRolloMaster(rollo){ return setVal('rollo:'+rollo.id, JSON.stringify(rollo), true); }
 
-  async function loadRegistros(){
-    var keys = await listKeys('registro:', true);
-    var out = [];
-    for(var i=0;i<keys.length;i++){
-      var v = await getVal(keys[i], true);
-      if(v){ var obj = safeParse(v, null); if(obj) out.push(obj); }
-    }
-    out.sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
-    return out;
-  }
-  async function saveRegistro(reg){ return setVal('registro:'+reg.id, JSON.stringify(reg), true); }
-  async function deleteRegistro(id){ return delVal('registro:'+id, true); }
-
-  async function getCurrentInspector(){ return getVal('current_inspector', false); }
-  async function setCurrentInspector(name){ return setVal('current_inspector', name, false); }
-
-  // ---------- APP STATE ----------
+  /* ============ ESTADO ============ */
   var root = document.getElementById('rollo-app');
   var S = {
-    tab:'captura',            // captura | historial | catalogo
-    step:'id',                // id | rollo_info | resultado | familia | defecto | variacion | ubicacion | severidad | evidencia
-    inspector:null,
-    rolloId:'',
-    rolloData:{},              // grado, espesor, ancho, peso, fecha, enrollador
-    resultado:null,            // Conforme | Defecto | Scrap
-    familia:null,
-    defecto:null,
-    variacion:null,
-    ubicacion:null,
-    severidad:null,
-    fotos:[],                  // array of {dataUrl}
-    comentario:'',
-    rollosMaster:{},
-    catalogs:null,
-    variacionesCat:null,
-    registros:[],
-    loading:true
+    tab:'captura', step:'id',
+    inspector:null, isAdmin:false,
+    adminPassword:DEFAULT_ADMIN_PASS, usuarios:[],
+    loginStep:'pick', loginPickedUser:null, loginError:'',
+    showAdminUnlock:false, adminUnlockError:'',
+    showChangePin:false, changePinError:'',
+    editingUserIdx:null,
+    idMid:'', idFull:'', idModo:'guiado',
+    rolloData:{}, gradoQuery:'', gradoAbierto:false,
+    resultado:null, familia:null, defecto:null, variacion:null, ubicacion:null, severidad:null,
+    fotos:[], comentario:'',
+    filtro:'', filtroResultado:'Todos', filtroFecha:'Todas', filtroTurno:'Todos', filtroDesde:'', filtroHasta:'',
+    editReg:null, editErr:'',
+    trackVista:'lista', trackRollo:null, trackFiltro:'', trackZona:'Todas', trackErr:'',
+    trackSeleccion:[], trackModoSel:false,
+    reporteFiltro:'Todos',
+    rollosMaster:{}, catalogs:null, variacionesCat:null, registros:[], tracking:{}, auditoria:[]
   };
 
+  function rolloId(){
+    if(S.idModo === 'libre') return S.idFull.trim().toUpperCase();
+    return S.idMid ? (ID_PREFIX + S.idMid + ID_SUFFIX) : '';
+  }
+  function idValido(){
+    if(S.idModo === 'libre') return S.idFull.trim().length >= 4;
+    return new RegExp('^\\d{'+ID_MID_LEN+'}$').test(S.idMid);
+  }
+
   function toast(msg){
-    var t = document.createElement('div');
-    t.className = 'ra-toast';
-    t.textContent = msg;
+    var t=document.createElement('div');
+    t.className='ra-toast'; t.textContent=msg;
     document.body.appendChild(t);
     requestAnimationFrame(function(){ t.classList.add('show'); });
-    setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ t.remove(); }, 300); }, 1800);
+    setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ t.remove(); },280); },2200);
+  }
+
+  function mostrarBienvenida(nombre){
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var h = new Date().getHours();
+    var saludo = h < 12 ? 'BUENOS DÍAS' : h < 19 ? 'BUENAS TARDES' : 'BUENAS NOCHES';
+    var ov = el('<div class="ra-welcome">' +
+        '<div class="w-logo" style="color:#fff;">' + logoSVG('ra-logo-lg') + '</div>' +
+        '<div class="w-hi">' + saludo + '<span class="w-name">' + escHtml(nombre) + '</span></div>' +
+        '<div class="w-bar"><i></i></div>' +
+      '</div>');
+    document.body.appendChild(ov);
+    setTimeout(function(){ if(ov.parentNode) ov.remove(); }, 2400);
+  }
+
+  function sacudir(sel){
+    var n = root.querySelector(sel);
+    if(!n) return;
+    n.classList.remove('ra-shake'); void n.offsetWidth; n.classList.add('ra-shake');
   }
 
   function resetCaptureFlow(){
-    S.step = 'id';
-    S.rolloId = '';
-    S.rolloData = {};
-    S.resultado = null;
-    S.familia = null;
-    S.defecto = null;
-    S.variacion = null;
-    S.ubicacion = null;
-    S.severidad = null;
-    S.fotos = [];
-    S.comentario = '';
+    S.step='id'; S.idMid=''; S.idFull=''; S.idModo='guiado'; S.rolloData={}; S.gradoQuery=''; S.gradoAbierto=false;
+    S.resultado=null; S.familia=null; S.defecto=null; S.variacion=null; S.ubicacion=null; S.severidad=null;
+    S.fotos=[]; S.comentario='';
   }
 
-  async function init(){
-    S.inspector = await getCurrentInspector();
-    S.catalogs = await loadCatalogs();
-    S.variacionesCat = await loadVariaciones();
-    S.rollosMaster = await loadRollosMaster();
-    S.registros = await loadRegistros();
-    S.loading = false;
+  function migrarGrados(cat){
+    if(!cat.grados || !cat.grados.length) cat.grados = JSON.parse(JSON.stringify(DEFAULT_GRADOS));
+    cat.grados = cat.grados.map(function(g){
+      if(typeof g === 'string') return {grado:g, sgf:'', familia:''};
+      if(g.sgf === undefined) return {grado:g.grado, sgf:g.familia||'', familia:''};
+      return g;
+    });
+    if(!cat.zonas || !cat.zonas.length) cat.zonas = DEFAULT_ZONAS.slice();
+    if(!cat.enrolladores) cat.enrolladores = ['Enrollador 1','Enrollador 2','Enrollador 3'];
+    return cat;
+  }
+
+  var inactTimer=null;
+  function cerrarSesion(porInactividad){
+    S.inspector=null; S.isAdmin=false; S.tab='captura';
+    try{ set('sesion',null); }catch(e){}
+    resetCaptureFlow();
+    S.editReg=null; S.trackVista='lista'; S.trackRollo=null;
+    S.trackModoSel=false; S.trackSeleccion=[];
+    S.loginStep='pick'; S.loginPickedUser=null; S.showAdminUnlock=false; S.showChangePin=false;
+    render();
+    if(porInactividad) toast('Sesión cerrada por inactividad');
+  }
+  function reiniciarInactividad(){
+    if(inactTimer) clearTimeout(inactTimer);
+    if(!S.inspector && !S.isAdmin) return;
+    inactTimer = setTimeout(function(){
+      if(S.inspector || S.isAdmin) cerrarSesion(true);
+    }, MINUTOS_INACTIVIDAD*60*1000);
+  }
+  ['click','keydown','touchstart','focusin'].forEach(function(ev){
+    document.addEventListener(ev, reiniciarInactividad, {passive:true});
+  });
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden) reiniciarInactividad();
+  });
+
+  function init(){
+    S.adminPassword = get('adminPassword', DEFAULT_ADMIN_PASS);
+    S.usuarios      = get('usuarios', []);
+    S.catalogs      = migrarGrados(get('catalogs', {}));
+    S.variacionesCat= get('variaciones', JSON.parse(JSON.stringify(DEFAULT_VARIACIONES)));
+    S.registros     = get('registros', []);
+    S.rollosMaster  = get('rollosMaster', {});
+    S.tracking      = get('tracking', {});
+    S.auditoria     = get('auditoria', []);
+    var saved = get('sesion', null);
+    if(saved && S.usuarios.some(function(u){ return u.nombre===saved; })) S.inspector = saved;
     render();
   }
 
-  // ---------- RENDER ----------
-  function el(html){ var d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; }
+  /* ============ HELPERS ============ */
+  function el(html){ var d=document.createElement('div'); d.innerHTML=html; return d.firstElementChild; }
+  function escHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  var escAttr = escHtml;
+  function pad(n){ return (n<10?'0':'')+n; }
+  function fechaHoy(d){ d=d||new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function horaAhora(d){ d=d||new Date(); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+  function usuarioActual(){ return S.inspector || 'Administrador'; }
+  /* Turno 1: 19:00 a 06:59 · Turno 2: 07:00 a 18:59 */
+  function turnoDe(d){ d=d||new Date(); var h=d.getHours(); return (h>=7 && h<19) ? '2' : '1'; }
+  function soloNumero(txt){
+    var v = String(txt||'').replace(/[^0-9.]/g,'');
+    var partes = v.split('.');
+    if(partes.length > 2) v = partes[0] + '.' + partes.slice(1).join('');
+    return v;
+  }
+  function buscarGrado(grado){
+    return (S.catalogs.grados||[]).filter(function(x){ return x.grado===grado; })[0] || null;
+  }
+  function familiaDeGrado(grado){
+    var g=buscarGrado(grado);
+    return g ? (g.sgf||'') : '';
+  }
+  function descripcionDeGrado(grado){
+    var g=buscarGrado(grado);
+    return g ? (g.familia||'') : '';
+  }
+  function gradoValido(g){ return !g || !!buscarGrado(g); }
+  function zonas(){ return S.catalogs.zonas || DEFAULT_ZONAS; }
+
+  function auditar(tipo, rolloId, detalle, motivo){
+    var now=new Date();
+    S.auditoria.unshift({
+      id:'a'+now.getTime()+Math.random().toString(36).slice(2,6), ts:now.getTime(),
+      fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), usuario:usuarioActual(),
+      tipo:tipo, rolloId:rolloId||'', detalle:detalle||'', motivo:motivo||''
+    });
+    if(S.auditoria.length > 800) S.auditoria = S.auditoria.slice(0,800);
+    try{ set('auditoria', S.auditoria); }catch(e){}
+  }
 
   function stepOrder(){
-    var steps = ['id','resultado'];
-    if(S.resultado === 'Defecto' || S.resultado === 'Scrap'){
+    var steps=['id','resultado'];
+    if(S.resultado==='Conforme') steps.push('confirmar');
+    if(S.resultado==='Defecto' || S.resultado==='Scrap'){
       steps.push('familia','defecto');
-      var defs = currentDefectVariaciones();
-      if(defs && defs.length) steps.push('variacion');
+      var v=currentDefectVariaciones();
+      if(v && v.length) steps.push('variacion');
       steps.push('ubicacion');
-      if(S.resultado === 'Defecto') steps.push('severidad');
+      if(S.resultado==='Defecto') steps.push('severidad');
       steps.push('evidencia');
     }
     return steps;
   }
-
   function currentDefectVariaciones(){
     if(!S.defecto) return null;
     return S.variacionesCat[S.defecto.code] || null;
   }
+  function isInsecureContext(){
+    return (location.protocol==='file:') || (!window.isSecureContext && location.hostname!=='localhost');
+  }
+
+  /* ============ RENDER ============ */
+  function render(){
+    if(!S.inspector && !S.isAdmin){ root.innerHTML = renderGate(); bindEvents(); return; }
+    var body;
+    if(S.tab==='captura') body = renderCaptura();
+    else if(S.tab==='rollos') body = renderTracking();
+    else if(S.tab==='historial') body = renderHistorial();
+    else body = renderAjustes();
+    root.innerHTML = renderHeader() + '<div class="ra-body">' + body + '</div>' + renderNav();
+    bindEvents();
+    reiniciarInactividad();
+  }
 
   function renderHeader(){
-    var order = stepOrder();
-    var idx = order.indexOf(S.step);
-    var dots = order.map(function(s,i){
-      var cls = 'ra-step-dot' + (i < idx ? ' done' : (i === idx ? ' active' : ''));
-      return '<div class="' + cls + '"></div>';
-    }).join('');
-    return '' +
-      '<div class="ra-header">' +
-        '<div>' +
-          '<div class="title">Inspección de rollos</div>' +
-          '<div class="sub">' + (S.tab==='captura' ? 'Captura rápida' : S.tab==='historial' ? 'Historial' : 'Catálogos') + '</div>' +
-        '</div>' +
-        '<button class="ra-inspector-badge" id="btn-inspector">' + (S.inspector || 'Elegir inspector') + '</button>' +
+    var order=stepOrder(), idx=order.indexOf(S.step);
+    var dots = order.map(function(s,i){ return '<div class="ra-step-dot'+(i<idx?' done':(i===idx?' active':''))+'"></div>'; }).join('');
+    var sub = S.tab==='captura'?'INSPECCIÓN DE ROLLOS':S.tab==='rollos'?'UBICACIÓN DE ROLLOS':S.tab==='historial'?'HISTORIAL':'AJUSTES';
+    return '<div class="ra-header">' +
+        '<div>' + logoSVG() + '<div class="sub">' + sub + '</div></div>' +
+        '<button class="ra-user" id="btn-user">' + escHtml(usuarioActual()) + '</button>' +
       '</div>' +
-      (S.tab==='captura' ? ('<div class="ra-steps">' + dots + '</div>') : '');
+      (S.tab==='captura' && !S.editReg ? '<div class="ra-steps">'+dots+'</div>' : '');
   }
 
   function renderNav(){
-    return '' +
-      '<div class="ra-nav">' +
-        '<button data-tab="captura" class="' + (S.tab==='captura'?'active':'') + '"><span class="ico">◧</span>Capturar</button>' +
-        '<button data-tab="historial" class="' + (S.tab==='historial'?'active':'') + '"><span class="ico">≡</span>Historial</button>' +
-        '<button data-tab="catalogo" class="' + (S.tab==='catalogo'?'active':'') + '"><span class="ico">⚙</span>Catálogos</button>' +
-      '</div>';
+    return '<div class="ra-nav">' +
+      '<button data-tab="captura" class="'+(S.tab==='captura'?'active':'')+'"><span class="ico">▣</span>CAPTURAR</button>' +
+      '<button data-tab="rollos" class="'+(S.tab==='rollos'?'active':'')+'"><span class="ico">◎</span>UBICACIÓN</button>' +
+      '<button data-tab="historial" class="'+(S.tab==='historial'?'active':'')+'"><span class="ico">▤</span>HISTORIAL</button>' +
+      '<button data-tab="ajustes" class="'+(S.tab==='ajustes'?'active':'')+'"><span class="ico">▨</span>AJUSTES</button>' +
+    '</div>';
   }
 
-  function render(){
-    if(S.loading){
-      root.innerHTML = '<div class="ra-empty"><div class="big">⏳</div>Cargando…</div>';
-      return;
+  /* ============ ACCESO ============ */
+  function renderGate(){
+    var warn = storageOK ? '' :
+      '<div class="ra-warn">El navegador está bloqueando el guardado local, algo típico del modo privado. Usa una ventana normal o los datos no se conservarán.</div>';
+    var inner;
+    if(S.showAdminUnlock){
+      inner = '<div class="ra-gate-card">' +
+          '<div class="ra-topbar"><button class="ra-back" id="btn-hide-admin-unlock">‹ Atrás</button></div>' +
+          '<div class="ra-h1">Administrador</div>' +
+          '<div class="ra-h2">Ingresa la clave para gestionar inspectores y catálogos.</div>' + warn +
+          '<input class="ra-input" type="password" id="admin-unlock-pass" placeholder="Clave" autocomplete="off">' +
+          (S.adminUnlockError?'<div class="ra-err">'+escHtml(S.adminUnlockError)+'</div>':'') +
+          '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-admin-unlock-submit" style="margin-bottom:0;">Entrar</button>' +
+        '</div>';
+    } else if(S.loginStep==='pin' && S.loginPickedUser){
+      inner = '<div class="ra-gate-card">' +
+          '<div class="ra-topbar"><button class="ra-back" id="btn-login-back">‹ Atrás</button></div>' +
+          '<div class="ra-h1">'+escHtml(S.loginPickedUser)+'</div>' +
+          '<div class="ra-h2">Ingresa tu PIN para continuar.</div>' +
+          '<input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="6" id="login-pin-input" autocomplete="off">' +
+          (S.loginError?'<div class="ra-err">'+escHtml(S.loginError)+'</div>':'') +
+          '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-login-submit" style="margin-bottom:0;">Entrar</button>' +
+        '</div>';
+    } else {
+      var lista = S.usuarios.length
+        ? S.usuarios.map(function(u){ return '<button class="ra-btn ra-btn-outline ra-btn-block" data-pick-user="'+escAttr(u.nombre)+'">'+escHtml(u.nombre)+'</button>'; }).join('')
+        : '<div class="ra-h2" style="margin-bottom:0;">Todavía no hay inspectores dados de alta en este equipo. Entra como administrador para agregarlos.</div>';
+      inner = '<div class="ra-gate-card">' +
+          '<div class="ra-h1">Selecciona tu nombre</div>' +
+          '<div class="ra-h2">Solo el personal autorizado puede capturar inspecciones.</div>' + warn + lista +
+        '</div>' +
+        '<button class="ra-link" id="btn-show-admin-unlock" style="display:block;width:100%;text-align:center;color:#fff;margin-top:18px;">Entrar como administrador</button>';
     }
-    var body = '';
-    if(S.tab === 'captura') body = renderCaptura();
-    else if(S.tab === 'historial') body = renderHistorial();
-    else body = renderCatalogo();
-
-    root.innerHTML = renderHeader() + '<div class="ra-body">' + body + '</div>' + renderNav();
-    bindEvents();
+    return '<div class="ra-gate"><div class="ra-gate-inner">' +
+        '<div class="ra-gate-brand">' +
+          '<div style="display:flex;justify-content:center;">' + logoSVG('ra-logo-lg') + '</div>' +
+          '<div class="app-name">INSPECCIÓN DE ROLLOS</div>' +
+        '</div>' + inner +
+      '</div></div>';
   }
 
-  // ---------- CAPTURA FLOW SCREENS ----------
+  /* ============ CAPTURA ============ */
   function renderCaptura(){
-    if(!S.inspector) return renderInspectorGate();
+    if(S.editReg) return screenEditar();
     switch(S.step){
-      case 'id': return screenId();
       case 'resultado': return screenResultado();
-      case 'familia': return screenFamilia();
-      case 'defecto': return screenDefecto();
+      case 'familia':   return screenFamilia();
+      case 'defecto':   return screenDefecto();
       case 'variacion': return screenVariacion();
       case 'ubicacion': return screenUbicacion();
       case 'severidad': return screenSeveridad();
       case 'evidencia': return screenEvidencia();
-      default: return screenId();
+      case 'confirmar': return screenConfirmar();
+      default:          return screenId();
     }
   }
 
-  function renderInspectorGate(){
-    var opts = (S.catalogs.inspectores||[]).map(function(n){
-      return '<button class="ra-btn ra-btn-outline ra-btn-block" data-pick-inspector="' + escAttr(n) + '">' + escHtml(n) + '</button>';
-    }).join('');
-    return '' +
-      '<div class="ra-card">' +
-        '<div class="ra-h1">¿Quién eres?</div>' +
-        '<div class="ra-h2">Selecciona tu nombre para comenzar a inspeccionar</div>' +
-        opts +
-        '<div class="ra-inline-form" style="margin-top:8px;">' +
-          '<input class="ra-input" id="new-inspector" placeholder="Agregar inspector nuevo" style="margin-bottom:0;">' +
-          '<button class="ra-small-btn" id="btn-add-inspector">Agregar</button>' +
-        '</div>' +
-      '</div>';
-  }
-
   function screenId(){
-    var master = S.rolloId ? S.rollosMaster[S.rolloId.trim().toUpperCase()] : null;
-    return '' +
-      '<div class="ra-card">' +
+    var id = rolloId(), ok = idValido();
+    var master = ok ? S.rollosMaster[id] : null;
+    var previos = ok ? S.registros.filter(function(r){ return (r.rolloId||'').toUpperCase()===id; }).length : 0;
+    var camWarn = isInsecureContext()
+      ? '<div class="ra-warn">La cámara solo funciona en páginas https o en localhost. Al abrir el archivo desde el disco el escaneo queda deshabilitado.</div>' : '';
+
+    var campo, aviso;
+    if(S.idModo === 'guiado'){
+      var faltan = ID_MID_LEN - S.idMid.length;
+      aviso = ok ? '<div class="ra-idpreview">ID completo: <b>'+escHtml(id)+'</b></div>'
+                 : '<div class="ra-idpreview'+(S.idMid.length?' warn':'')+'">' +
+                   (S.idMid.length ? 'Faltan '+faltan+' dígito'+(faltan===1?'':'s')+' — el ID debe llevar exactamente '+ID_MID_LEN+'.'
+                                   : 'Captura los '+ID_MID_LEN+' dígitos del centro.') + '</div>';
+      campo = '<div class="ra-idbox'+(ok?' ok':'')+'">' +
+          '<div class="ra-idfix">'+ID_PREFIX+'</div>' +
+          '<input class="ra-idmid" id="input-id-mid" type="tel" inputmode="numeric" pattern="[0-9]*" ' +
+            'maxlength="'+ID_MID_LEN+'" placeholder="000000" value="'+escAttr(S.idMid)+'" autocomplete="off">' +
+          '<div class="ra-idfix suffix">'+ID_SUFFIX+'</div>' +
+        '</div>' + aviso +
+        '<button class="ra-link" id="btn-modo-libre">Este rollo no sigue el formato</button>';
+    } else {
+      campo = '<input class="ra-input" id="input-id-full" placeholder="ID completo del rollo" value="'+escAttr(S.idFull)+'" autocapitalize="characters" autocomplete="off" spellcheck="false">' +
+        '<button class="ra-link" id="btn-modo-guiado">Volver al formato '+ID_PREFIX+'…'+ID_SUFFIX+'</button>';
+    }
+
+    return '<div class="ra-card">' +
         '<div class="ra-h1">Identificar rollo</div>' +
-        '<div class="ra-h2">Escanea el código o captúralo manualmente</div>' +
-        '<button class="ra-btn ra-btn-steel ra-btn-block" id="btn-scan">📷 Escanear código</button>' +
-        '<label class="ra-label">ID de rollo</label>' +
-        '<input class="ra-input" id="input-rollo-id" placeholder="Ej. 4A695767PM400" value="' + escAttr(S.rolloId) + '" autocapitalize="characters">' +
-        (master ? renderMasterPreview(master) : (S.rolloId.trim() ? '<div class="ra-h2" style="margin-bottom:10px;">Sin datos previos — se guardará solo con el ID. Puedes añadir datos del rollo abajo si lo deseas.</div>' + renderManualMasterFields() : '')) +
-        '<button class="ra-btn ra-btn-conforme ra-btn-block" id="btn-continue-id" ' + (S.rolloId.trim()?'':'disabled style="opacity:.45"') + '>Continuar</button>' +
+        '<div class="ra-h2">Escanea el código QR del rollo o captura los dígitos manualmente.</div>' + camWarn +
+        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-scan"'+(isInsecureContext()?' disabled':'')+' style="margin-bottom:20px;">Escanear código QR</button>' +
+        '<label class="ra-label">ID DE ROLLO</label>' + campo +
+        (previos ? '<div class="ra-note" style="margin-top:14px;">Este rollo ya tiene '+previos+' inspección(es) registrada(s).</div>' : '') +
+        (master ? masterPreview(master) : (ok ? datosRolloFields() : '')) +
+        '<button class="ra-btn ra-btn-conforme ra-btn-block" id="btn-continue-id" style="margin-top:18px;margin-bottom:0;"'+(ok?'':' disabled')+'>Continuar</button>' +
       '</div>';
   }
 
-  function renderMasterPreview(m){
-    return '' +
-      '<div class="ra-card" style="background:#F3F8F5;border-color:#BFE3CC;box-shadow:none;margin:4px 0 14px;">' +
-        '<div class="ra-label" style="color:#1F8A54;">Datos recuperados automáticamente</div>' +
-        row('Grado', m.grado) + row('Espesor', m.espesor) + row('Ancho', m.ancho) + row('Peso', m.peso) + row('Fecha producción', m.fecha) + row('Enrollador', m.enrollador) +
+  function masterPreview(m){
+    function row(l,v){ return v ? '<div class="ra-summary-line"><span>'+l+'</span><b>'+escHtml(String(v))+'</b></div>' : ''; }
+    return '<div style="border-left:3px solid var(--conforme);background:#F3F8F5;padding:14px 15px;margin-top:16px;">' +
+        '<div class="ra-label" style="color:var(--conforme);">DATOS GUARDADOS DE ESTE ROLLO</div>' +
+        row('Grado de acero',m.grado)+row('Familia SGF',m.familiaSGF)+row('Familia',m.familiaDesc)+
+        row('Espesor',m.espesor?m.espesor+' mm':'')+row('Ancho',m.ancho?m.ancho+' mm':'')+
+        row('Peso',m.peso?m.peso+' kg':'')+row('Fecha producción',m.fecha)+row('Enrollador',m.enrollador) +
       '</div>';
-    function row(l,v){ return v ? ('<div class="ra-summary-line"><span>'+l+'</span><b>'+escHtml(String(v))+'</b></div>') : ''; }
   }
 
-  function renderManualMasterFields(){
-    var gradosOpts = (S.catalogs.grados||[]).map(function(g){ return '<option value="'+escAttr(g)+'"'+(S.rolloData.grado===g?' selected':'')+'>'+escHtml(g)+'</option>'; }).join('');
-    var enrolladoresOpts = (S.catalogs.enrolladores||[]).map(function(g){ return '<option value="'+escAttr(g)+'"'+(S.rolloData.enrollador===g?' selected':'')+'>'+escHtml(g)+'</option>'; }).join('');
-    return '' +
-      '<details style="margin-bottom:12px;">' +
-        '<summary class="ra-link" style="cursor:pointer;">+ Agregar datos del rollo (opcional)</summary>' +
-        '<div style="margin-top:10px;">' +
-          '<label class="ra-label">Grado</label>' +
-          '<select class="ra-input" id="field-grado"><option value="">—</option>' + gradosOpts + '</select>' +
-          '<label class="ra-label">Enrollador</label>' +
-          '<select class="ra-input" id="field-enrollador"><option value="">—</option>' + enrolladoresOpts + '</select>' +
+  function comboGrados(){
+    var lista = (S.catalogs.grados||[]);
+    if(!lista.length) return '<div class="ra-note">El catálogo de grados está vacío. El administrador puede cargarlo desde Ajustes.</div>';
+    var q = (S.gradoQuery||'').trim().toUpperCase();
+    var filtrados = q ? lista.filter(function(x){ return x.grado.toUpperCase().indexOf(q)===0; }) : lista;
+    if(q && !filtrados.length) filtrados = lista.filter(function(x){ return x.grado.toUpperCase().indexOf(q)!==-1; });
+    var abierto = S.gradoAbierto && !S.rolloData.grado;
+    var opciones = abierto ? filtrados.slice(0,60).map(function(x){
+      return '<div class="ra-combo-opt" data-pick-grado="'+escAttr(x.grado)+'">' +
+          '<b>'+escHtml(x.grado)+'</b>' +
+          '<span>SGF '+escHtml(x.sgf||'—')+(x.familia?' · '+escHtml(x.familia):'')+'</span>' +
+        '</div>';
+    }).join('') : '';
+    var vacio = abierto && !filtrados.length ? '<div class="ra-combo-empty">Ningún grado coincide con «'+escHtml(q)+'»</div>' : '';
+    return '<div class="ra-combo">' +
+        '<input class="ra-input" id="field-grado" autocomplete="off" autocapitalize="characters" spellcheck="false" ' +
+          'placeholder="Escribe para buscar, ej. C14" value="'+escAttr(S.rolloData.grado||S.gradoQuery||'')+'" ' +
+          'style="margin-bottom:'+(abierto?'0':'12px')+';">' +
+        (S.rolloData.grado ? '<button class="ra-combo-clear" id="btn-clear-grado" aria-label="Cambiar grado">✕</button>' : '') +
+        (abierto ? '<div class="ra-combo-list">'+(opciones||vacio)+'</div>' : '') +
+      '</div>' +
+      (abierto && filtrados.length>60 ? '<div class="ra-meta" style="margin:-6px 0 12px;">Mostrando 60 de '+filtrados.length+' — sigue escribiendo para acotar.</div>' : '');
+  }
+
+  function datosRolloFields(){
+    var e = (S.catalogs.enrolladores||[]).map(function(x){ return '<option value="'+escAttr(x)+'"'+(S.rolloData.enrollador===x?' selected':'')+'>'+escHtml(x)+'</option>'; }).join('');
+    var sgf = S.rolloData.grado ? familiaDeGrado(S.rolloData.grado) : '';
+    var desc = S.rolloData.grado ? descripcionDeGrado(S.rolloData.grado) : '';
+    return '<details style="margin-top:16px;" '+(S.rolloData.grado||S.gradoAbierto?'open':'')+'>' +
+        '<summary class="ra-link" style="cursor:pointer;">Agregar datos del rollo (opcional)</summary>' +
+        '<div style="margin-top:14px;">' +
+          '<label class="ra-label">GRADO DE ACERO (GRADO DE PLANCHÓN)</label>' +
+          comboGrados() +
+          '<label class="ra-label">FAMILIA SGF</label>' +
+          '<input class="ra-input" id="field-familia-sgf" value="'+escAttr(sgf)+'" placeholder="Se llena sola al elegir el grado" readonly style="background:#F4F5F7;font-weight:700;">' +
+          (desc ? '<div class="ra-meta" style="margin:-6px 0 12px;">'+escHtml(desc)+'</div>' : '') +
+          '<label class="ra-label">ENROLLADOR</label><select class="ra-input" id="field-enrollador"><option value="">—</option>'+e+'</select>' +
           '<div class="ra-grid">' +
-            '<div><label class="ra-label">Espesor</label><input class="ra-input" id="field-espesor" value="' + escAttr(S.rolloData.espesor||'') + '"></div>' +
-            '<div><label class="ra-label">Ancho</label><input class="ra-input" id="field-ancho" value="' + escAttr(S.rolloData.ancho||'') + '"></div>' +
-            '<div><label class="ra-label">Peso</label><input class="ra-input" id="field-peso" value="' + escAttr(S.rolloData.peso||'') + '"></div>' +
-            '<div><label class="ra-label">Fecha prod.</label><input class="ra-input" type="date" id="field-fecha" value="' + escAttr(S.rolloData.fecha||'') + '"></div>' +
+            '<div><label class="ra-label">ESPESOR (MM)</label><input class="ra-input" inputmode="decimal" id="field-espesor" placeholder="mm" value="'+escAttr(S.rolloData.espesor||'')+'"></div>' +
+            '<div><label class="ra-label">ANCHO (MM)</label><input class="ra-input" inputmode="decimal" id="field-ancho" placeholder="mm" value="'+escAttr(S.rolloData.ancho||'')+'"></div>' +
+            '<div><label class="ra-label">PESO (KG)</label><input class="ra-input" inputmode="decimal" id="field-peso" placeholder="kg" value="'+escAttr(S.rolloData.peso||'')+'"></div>' +
+            '<div><label class="ra-label">FECHA PROD.</label><input class="ra-input" type="date" id="field-fecha" value="'+escAttr(S.rolloData.fecha||'')+'"></div>' +
           '</div>' +
         '</div>' +
       '</details>';
   }
 
   function screenResultado(){
-    return '' +
-      backRow('id') +
-      '<div class="ra-card">' +
-        '<div class="ra-h1">' + escHtml(S.rolloId) + '</div>' +
+    return backRow('id') + '<div class="ra-card">' +
+        '<div class="ra-h1" style="word-break:break-all;">'+escHtml(rolloId())+'</div>' +
         '<div class="ra-h2">¿Cuál es la condición del rollo?</div>' +
-        '<button class="ra-btn ra-btn-conforme ra-btn-block" data-resultado="Conforme" style="min-height:76px;font-size:18px;">✔ Conforme</button>' +
-        '<button class="ra-btn ra-btn-defecto ra-btn-block" data-resultado="Defecto" style="min-height:76px;font-size:18px;">⚠ Defecto</button>' +
-        '<button class="ra-btn ra-btn-scrap ra-btn-block" data-resultado="Scrap" style="min-height:76px;font-size:18px;">✕ Scrap</button>' +
+        '<button class="ra-btn ra-btn-conforme ra-btn-block" data-resultado="Conforme" style="min-height:74px;font-size:17px;">CONFORME</button>' +
+        '<button class="ra-btn ra-btn-defecto ra-btn-block" data-resultado="Defecto" style="min-height:74px;font-size:17px;">DEFECTO</button>' +
+        '<button class="ra-btn ra-btn-scrap ra-btn-block" data-resultado="Scrap" style="min-height:74px;font-size:17px;margin-bottom:0;">SCRAP</button>' +
       '</div>';
   }
 
   function screenFamilia(){
     var items = FAMILIAS.map(function(f){
-      return '<button class="ra-btn ra-btn-outline ra-btn-block" data-familia="' + f.id + '" style="text-transform:capitalize;justify-content:space-between;">' + escHtml(f.name) + '<span style="color:var(--ink-soft);font-size:12px;">' + f.defectos.length + '</span></button>';
+      return '<div class="ra-choice" role="button" tabindex="0" data-familia="'+f.id+'"><span class="ra-choice-text">'+escHtml(f.name)+'</span><span class="ra-chev">'+f.defectos.length+' ›</span></div>';
     }).join('');
-    return backRow('resultado') + '<div class="ra-card"><div class="ra-h1">Familia del defecto</div><div class="ra-h2">Selecciona la categoría</div>' + items + '</div>';
+    return backRow('resultado') + '<div class="ra-card"><div class="ra-h1">Familia del defecto</div><div class="ra-h2">Selecciona la categoría.</div>'+items+'</div>';
   }
 
   function screenDefecto(){
     var items = S.familia.defectos.map(function(d){
-      return '<div class="ra-choice" data-defecto="' + d.code + '"><div class="ra-choice-row"><span class="code">' + d.code + '</span><span class="ra-choice-text">' + escHtml(d.name) + '</span></div><span>›</span></div>';
+      return '<div class="ra-choice" role="button" tabindex="0" data-defecto="'+escAttr(d.code)+'"><div class="ra-choice-row"><span class="code">'+escHtml(d.code)+'</span><span class="ra-choice-text">'+escHtml(d.name)+'</span></div><span class="ra-chev">›</span></div>';
     }).join('');
-    return backRow('familia') + '<div class="ra-card"><div class="ra-h1">' + escHtml(S.familia.name) + '</div><div class="ra-h2">Selecciona el defecto</div>' + items + '</div>';
+    return backRow('familia') + '<div class="ra-card"><div class="ra-h1">'+escHtml(S.familia.name)+'</div><div class="ra-h2">Selecciona el defecto.</div>'+items+'</div>';
   }
 
   function screenVariacion(){
-    var vs = currentDefectVariaciones() || [];
-    var items = vs.map(function(v){
-      return '<div class="ra-choice" data-variacion="' + escAttr(v) + '">' + escHtml(v) + '<span>›</span></div>';
+    var items = (currentDefectVariaciones()||[]).map(function(v){
+      return '<div class="ra-choice" role="button" tabindex="0" data-variacion="'+escAttr(v)+'"><span class="ra-choice-text">'+escHtml(v)+'</span><span class="ra-chev">›</span></div>';
     }).join('');
-    return backRow('defecto') + '<div class="ra-card"><div class="ra-h1">' + escHtml(S.defecto.name) + '</div><div class="ra-h2">Variación del defecto</div>' + items + '</div>';
+    return backRow('defecto') + '<div class="ra-card"><div class="ra-h1">'+escHtml(S.defecto.name)+'</div><div class="ra-h2">Variación del defecto.</div>'+items+'</div>';
   }
 
   function screenUbicacion(){
-    var items = UBICACIONES.map(function(u){
-      return '<button class="ra-btn ra-btn-outline" data-ubicacion="' + escAttr(u) + '" style="text-transform:capitalize;">' + escHtml(u) + '</button>';
-    }).join('');
-    return backRow(currentDefectVariaciones() ? 'variacion' : 'defecto') +
-      '<div class="ra-card"><div class="ra-h1">Ubicación</div><div class="ra-h2">¿Dónde está el defecto en el rollo?</div>' +
-      '<div class="ra-grid">' + items + '</div></div>';
+    var items = UBICACIONES.map(function(u){ return '<button class="ra-btn ra-btn-outline" data-ubicacion="'+escAttr(u)+'">'+escHtml(u)+'</button>'; }).join('');
+    return backRow(currentDefectVariaciones()?'variacion':'defecto') +
+      '<div class="ra-card"><div class="ra-h1">Ubicación del defecto</div><div class="ra-h2">¿Dónde está el defecto en el rollo?</div><div class="ra-grid">'+items+'</div></div>';
   }
 
   function screenSeveridad(){
     var items = SEVERIDADES.map(function(s){
-      var cls = s==='Severo' ? 'ra-btn-scrap' : s==='Moderado' ? 'ra-btn-defecto' : 'ra-btn-conforme';
-      return '<button class="ra-btn ' + cls + ' ra-btn-block" data-severidad="' + s + '">' + s + '</button>';
+      var cls = s==='Severo'?'ra-btn-scrap':s==='Moderado'?'ra-btn-defecto':'ra-btn-conforme';
+      return '<button class="ra-btn '+cls+' ra-btn-block" data-severidad="'+s+'">'+s+'</button>';
     }).join('');
-    return backRow('ubicacion') + '<div class="ra-card"><div class="ra-h1">Severidad</div><div class="ra-h2">Selecciona el nivel</div>' + items + '</div>';
+    return backRow('ubicacion') + '<div class="ra-card"><div class="ra-h1">Severidad</div><div class="ra-h2">Selecciona el nivel.</div>'+items+'</div>';
   }
 
   function screenEvidencia(){
     var fotos = S.fotos.map(function(f,i){
-      return '<div class="ra-photo-thumb"><img src="' + f + '"><button data-remove-foto="' + i + '">✕</button></div>';
+      return '<div class="ra-photo-thumb"><img src="'+f+'" alt="Evidencia '+(i+1)+'"><button data-remove-foto="'+i+'" aria-label="Quitar foto">✕</button></div>';
     }).join('');
-    return backRow(S.resultado === 'Defecto' ? 'severidad' : 'ubicacion') +
+    return backRow(S.resultado==='Defecto'?'severidad':'ubicacion') +
       '<div class="ra-card">' +
         '<div class="ra-h1">Evidencia y comentario</div>' +
-        '<div class="ra-h2">Ambos son opcionales</div>' +
-        '<label class="ra-label">Fotografía</label>' +
-        '<div class="ra-photo-row">' + fotos + '<label class="ra-add-photo">＋<input type="file" accept="image/*" capture="environment" id="input-foto" style="display:none;"></label></div>' +
-        '<label class="ra-label">Comentario</label>' +
-        '<textarea class="ra-input" id="input-comentario" placeholder="Información adicional (opcional)">' + escHtml(S.comentario) + '</textarea>' +
-        renderResumen() +
-        '<button class="ra-btn ra-btn-conforme ra-btn-block" id="btn-guardar" style="margin-top:14px;">Guardar rollo</button>' +
+        '<div class="ra-h2">Ambos campos son opcionales.</div>' +
+        '<label class="ra-label">FOTOGRAFÍA</label>' +
+        '<div class="ra-photo-row">'+fotos+'<label class="ra-add-photo">＋<input type="file" accept="image/*" capture="environment" id="input-foto" style="display:none;"></label></div>' +
+        '<label class="ra-label" for="input-comentario">COMENTARIO</label>' +
+        '<textarea class="ra-input" id="input-comentario" placeholder="Información adicional">'+escHtml(S.comentario)+'</textarea>' +
+        resumen() +
+        '<button class="ra-btn ra-btn-conforme ra-btn-block" id="btn-guardar" style="margin-top:16px;margin-bottom:0;">Guardar rollo</button>' +
       '</div>';
   }
 
-  function renderResumen(){
-    var lines = [];
-    lines.push(['Rollo', S.rolloId]);
-    lines.push(['Resultado', S.resultado]);
-    if(S.familia) lines.push(['Familia', S.familia.name]);
-    if(S.defecto) lines.push(['Defecto', S.defecto.code + ' — ' + S.defecto.name]);
-    if(S.variacion) lines.push(['Variación', S.variacion]);
-    if(S.ubicacion) lines.push(['Ubicación', S.ubicacion]);
-    if(S.severidad) lines.push(['Severidad', S.severidad]);
-    return '<div class="ra-card" style="background:var(--bg);box-shadow:none;">' +
-      lines.map(function(l){ return '<div class="ra-summary-line"><span>'+l[0]+'</span><b>'+escHtml(String(l[1]))+'</b></div>'; }).join('') +
+  function screenConfirmar(){
+    return backRow('resultado') +
+      '<div class="ra-card">' +
+        '<div style="text-align:center;padding:6px 0 14px;">' +
+          '<div style="width:62px;height:62px;border-radius:50%;background:#EAF5EF;color:var(--conforme);' +
+            'display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px;">✓</div>' +
+          '<div class="ra-h1" style="margin-bottom:2px;">Rollo conforme</div>' +
+          '<div class="ra-meta">Revisa los datos antes de guardar.</div>' +
+        '</div>' +
+        resumen() +
+        '<label class="ra-label" style="margin-top:16px;" for="input-comentario">COMENTARIO (OPCIONAL)</label>' +
+        '<textarea class="ra-input" id="input-comentario" placeholder="Información adicional">'+escHtml(S.comentario)+'</textarea>' +
+        '<button class="ra-btn ra-btn-conforme ra-btn-block" id="btn-guardar">Confirmar y guardar</button>' +
+        '<button class="ra-btn ra-btn-outline ra-btn-block" data-goto="resultado" style="margin-bottom:0;">Cancelar</button>' +
       '</div>';
   }
 
-  function backRow(target){
-    return '<div class="ra-topbar"><button class="ra-back" data-goto="' + target + '">‹ Atrás</button></div>';
+  function resumen(){
+    var lines=[['Rollo',rolloId()],['Resultado',S.resultado],['Turno',turnoDe()]];
+    if(S.rolloData.grado) lines.push(['Grado de acero',S.rolloData.grado]);
+    if(S.rolloData.grado && familiaDeGrado(S.rolloData.grado)) lines.push(['Familia SGF',familiaDeGrado(S.rolloData.grado)]);
+    if(S.rolloData.espesor) lines.push(['Espesor',S.rolloData.espesor+' mm']);
+    if(S.rolloData.ancho) lines.push(['Ancho',S.rolloData.ancho+' mm']);
+    if(S.rolloData.peso) lines.push(['Peso',S.rolloData.peso+' kg']);
+    if(S.familia) lines.push(['Familia defecto',S.familia.name]);
+    if(S.defecto) lines.push(['Defecto',S.defecto.code+' — '+S.defecto.name]);
+    if(S.variacion) lines.push(['Variación',S.variacion]);
+    if(S.ubicacion) lines.push(['Ubicación',S.ubicacion]);
+    if(S.severidad) lines.push(['Severidad',S.severidad]);
+    return '<div style="background:#F4F5F7;padding:6px 14px;margin-top:6px;">' +
+      lines.map(function(l){ return '<div class="ra-summary-line"><span>'+l[0]+'</span><b>'+escHtml(String(l[1]))+'</b></div>'; }).join('') + '</div>';
   }
 
-  // ---------- HISTORIAL ----------
-  function renderHistorial(){
-    var regs = S.registros;
-    var total = regs.length;
-    var defectos = regs.filter(function(r){ return r.resultado==='Defecto'; }).length;
-    var scrap = regs.filter(function(r){ return r.resultado==='Scrap'; }).length;
-    var items = regs.length ? regs.map(historyItem).join('') :
-      '<div class="ra-empty"><div class="big">📋</div>Aún no hay rollos capturados</div>';
-    return '' +
-      '<div class="ra-stats">' +
-        stat(total,'Total') + stat(defectos,'Defecto') + stat(scrap,'Scrap') +
+  function backRow(t){ return '<div class="ra-topbar"><button class="ra-back" data-goto="'+t+'">‹ Atrás</button></div>'; }
+
+  /* ============ EDICIÓN DE REGISTRO ============ */
+  function screenEditar(){
+    var r = S.editReg;
+    var resOpts = ['Conforme','Defecto','Scrap'].map(function(x){ return '<option value="'+x+'"'+(r.resultado===x?' selected':'')+'>'+x+'</option>'; }).join('');
+    var famOpts = '<option value="">—</option>' + FAMILIAS.map(function(f){ return '<option value="'+f.id+'"'+(r.familia===f.name?' selected':'')+'>'+escHtml(f.name)+'</option>'; }).join('');
+    var famActual = FAMILIAS.filter(function(f){ return f.name===r.familia; })[0];
+    var defOpts = '<option value="">—</option>' + (famActual? famActual.defectos.map(function(d){
+      return '<option value="'+escAttr(d.code)+'"'+(r.defectoCode===d.code?' selected':'')+'>'+escHtml(d.code+' — '+d.name)+'</option>';
+    }).join('') : '');
+    var ubiOpts = '<option value="">—</option>' + UBICACIONES.map(function(u){ return '<option value="'+escAttr(u)+'"'+(r.ubicacion===u?' selected':'')+'>'+escHtml(u)+'</option>'; }).join('');
+    var sevOpts = '<option value="">—</option>' + SEVERIDADES.map(function(x){ return '<option value="'+x+'"'+(r.severidad===x?' selected':'')+'>'+x+'</option>'; }).join('');
+    var vars = S.variacionesCat[r.defectoCode]||[];
+    var varOpts = '<option value="">—</option>' + vars.map(function(v){ return '<option value="'+escAttr(v)+'"'+(r.variacion===v?' selected':'')+'>'+escHtml(v)+'</option>'; }).join('');
+    var ediciones = (r.ediciones||[]).length;
+
+    return '<div class="ra-topbar"><button class="ra-back" id="btn-cancel-edit">‹ Cancelar</button></div>' +
+      '<div class="ra-card">' +
+        '<div class="ra-h1">Modificar registro</div>' +
+        '<div class="ra-h2">'+escHtml(r.rolloId)+' · capturado por '+escHtml(r.inspector||'')+' el '+escHtml(r.fecha||'')+'</div>' +
+        (ediciones ? '<div class="ra-note">Este registro ya tiene '+ediciones+' modificación(es) previas. Puedes verlas en el reporte de movimientos.</div>' : '') +
+        '<label class="ra-label">RESULTADO</label><select class="ra-input" id="edit-resultado">'+resOpts+'</select>' +
+        '<label class="ra-label">FAMILIA DEL DEFECTO</label><select class="ra-input" id="edit-familia">'+famOpts+'</select>' +
+        '<label class="ra-label">DEFECTO</label><select class="ra-input" id="edit-defecto">'+defOpts+'</select>' +
+        '<label class="ra-label">VARIACIÓN</label><select class="ra-input" id="edit-variacion">'+varOpts+'</select>' +
+        '<label class="ra-label">UBICACIÓN DEL DEFECTO</label><select class="ra-input" id="edit-ubicacion">'+ubiOpts+'</select>' +
+        '<label class="ra-label">SEVERIDAD</label><select class="ra-input" id="edit-severidad">'+sevOpts+'</select>' +
+        '<label class="ra-label">COMENTARIO</label><textarea class="ra-input" id="edit-comentario">'+escHtml(r.comentario||'')+'</textarea>' +
+        '<div style="border-left:3px solid var(--defecto);background:#FDF6E9;padding:14px 15px;margin:6px 0 14px;">' +
+          '<label class="ra-label" style="color:#6E4B10;">MOTIVO DEL CAMBIO (OBLIGATORIO)</label>' +
+          '<textarea class="ra-input" id="edit-motivo" style="margin-bottom:0;" placeholder="Explica por qué se modifica este registro"></textarea>' +
+        '</div>' +
+        (S.editErr?'<div class="ra-err">'+escHtml(S.editErr)+'</div>':'') +
+        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-save-edit" style="margin-bottom:0;">Guardar cambios</button>' +
+      '</div>';
+  }
+
+  /* ============ TRACKING ============ */
+  function horasSinMover(t){
+    return (Date.now() - (t.ultimoTs||Date.now())) / 3600000;
+  }
+  function estaDetenido(t){
+    return horasSinMover(t) >= HORAS_DETENIDO;
+  }
+  function textoAntiguedad(t){
+    var h = horasSinMover(t);
+    if(h < 1) return 'hace menos de 1 h';
+    if(h < 24) return 'hace '+Math.floor(h)+' h';
+    var d = Math.floor(h/24);
+    return 'hace '+d+' día'+(d===1?'':'s');
+  }
+
+  function trackingList(){
+    return Object.keys(S.tracking).map(function(k){ return S.tracking[k]; })
+      .sort(function(a,b){ return (b.ultimoTs||0)-(a.ultimoTs||0); });
+  }
+
+  function renderTracking(){
+    if(S.trackVista==='detalle' && S.trackRollo) return screenTrackDetalle();
+    var q = S.trackFiltro.trim().toLowerCase();
+    var todos = trackingList();
+    var detenidos = todos.filter(estaDetenido);
+    var lista = todos.filter(function(t){
+      if(S.trackZona==='Detenidos'){ if(!estaDetenido(t)) return false; }
+      else if(S.trackZona!=='Todas' && t.zona!==S.trackZona) return false;
+      if(!q) return true;
+      return t.rolloId.toLowerCase().indexOf(q)!==-1;
+    });
+    var porZona = {};
+    todos.forEach(function(t){ porZona[t.zona]=(porZona[t.zona]||0)+1; });
+    var listaZonas = zonas().slice();
+    Object.keys(porZona).forEach(function(z){ if(listaZonas.indexOf(z)===-1) listaZonas.push(z); });
+    var chips = ['Todas'].concat(listaZonas).map(function(z){
+      var n = z==='Todas' ? todos.length : (porZona[z]||0);
+      return '<button class="ra-zchip'+(S.trackZona===z?' on':'')+'" data-zona-filtro="'+escAttr(z)+'">' +
+        escHtml(z)+'<b>'+n+'</b></button>';
+    }).join('');
+    if(detenidos.length){
+      chips += '<button class="ra-zchip alerta'+(S.trackZona==='Detenidos'?' on':'')+'" data-zona-filtro="Detenidos">' +
+        'Detenidos<b>'+detenidos.length+'</b></button>';
+    }
+
+    var aviso = (detenidos.length && S.trackZona!=='Detenidos')
+      ? '<div class="ra-warn">'+detenidos.length+' rollo(s) llevan más de '+HORAS_DETENIDO+' h sin movimiento. ' +
+        '<button class="ra-link" id="btn-ver-detenidos" style="color:#6E4B10;">Ver cuáles</button></div>' : '';
+
+    var vacioTxt = S.trackZona==='Detenidos'
+      ? 'No hay rollos detenidos. Todo se ha movido en las últimas '+HORAS_DETENIDO+' h.'
+      : (S.trackZona!=='Todas'
+          ? 'No hay rollos en '+escHtml(S.trackZona)+(q?' que coincidan con la búsqueda.':'.')
+          : (q ? 'Ningún rollo coincide con la búsqueda.' : ''));
+
+    var items = lista.length ? lista.map(function(t){
+      var reg = S.registros.filter(function(r){ return r.rolloId===t.rolloId; })[0];
+      var cls = reg ? (reg.resultado==='Conforme'?'conforme':reg.resultado==='Defecto'?'defecto':'scrap') : 'zona';
+      var det = estaDetenido(t);
+      var sel = S.trackSeleccion.indexOf(t.rolloId)!==-1;
+      return '<div class="ra-item'+(det?' detenido':'')+(sel?' sel':'')+'"'+(S.trackModoSel?' data-sel-rollo="'+escAttr(t.rolloId)+'" style="cursor:pointer;"':'')+'>' +
+          '<div class="ra-item-top">' +
+            '<span class="ra-item-id">'+(S.trackModoSel?'<span class="ra-check'+(sel?' on':'')+'">'+(sel?'✓':'')+'</span>':'')+escHtml(t.rolloId)+'</span>' +
+            (reg?'<span class="ra-badge '+cls+'">'+escHtml(reg.resultado.toUpperCase())+'</span>':'')+'</div>' +
+          '<div class="ra-meta"><b style="color:var(--info);">'+escHtml(t.zona)+'</b> · '+(t.movimientos.length)+' movimiento(s)</div>' +
+          '<div class="ra-meta">Último: '+escHtml(t.ultimoUsuario||'')+' · '+escHtml(t.ultimaFecha||'')+' '+escHtml(t.ultimaHora||'')+(t.ultimoTurno?' · Turno '+escHtml(t.ultimoTurno):'')+'</div>' +
+          (det?'<div class="ra-meta" style="color:var(--defecto);font-weight:600;margin-top:4px;">Sin movimiento '+textoAntiguedad(t)+'</div>':'') +
+          (S.trackModoSel?'':'<div class="ra-actions"><button class="ra-link" data-track-open="'+escAttr(t.rolloId)+'">Ver seguimiento</button></div>') +
+        '</div>';
+    }).join('') : (todos.length
+      ? '<div class="ra-empty">'+vacioTxt+'</div>'
+      : '<div class="ra-empty"><div class="big">◎</div>Aún no hay rollos en seguimiento.<br>Cada rollo entra automáticamente al capturarse.</div>');
+
+    var titulo = S.trackZona==='Todas' ? 'Todos los rollos ('+lista.length+')'
+      : S.trackZona==='Detenidos' ? 'Detenidos · '+lista.length+' rollo(s)'
+      : S.trackZona+' · '+lista.length+' rollo(s)';
+
+    var barraSel = '';
+    if(S.trackModoSel){
+      var zonasDestino = zonas().map(function(z){
+        return '<button class="ra-btn ra-btn-outline ra-btn-sm" data-mover-lote="'+escAttr(z)+'">'+escHtml(z)+'</button>';
+      }).join('');
+      barraSel = '<div class="ra-card" style="padding:14px;border-color:var(--ink);">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;">' +
+            '<div><div class="ra-label" style="margin:0;">SELECCIÓN MÚLTIPLE</div>' +
+            '<div class="ra-meta">'+S.trackSeleccion.length+' rollo(s) seleccionados</div></div>' +
+            '<button class="ra-link" id="btn-sel-cancelar">Cancelar</button>' +
+          '</div>' +
+          '<div style="display:flex;gap:16px;margin-bottom:12px;">' +
+            '<button class="ra-link" id="btn-sel-todos">Seleccionar los '+lista.length+' visibles</button>' +
+            (S.trackSeleccion.length?'<button class="ra-link" id="btn-sel-ninguno">Quitar selección</button>':'') +
+          '</div>' +
+          (S.trackSeleccion.length
+            ? '<label class="ra-label">MOVER TODOS A</label><input class="ra-input" id="mover-nota-lote" placeholder="Nota (opcional)" autocomplete="off">' +
+              '<div class="ra-grid">'+zonasDestino+'</div>'
+            : '<div class="ra-meta">Toca los rollos de la lista para seleccionarlos.</div>') +
+        '</div>';
+    }
+
+    return aviso +
+      '<div class="ra-card" style="padding:14px;">' +
+        '<label class="ra-label">FILTRAR POR ZONA</label>' +
+        '<div class="ra-zchips">'+chips+'</div>' +
+        '<label class="ra-label" style="margin-top:14px;">BUSCAR ROLLO</label>' +
+        '<input class="ra-input" id="track-filtro" inputmode="search" placeholder="Ej. 695767 o 4A695767PM400" value="'+escAttr(S.trackFiltro)+'" autocomplete="off" style="margin-bottom:0;">' +
+        (todos.length && !S.trackModoSel ? '<button class="ra-link" id="btn-sel-modo" style="margin-top:12px;">Mover varios rollos a la vez</button>' : '') +
+      '</div>' + barraSel +
+      '<div class="ra-section-title" style="margin-top:4px;">'+escHtml(titulo)+'</div>' + items;
+  }
+
+  function screenTrackDetalle(){
+    var t = S.tracking[S.trackRollo];
+    if(!t){ S.trackVista='lista'; return renderTracking(); }
+    var movs = t.movimientos.slice().reverse();
+    var tl = movs.map(function(m,i){
+      var cls = i===0 ? 'current' : 'done';
+      return '<div class="ra-tl-item '+cls+'"><div class="ra-tl-dot"></div>' +
+          '<div class="ra-tl-zona">'+escHtml(m.zona)+(i===0?' · actual':'')+'</div>' +
+          '<div class="ra-tl-meta">'+escHtml(m.fecha)+' '+escHtml(m.hora)+(m.turno?' · Turno '+escHtml(m.turno):'')+' · registrado por '+escHtml(m.usuario)+'</div>' +
+          (m.nota?'<div class="ra-tl-nota">'+escHtml(m.nota)+'</div>':'') +
+        '</div>';
+    }).join('');
+    var opciones = zonas().filter(function(z){ return z!==t.zona; })
+      .map(function(z){ return '<button class="ra-btn ra-btn-outline ra-btn-sm" data-mover-zona="'+escAttr(z)+'">'+escHtml(z)+'</button>'; }).join('');
+
+    return '<div class="ra-topbar"><button class="ra-back" id="btn-track-back">‹ Todos los rollos</button></div>' +
+      '<div class="ra-card">' +
+        '<div class="ra-h1" style="word-break:break-all;">'+escHtml(t.rolloId)+'</div>' +
+        '<div class="ra-zona-actual"><div class="ra-label" style="color:var(--info);">UBICACIÓN ACTUAL</div><div class="z">'+escHtml(t.zona)+'</div>' +
+          '<div class="ra-meta" style="margin-top:4px;">Desde '+escHtml(t.ultimaFecha||'')+' '+escHtml(t.ultimaHora||'')+(t.ultimoTurno?' · Turno '+escHtml(t.ultimoTurno):'')+' · '+escHtml(t.ultimoUsuario||'')+'</div></div>' +
+        '<div class="ra-label">RECORRIDO</div>' +
+        '<div class="ra-tl">'+tl+'</div>' +
       '</div>' +
-      '<button class="ra-btn ra-btn-steel ra-btn-block" id="btn-export">⬇ Exportar a Excel</button>' +
-      items;
+      '<div class="ra-card">' +
+        '<div class="ra-h1" style="font-size:17px;">Registrar movimiento</div>' +
+        '<div class="ra-h2">Selecciona a dónde se está enviando el rollo. Quedará registrado con tu nombre y la hora.</div>' +
+        '<label class="ra-label">NOTA (OPCIONAL)</label>' +
+        '<input class="ra-input" id="mover-nota" placeholder="Ej. trasladado por montacargas 3" autocomplete="off">' +
+        '<div class="ra-grid">'+opciones+'</div>' +
+      '</div>';
+  }
+
+  function moverRollo(rolloIdVal, zona, nota){
+    var t = S.tracking[rolloIdVal];
+    if(!t) return;
+    var now = new Date();
+    t.movimientos.push({zona:zona, usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), ts:now.getTime(), nota:nota||''});
+    t.zona = zona; t.ultimoUsuario = usuarioActual(); t.ultimaFecha = fechaHoy(now); t.ultimaHora = horaAhora(now); t.ultimoTurno = turnoDe(now); t.ultimoTs = now.getTime();
+    try{ set('tracking', S.tracking); }catch(e){ toast('No se pudo guardar el movimiento'); return; }
+    auditar('movimiento', rolloIdVal, 'Movido a '+zona, nota||'');
+    toast('Rollo movido a '+zona);
+    render();
+  }
+
+  function moverLote(ids, zona, nota){
+    var now=new Date(), movidos=0;
+    ids.forEach(function(id){
+      var t=S.tracking[id];
+      if(!t || t.zona===zona) return;
+      t.movimientos.push({zona:zona, usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now),
+        turno:turnoDe(now), ts:now.getTime(), nota:nota||'Movimiento en lote'});
+      t.zona=zona; t.ultimoUsuario=usuarioActual(); t.ultimaFecha=fechaHoy(now);
+      t.ultimaHora=horaAhora(now); t.ultimoTurno=turnoDe(now); t.ultimoTs=now.getTime();
+      movidos++;
+    });
+    if(!movidos){ toast('Esos rollos ya están en '+zona); return; }
+    try{ set('tracking', S.tracking); }catch(e){ toast('No se pudo guardar el movimiento'); return; }
+    auditar('movimiento','('+movidos+' rollos)','Movimiento en lote a '+zona+': '+ids.join(', '), nota||'');
+    S.trackModoSel=false; S.trackSeleccion=[];
+    toast(movidos+' rollo(s) movidos a '+zona);
+    render();
+  }
+
+  function iniciarTracking(rolloIdVal){
+    if(S.tracking[rolloIdVal]) return;
+    var now = new Date();
+    S.tracking[rolloIdVal] = {
+      rolloId:rolloIdVal, zona:ZONA_ORIGEN,
+      ultimoUsuario:usuarioActual(), ultimaFecha:fechaHoy(now), ultimaHora:horaAhora(now), ultimoTurno:turnoDe(now), ultimoTs:now.getTime(),
+      movimientos:[{zona:ZONA_ORIGEN, usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), ts:now.getTime(), nota:'Alta por inspección'}]
+    };
+    try{ set('tracking', S.tracking); }catch(e){}
+  }
+
+  /* ============ HISTORIAL ============ */
+  function restarDias(n){
+    var d=new Date(); d.setDate(d.getDate()-n); return fechaHoy(d);
+  }
+  function pasaFiltroFecha(r){
+    var f=r.fecha||'';
+    if(S.filtroFecha==='Hoy') return f===fechaHoy();
+    if(S.filtroFecha==='Ayer') return f===restarDias(1);
+    if(S.filtroFecha==='7 días') return f>=restarDias(6);
+    if(S.filtroFecha==='Rango'){
+      if(S.filtroDesde && f<S.filtroDesde) return false;
+      if(S.filtroHasta && f>S.filtroHasta) return false;
+      return true;
+    }
+    return true;
+  }
+  function filteredRegistros(){
+    var q=S.filtro.trim().toLowerCase();
+    return S.registros.filter(function(r){
+      if(S.filtroResultado!=='Todos' && r.resultado!==S.filtroResultado) return false;
+      if(S.filtroTurno!=='Todos' && (r.turno||'')!==S.filtroTurno) return false;
+      if(!pasaFiltroFecha(r)) return false;
+      if(!q) return true;
+      return [r.rolloId,r.defecto,r.defectoCode,r.familia,r.inspector,r.ubicacion,r.comentario,r.grado,r.familiaSGF]
+        .filter(Boolean).join(' ').toLowerCase().indexOf(q)!==-1;
+    });
+  }
+
+  /* ---------- Resumen del día ---------- */
+  function resumenHoyCard(){
+    var hoy=fechaHoy();
+    var delDia=S.registros.filter(function(r){ return r.fecha===hoy; });
+    if(!delDia.length){
+      return '<div class="ra-card" style="padding:16px 18px;">' +
+        '<div class="ra-label">RESUMEN DE HOY</div>' +
+        '<div class="ra-meta" style="margin-top:4px;">Todavía no hay rollos capturados hoy.</div></div>';
+    }
+    function conteo(arr,res){ return arr.filter(function(r){ return r.resultado===res; }).length; }
+    var t1=delDia.filter(function(r){ return r.turno==='1'; });
+    var t2=delDia.filter(function(r){ return r.turno==='2'; });
+    var defectos={};
+    delDia.forEach(function(r){
+      if(r.defecto) { var k=r.defectoCode+' '+r.defecto; defectos[k]=(defectos[k]||0)+1; }
+    });
+    var top=Object.keys(defectos).sort(function(a,b){ return defectos[b]-defectos[a]; }).slice(0,3);
+    var topHtml = top.length
+      ? top.map(function(k){ return '<div class="ra-summary-line"><span>'+escHtml(k)+'</span><b>'+defectos[k]+'</b></div>'; }).join('')
+      : '<div class="ra-meta">Sin defectos registrados hoy.</div>';
+    function fila(nombre,arr){
+      if(!arr.length) return '';
+      return '<div class="ra-summary-line"><span>'+nombre+'</span><b>'+arr.length+
+        ' <span style="color:var(--ink-soft);font-weight:400;">('+conteo(arr,'Defecto')+' def · '+conteo(arr,'Scrap')+' scrap)</span></b></div>';
+    }
+    return '<div class="ra-card" style="padding:16px 18px;">' +
+        '<div class="ra-label">RESUMEN DE HOY · '+escHtml(hoy)+'</div>' +
+        '<div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 10px;">' +
+          '<div style="font-size:30px;font-weight:800;letter-spacing:-.02em;">'+delDia.length+'</div>' +
+          '<div class="ra-meta">rollos inspeccionados · '+conteo(delDia,'Conforme')+' conformes</div>' +
+        '</div>' +
+        fila('Turno 1 (19:00–06:59)',t1) + fila('Turno 2 (07:00–18:59)',t2) +
+        '<div class="ra-label" style="margin-top:14px;">DEFECTOS MÁS FRECUENTES</div>' + topHtml +
+      '</div>';
+  }
+
+  function renderHistorial(){
+    var all=S.registros;
+    var c=all.filter(function(r){return r.resultado==='Conforme';}).length;
+    var d=all.filter(function(r){return r.resultado==='Defecto';}).length;
+    var s=all.filter(function(r){return r.resultado==='Scrap';}).length;
+    var regs=filteredRegistros();
+    var filtros=['Todos','Conforme','Defecto','Scrap'].map(function(f){
+      return '<button class="ra-btn ra-btn-sm '+(S.filtroResultado===f?'ra-btn-primary':'ra-btn-outline')+'" data-filtro-res="'+f+'" style="font-size:12.5px;">'+f+'</button>';
+    }).join('');
+    var fechas=['Todas','Hoy','Ayer','7 días','Rango'].map(function(f){
+      return '<button class="ra-zchip'+(S.filtroFecha===f?' on':'')+'" data-filtro-fecha="'+escAttr(f)+'">'+f+'</button>';
+    }).join('');
+    var turnos=['Todos','1','2'].map(function(t){
+      return '<button class="ra-zchip'+(S.filtroTurno===t?' on':'')+'" data-filtro-turno="'+t+'">'+(t==='Todos'?'Todos':'Turno '+t)+'</button>';
+    }).join('');
+    var rango = S.filtroFecha==='Rango'
+      ? '<div class="ra-grid" style="margin-top:10px;">' +
+          '<div><label class="ra-label">DESDE</label><input class="ra-input" type="date" id="filtro-desde" value="'+escAttr(S.filtroDesde)+'" style="margin-bottom:0;"></div>' +
+          '<div><label class="ra-label">HASTA</label><input class="ra-input" type="date" id="filtro-hasta" value="'+escAttr(S.filtroHasta)+'" style="margin-bottom:0;"></div>' +
+        '</div>' : '';
+    var hayFiltro = S.filtroResultado!=='Todos' || S.filtroFecha!=='Todas' || S.filtroTurno!=='Todos' || S.filtro.trim();
+    var items = regs.length ? regs.map(historyItem).join('') :
+      (all.length ? '<div class="ra-empty">Ningún rollo coincide con los filtros.</div>'
+                  : '<div class="ra-empty"><div class="big">▤</div>Aún no hay rollos capturados en este equipo.</div>');
+    return resumenHoyCard() +
+      '<div class="ra-stats">'+stat(all.length,'TOTAL')+stat(c,'CONFORME')+stat(d,'DEFECTO')+stat(s,'SCRAP')+'</div>' +
+      '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-export">Exportar a Excel</button>' +
+      '<div class="ra-card" style="padding:14px;">' +
+        '<input class="ra-input" id="input-filtro" placeholder="Buscar por rollo, defecto, grado o inspector" value="'+escAttr(S.filtro)+'" autocomplete="off">' +
+        '<div class="ra-grid" style="grid-template-columns:repeat(4,1fr);gap:6px;">'+filtros+'</div>' +
+        '<label class="ra-label" style="margin-top:14px;">FECHA</label><div class="ra-zchips">'+fechas+'</div>' + rango +
+        '<label class="ra-label" style="margin-top:14px;">TURNO</label><div class="ra-zchips">'+turnos+'</div>' +
+        (hayFiltro ? '<div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
+          '<span class="ra-meta">'+regs.length+' resultado(s)</span>' +
+          '<button class="ra-link" id="btn-limpiar-filtros">Limpiar filtros</button></div>' : '') +
+      '</div>' + items;
     function stat(n,l){ return '<div class="ra-stat"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
   }
 
   function historyItem(r){
-    var badgeCls = r.resultado==='Conforme'?'conforme':r.resultado==='Defecto'?'defecto':'scrap';
-    var meta = [r.familia, r.defecto, r.variacion, r.ubicacion, r.severidad].filter(Boolean).join(' · ');
-    return '' +
-      '<div class="ra-history-item">' +
-        '<div class="ra-history-top"><span class="ra-history-id">' + escHtml(r.rolloId) + '</span><span class="ra-badge ' + badgeCls + '">' + r.resultado + '</span></div>' +
-        '<div class="ra-history-meta">' + (meta || 'Sin defecto') + '</div>' +
-        '<div class="ra-history-meta">' + (r.fecha||'') + ' ' + (r.hora||'') + ' · ' + escHtml(r.inspector||'') + (r.fotos && r.fotos.length ? ' · 📷 ' + r.fotos.length : '') + '</div>' +
-        '<button class="ra-link" style="margin-top:8px;color:var(--scrap);" data-delete-registro="' + r.id + '">Eliminar</button>' +
+    var cls=r.resultado==='Conforme'?'conforme':r.resultado==='Defecto'?'defecto':'scrap';
+    var meta=[r.familia, r.defectoCode?r.defectoCode+' '+r.defecto:'', r.variacion, r.ubicacion, r.severidad].filter(Boolean).join(' · ');
+    var acero=[r.grado, r.familiaSGF?'SGF '+r.familiaSGF:'', r.familiaDesc].filter(Boolean).join(' · ');
+    var zona = S.tracking[r.rolloId] ? S.tracking[r.rolloId].zona : '';
+    var fotos = (r.fotos||[]).map(function(f,i){ return '<img src="'+f+'" data-foto-reg="'+escAttr(r.id)+'" data-foto-idx="'+i+'" alt="Evidencia">'; }).join('');
+    var ed = (r.ediciones||[]).length;
+    return '<div class="ra-item">' +
+        '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(r.rolloId)+'</span><span class="ra-badge '+cls+'">'+escHtml((r.resultado||'').toUpperCase())+'</span></div>' +
+        '<div class="ra-meta">'+(escHtml(meta)||'Sin defecto')+'</div>' +
+        (acero?'<div class="ra-meta">'+escHtml(acero)+'</div>':'') +
+        '<div class="ra-meta">'+escHtml(r.fecha||'')+' '+escHtml(r.hora||'')+(r.turno?' · Turno '+escHtml(r.turno):'')+' · '+escHtml(r.inspector||'')+(zona?' · '+escHtml(zona):'')+'</div>' +
+        (r.comentario?'<div class="ra-meta" style="margin-top:5px;font-style:italic;">'+escHtml(r.comentario)+'</div>':'') +
+        (ed?'<div class="ra-meta" style="color:var(--defecto);margin-top:4px;">Modificado '+ed+' vez(es)</div>':'') +
+        (fotos?'<div class="ra-photos-mini">'+fotos+'</div>':'') +
+        '<div class="ra-actions">' +
+          '<button class="ra-link" data-edit-registro="'+escAttr(r.id)+'">Modificar</button>' +
+          '<button class="ra-link" data-track-open="'+escAttr(r.rolloId)+'">Ubicación</button>' +
+          '<button class="ra-link danger" data-delete-registro="'+escAttr(r.id)+'">Eliminar</button>' +
+        '</div>' +
       '</div>';
   }
 
-  // ---------- CATALOGO / ADMIN ----------
-  function renderCatalogo(){
-    var v = S.variacionesCat;
-    var variacionSections = FAMILIAS.map(function(f){
-      var withDefects = f.defectos.map(function(d){
-        var list = v[d.code] || [];
-        var tags = list.map(function(item, i){
-          return '<div class="ra-tag">' + escHtml(item) + '<button data-del-var="' + d.code + '" data-idx="' + i + '">✕</button></div>';
-        }).join('');
-        return '<div style="margin-bottom:14px;">' +
-          '<div style="font-size:13.5px;font-weight:700;text-transform:capitalize;margin-bottom:6px;">' + d.code + ' — ' + escHtml(d.name) + '</div>' +
-          '<div class="ra-tag-list">' + (tags || '<span style="font-size:12.5px;color:var(--ink-soft);">Sin variaciones — se omite ese paso</span>') + '</div>' +
-          '<div class="ra-inline-form">' +
-            '<input class="ra-input" placeholder="Nueva variación" id="newvar-' + d.code + '" style="margin-bottom:0;">' +
-            '<button class="ra-small-btn" data-add-var="' + d.code + '">Agregar</button>' +
-          '</div>' +
+  /* ============ AJUSTES ============ */
+  function renderAjustes(){
+    var out='', kb=Math.round(estimateUsage()/1024);
+    out += '<div class="ra-card">' +
+        '<div class="ra-h1">Sesión</div>' +
+        '<div class="ra-h2">'+escHtml(usuarioActual())+(S.isAdmin?'<span class="ra-pill">ADMIN</span>':'')+'</div>' +
+        (S.inspector?'<button class="ra-link" id="btn-change-pin" style="margin-right:22px;">Cambiar mi PIN</button>':'') +
+        '<button class="ra-link danger" id="btn-logout">Cerrar sesión</button>' +
+        '<div class="ra-meta" style="margin-top:10px;">La sesión se cierra sola tras '+MINUTOS_INACTIVIDAD+' minutos sin actividad.</div>' +
+      '</div>';
+    if(S.showChangePin) out += changePinCard();
+
+    out += '<div class="ra-card">' +
+        '<div class="ra-h1">Respaldo</div>' +
+        '<div class="ra-h2">La información vive solo en este equipo. Descarga respaldos con frecuencia. Uso actual: '+kb+' KB.</div>' +
+        '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-backup">Descargar respaldo</button>' +
+        '<label class="ra-btn ra-btn-outline ra-btn-block" style="cursor:pointer;margin-bottom:0;">Restaurar respaldo<input type="file" accept="application/json,.json" id="input-restore" style="display:none;"></label>' +
+      '</div>';
+
+    if(!S.isAdmin){
+      out += '<div class="ra-card">' +
+          '<div class="ra-h1">Panel de administrador</div>' +
+          '<div class="ra-h2">Inspectores, catálogos, zonas y el reporte de movimientos solo los ve el administrador.</div>' +
+          (S.showAdminUnlock ?
+            ('<input class="ra-input" type="password" id="admin-unlock-pass" placeholder="Clave de administrador" autocomplete="off">' +
+             (S.adminUnlockError?'<div class="ra-err">'+escHtml(S.adminUnlockError)+'</div>':'') +
+             '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-admin-unlock-submit">Entrar</button>' +
+             '<button class="ra-link" id="btn-hide-admin-unlock">Cancelar</button>')
+            : '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-show-admin-unlock" style="margin-bottom:0;">Desbloquear con clave</button>') +
         '</div>';
-      }).join('');
-      return '<details><summary class="ra-section-title" style="cursor:pointer;">' + escHtml(f.name) + '</summary>' + withDefects + '</details>';
-    }).join('');
+      return out;
+    }
+    return out + reporteCard() + usersCard() + gradosCard() + zonasCard() +
+           simpleCatalogCard('enrolladores','Enrolladores') + adminPassCard() + variacionesCard() + demoCard();
+  }
 
-    return '' +
-      '<div class="ra-card">' +
-        '<div class="ra-h1">Inspector actual</div>' +
-        '<div class="ra-h2">' + (S.inspector || 'Ninguno seleccionado') + '</div>' +
-        '<button class="ra-link" id="btn-change-inspector">Cambiar inspector</button>' +
-      '</div>' +
-      '<div class="ra-card">' +
-        '<div class="ra-h1">Grados</div>' +
-        '<div class="ra-tag-list">' + (S.catalogs.grados||[]).map(function(g,i){ return '<div class="ra-tag">' + escHtml(g) + '<button data-del-simple="grados" data-idx="'+i+'">✕</button></div>'; }).join('') + '</div>' +
-        '<div class="ra-inline-form"><input class="ra-input" id="new-grado" placeholder="Nuevo grado" style="margin-bottom:0;"><button class="ra-small-btn" data-add-simple="grados">Agregar</button></div>' +
-      '</div>' +
-      '<div class="ra-card">' +
-        '<div class="ra-h1">Enrolladores</div>' +
-        '<div class="ra-tag-list">' + (S.catalogs.enrolladores||[]).map(function(g,i){ return '<div class="ra-tag">' + escHtml(g) + '<button data-del-simple="enrolladores" data-idx="'+i+'">✕</button></div>'; }).join('') + '</div>' +
-        '<div class="ra-inline-form"><input class="ra-input" id="new-enrollador" placeholder="Nuevo enrollador" style="margin-bottom:0;"><button class="ra-small-btn" data-add-simple="enrolladores">Agregar</button></div>' +
-      '</div>' +
-      '<div class="ra-card">' +
-        '<div class="ra-h1">Inspectores</div>' +
-        '<div class="ra-tag-list">' + (S.catalogs.inspectores||[]).map(function(g,i){ return '<div class="ra-tag">' + escHtml(g) + '<button data-del-simple="inspectores" data-idx="'+i+'">✕</button></div>'; }).join('') + '</div>' +
-        '<div class="ra-inline-form"><input class="ra-input" id="new-inspector-cat" placeholder="Nuevo inspector" style="margin-bottom:0;"><button class="ra-small-btn" data-add-simple="inspectores">Agregar</button></div>' +
-      '</div>' +
-      '<div class="ra-card">' +
-        '<div class="ra-h1">Variaciones por defecto</div>' +
-        '<div class="ra-h2">Solo el devanado (593) viene precargado con los datos que diste. Agrega el resto aquí — sin código nuevos ni cambios de nombre, solo variaciones.</div>' +
-        variacionSections +
-      '</div>' +
-      '<div class="ra-card" style="background:#fff7ec;border-color:#F0D9AE;">' +
-        '<div class="ra-h1" style="font-size:15px;">Nota sobre datos compartidos</div>' +
-        '<div class="ra-h2" style="margin-bottom:0;">Los registros y catálogos de esta app se comparten entre todos los inspectores que la usan — así el Excel final junta el trabajo de todo el equipo.</div>' +
+  function reporteCard(){
+    var tipos = ['Todos','creacion','edicion','movimiento','eliminacion'];
+    var etiqueta = {creacion:'Alta', edicion:'Modificación', movimiento:'Movimiento', eliminacion:'Eliminación', Todos:'Todos'};
+    var chips = tipos.map(function(t){
+      return '<button class="ra-btn ra-btn-sm '+(S.reporteFiltro===t?'ra-btn-primary':'ra-btn-outline')+'" data-rep-filtro="'+t+'" style="font-size:12px;">'+etiqueta[t]+'</button>';
+    }).join('');
+    var lista = S.auditoria.filter(function(a){ return S.reporteFiltro==='Todos' || a.tipo===S.reporteFiltro; }).slice(0,60);
+    var items = lista.length ? lista.map(function(a){
+      var color = a.tipo==='eliminacion'?'var(--scrap)':a.tipo==='edicion'?'var(--defecto)':a.tipo==='movimiento'?'var(--info)':'var(--conforme)';
+      return '<div class="ra-item" style="border-left:3px solid '+color+';">' +
+          '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(a.rolloId||'—')+'</span>' +
+          '<span class="ra-meta">'+escHtml(a.fecha)+' '+escHtml(a.hora)+(a.turno?' · T'+escHtml(a.turno):'')+'</span></div>' +
+          '<div class="ra-meta"><b style="color:'+color+';">'+escHtml(etiqueta[a.tipo]||a.tipo)+'</b> · '+escHtml(a.usuario)+'</div>' +
+          (a.detalle?'<div class="ra-meta">'+escHtml(a.detalle)+'</div>':'') +
+          (a.motivo?'<div class="ra-meta" style="font-style:italic;margin-top:4px;">Motivo: '+escHtml(a.motivo)+'</div>':'') +
+        '</div>';
+    }).join('') : '<div class="ra-empty">Sin movimientos registrados todavía.</div>';
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Reporte de movimientos</div>' +
+        '<div class="ra-h2">Historial completo de altas, modificaciones, traslados y eliminaciones. Se muestran los 60 más recientes; el Excel incluye todos.</div>' +
+        '<div class="ra-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;">'+chips+'</div>' +
+        '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-export-auditoria">Exportar reporte a Excel</button>' +
+        items +
       '</div>';
   }
 
-  // ---------- UTIL ----------
-  function escHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-  function escAttr(s){ return escHtml(s); }
+  function gradosCard(){
+    var lista = S.catalogs.grados||[];
+    var porFamilia = {};
+    lista.forEach(function(g){ var k=g.familia||'Sin familia'; (porFamilia[k]=porFamilia[k]||[]).push(g); });
+    var secciones = Object.keys(porFamilia).sort().map(function(k){
+      var tags = porFamilia[k].map(function(g){
+        var i = lista.indexOf(g);
+        return '<div class="ra-tag">'+escHtml(g.grado)+' <span style="color:var(--ink-soft);">SGF '+escHtml(g.sgf||'—')+'</span>' +
+          '<button data-del-grado="'+i+'" aria-label="Quitar">✕</button></div>';
+      }).join('');
+      return '<details><summary class="ra-section-title" style="cursor:pointer;">'+escHtml(k)+' ('+porFamilia[k].length+')</summary>' +
+        '<div class="ra-tag-list">'+tags+'</div></details>';
+    }).join('');
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Grados de acero y SGF</div>' +
+        '<div class="ra-h2">El grado de planchón se toma como grado de acero. Al elegirlo en la captura, el número SGF se llena solo. '+lista.length+' grado(s) cargados.</div>' +
+        (lista.length ? secciones : '<div class="ra-note">Catálogo vacío — impórtalo abajo.</div>') +
+        '<div class="ra-inline-form" style="margin-top:14px;"><input class="ra-input" id="new-grado" placeholder="Grado" style="margin-bottom:0;" autocomplete="off">' +
+          '<input class="ra-input" id="new-grado-sgf" placeholder="SGF" inputmode="numeric" style="margin-bottom:0;max-width:82px;" autocomplete="off"></div>' +
+        '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input" id="new-grado-familia" placeholder="Familia (opcional)" style="margin-bottom:0;" autocomplete="off">' +
+          '<button class="ra-small-btn" id="btn-add-grado">Agregar</button></div>' +
+        '<div class="ra-note" style="margin-top:14px;">Para reemplazar el catálogo, importa un Excel o CSV con tres columnas: grado de planchón, SGF y familia (la tercera es opcional).</div>' +
+        '<label class="ra-btn ra-btn-outline ra-btn-block" style="cursor:pointer;">Importar desde Excel o CSV<input type="file" accept=".xlsx,.xls,.csv" id="input-import-grados" style="display:none;"></label>' +
+        '<button class="ra-link danger" id="btn-clear-grados">Vaciar catálogo de grados</button>' +
+      '</div>';
+  }
 
+  function zonasCard(){
+    var tags=(S.catalogs.zonas||[]).map(function(z,i){
+      var esOrigen = z===ZONA_ORIGEN;
+      return '<div class="ra-tag">'+escHtml(z)+(esOrigen?' <span style="color:var(--ink-soft);font-size:11px;">origen</span>':'')+
+        (esOrigen?'':'<button data-del-zona="'+i+'" aria-label="Quitar">✕</button>')+'</div>';
+    }).join('');
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Zonas de ubicación</div>' +
+        '<div class="ra-h2">Todo rollo nace en «'+ZONA_ORIGEN+'» y desde ahí los inspectores lo mueven a cualquiera de estas zonas.</div>' +
+        '<div class="ra-tag-list">'+tags+'</div>' +
+        '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input" id="new-zona" placeholder="Nueva zona" style="margin-bottom:0;" autocomplete="off"><button class="ra-small-btn" id="btn-add-zona">Agregar</button></div>' +
+      '</div>';
+  }
+
+  function changePinCard(){
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Cambiar mi PIN</div>' +
+        '<label class="ra-label">PIN ACTUAL</label><input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="6" id="cp-current">' +
+        '<label class="ra-label">PIN NUEVO (4 A 6 DÍGITOS)</label><input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="6" id="cp-new">' +
+        (S.changePinError?'<div class="ra-err">'+escHtml(S.changePinError)+'</div>':'') +
+        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-change-pin-submit">Guardar nuevo PIN</button>' +
+        '<button class="ra-link" id="btn-cancel-change-pin">Cancelar</button>' +
+      '</div>';
+  }
+
+  function usersCard(){
+    var rows = S.usuarios.map(function(u,i){
+      var editing = S.editingUserIdx===i;
+      var count = S.registros.filter(function(r){ return r.inspector===u.nombre; }).length;
+      return '<div class="ra-item">' +
+          '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(u.nombre)+'</span><button class="ra-link danger" data-del-usuario="'+i+'">Eliminar</button></div>' +
+          '<div class="ra-meta">'+count+' inspecciones capturadas</div>' +
+          (editing
+            ? '<div class="ra-inline-form" style="margin-top:9px;margin-bottom:0;"><input class="ra-input ra-pin-input" type="tel" inputmode="numeric" maxlength="6" id="edit-pin-input" placeholder="PIN" style="margin-bottom:0;"><button class="ra-small-btn" data-save-pin="'+i+'">Guardar</button></div>'
+            : '<button class="ra-link" data-edit-usuario="'+i+'">Cambiar PIN</button>') +
+        '</div>';
+    }).join('');
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Inspectores autorizados</div>' +
+        '<div class="ra-h2">Solo estas personas pueden entrar a capturar en este equipo.</div>' +
+        (rows || '<div class="ra-h2">Todavía no agregas a nadie.</div>') +
+        '<div class="ra-inline-form" style="margin-top:14px;"><input class="ra-input" id="new-usuario-nombre" placeholder="Nombre del inspector" style="margin-bottom:0;" autocomplete="off"></div>' +
+        '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input ra-pin-input" type="tel" inputmode="numeric" maxlength="6" id="new-usuario-pin" placeholder="PIN" style="margin-bottom:0;"><button class="ra-small-btn" id="btn-add-usuario">Agregar</button></div>' +
+      '</div>';
+  }
+
+  function adminPassCard(){
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Clave de administrador</div>' +
+        '<div class="ra-h2">Cámbiala en cuanto entres. Clave por defecto: '+escHtml(DEFAULT_ADMIN_PASS)+'</div>' +
+        '<input class="ra-input" type="password" id="new-admin-pass" placeholder="Nueva clave" autocomplete="off">' +
+        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-save-admin-pass" style="margin-bottom:0;">Actualizar clave</button>' +
+      '</div>';
+  }
+
+  function simpleCatalogCard(kind,title){
+    var tags=(S.catalogs[kind]||[]).map(function(g,i){ return '<div class="ra-tag">'+escHtml(g)+'<button data-del-simple="'+kind+'" data-idx="'+i+'" aria-label="Quitar">✕</button></div>'; }).join('');
+    return '<div class="ra-card"><div class="ra-h1">'+title+'</div>' +
+        '<div class="ra-tag-list">'+(tags||'<span style="font-size:12.5px;color:var(--ink-soft);">Vacío</span>')+'</div>' +
+        '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input" id="new-'+kind+'" placeholder="Agregar" style="margin-bottom:0;" autocomplete="off"><button class="ra-small-btn" data-add-simple="'+kind+'">Agregar</button></div>' +
+      '</div>';
+  }
+
+  function variacionesCard(){
+    var v=S.variacionesCat;
+    var secciones = FAMILIAS.map(function(f){
+      var cuerpo = f.defectos.map(function(d){
+        var list=v[d.code]||[];
+        var tags=list.map(function(item,i){ return '<div class="ra-tag">'+escHtml(item)+'<button data-del-var="'+escAttr(d.code)+'" data-idx="'+i+'" aria-label="Quitar">✕</button></div>'; }).join('');
+        return '<div style="margin-bottom:18px;">' +
+            '<div style="font-size:13.5px;font-weight:700;margin-bottom:7px;">'+escHtml(d.code)+' — '+escHtml(d.name)+'</div>' +
+            '<div class="ra-tag-list">'+(tags||'<span style="font-size:12.5px;color:var(--ink-soft);">Sin variaciones — ese paso se omite</span>')+'</div>' +
+            '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input" placeholder="Nueva variación" data-var-input="'+escAttr(d.code)+'" style="margin-bottom:0;" autocomplete="off"><button class="ra-small-btn" data-add-var="'+escAttr(d.code)+'">Agregar</button></div>' +
+          '</div>';
+      }).join('');
+      return '<details><summary class="ra-section-title" style="cursor:pointer;">'+escHtml(f.name)+'</summary>'+cuerpo+'</details>';
+    }).join('');
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Variaciones por defecto</div>' +
+        '<div class="ra-h2">Si un defecto no tiene variaciones, ese paso se salta durante la captura.</div>' + secciones +
+      '</div>';
+  }
+
+  function demoCard(){
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Herramientas de demostración</div>' +
+        '<div class="ra-h2">Carga inspectores y rollos de ejemplo para presentar la app, o borra todo para dejarla limpia.</div>' +
+        '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-demo">Cargar datos de ejemplo</button>' +
+        '<button class="ra-btn ra-btn-scrap ra-btn-block" id="btn-wipe" style="margin-bottom:0;">Borrar todos los datos</button>' +
+      '</div>';
+  }
+
+  /* ============ FOTOS ============ */
   function compressImage(file){
-    return new Promise(function(resolve, reject){
-      var reader = new FileReader();
-      reader.onload = function(e){
-        var img = new Image();
-        img.onload = function(){
-          var maxW = 900;
-          var scale = Math.min(1, maxW / img.width);
-          var canvas = document.createElement('canvas');
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
-          var ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
+    return new Promise(function(resolve,reject){
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var img=new Image();
+        img.onload=function(){
+          var maxW=900, scale=Math.min(1,maxW/img.width);
+          var c=document.createElement('canvas');
+          c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+          c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+          resolve(c.toDataURL('image/jpeg',0.55));
         };
-        img.onerror = reject;
-        img.src = e.target.result;
+        img.onerror=reject; img.src=e.target.result;
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      reader.onerror=reject; reader.readAsDataURL(file);
     });
   }
 
-  // ---------- SCANNER ----------
-  function openScanner(){
-    if(!('BarcodeDetector' in window)){
-      toast('Escaneo no disponible en este dispositivo — captura el ID manualmente');
-      return;
-    }
-    var modal = el('<div class="ra-video-modal"><button class="close-scan" id="scan-close">✕</button><video autoplay playsinline muted></video><div class="hint">Apunta al código de barras o QR del rollo</div></div>');
-    document.body.appendChild(modal);
-    var video = modal.querySelector('video');
-    var stream = null;
-    var stop = false;
-    navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(function(s){
-      stream = s;
-      video.srcObject = s;
-      var detector = new window.BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']});
-      function loop(){
-        if(stop) return;
-        detector.detect(video).then(function(codes){
-          if(codes && codes.length){
-            S.rolloId = codes[0].rawValue;
-            closeScanner();
-            render();
-          } else if(!stop){
-            requestAnimationFrame(loop);
-          }
-        }).catch(function(){ if(!stop) requestAnimationFrame(loop); });
-      }
-      requestAnimationFrame(loop);
-    }).catch(function(){
-      toast('No se pudo acceder a la cámara — captura el ID manualmente');
-      modal.remove();
-    });
-    function closeScanner(){
-      stop = true;
-      if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
-      modal.remove();
-    }
-    modal.querySelector('#scan-close').addEventListener('click', closeScanner);
+  function abrirFoto(src, meta){
+    var lb = el('<div class="ra-lightbox"><button class="lb-close" aria-label="Cerrar">✕</button>' +
+      '<img src="'+src+'" alt="Evidencia"><div class="lb-meta">'+escHtml(meta||'')+'</div></div>');
+    document.body.appendChild(lb);
+    function cerrar(){ if(lb.parentNode) lb.remove(); }
+    lb.querySelector('.lb-close').addEventListener('click', cerrar);
+    lb.addEventListener('click', function(e){ if(e.target===lb) cerrar(); });
   }
 
-  // ---------- EXPORT TO EXCEL ----------
-  function loadSheetJS(){
-    return new Promise(function(resolve, reject){
-      if(window.XLSX) return resolve();
-      var s = document.createElement('script');
-      s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
-      s.onload = resolve;
-      s.onerror = reject;
+  /* ============ QR ============ */
+  function aplicarIdEscaneado(valor){
+    var v = String(valor||'').trim().toUpperCase().replace(/\s+/g,'');
+    var m = v.match(new RegExp('^'+ID_PREFIX+'(\\d{'+ID_MID_LEN+'})'+ID_SUFFIX+'$'));
+    if(m){ S.idModo='guiado'; S.idMid=m[1]; }
+    else { S.idModo='libre'; S.idFull=v; }
+  }
+
+  function loadScript(src){
+    return new Promise(function(resolve,reject){
+      var s=document.createElement('script');
+      s.src=src; s.onload=resolve; s.onerror=reject;
       document.head.appendChild(s);
     });
   }
+  function loadJsQR(){ return window.jsQR ? Promise.resolve() : loadScript("https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"); }
+  function loadSheetJS(){ return window.XLSX ? Promise.resolve() : loadScript("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"); }
 
-  async function exportExcel(){
-    toast('Preparando archivo…');
-    try{ await loadSheetJS(); }catch(e){ toast('No se pudo cargar el generador de Excel'); return; }
-    var XLSX = window.XLSX;
+  function openScanner(){
+    if(isInsecureContext()){ toast('La cámara requiere https — captura el ID manualmente'); return; }
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ toast('Este navegador no permite usar la cámara'); return; }
+    loadJsQR().then(function(){
+      var modal=el('<div class="ra-video-modal"><button class="close-scan" aria-label="Cerrar">✕</button><video autoplay playsinline muted></video><div class="ra-scan-frame"></div><div class="hint">Apunta al código QR del rollo</div></div>');
+      document.body.appendChild(modal);
+      var video=modal.querySelector('video');
+      var canvas=document.createElement('canvas');
+      var ctx=canvas.getContext('2d',{willReadFrequently:true});
+      var stream=null, stop=false, torchOn=false;
+      navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}).then(function(s){
+        stream=s; video.srcObject=s; video.play().catch(function(){});
+        var track=s.getVideoTracks()[0];
+        var caps=(track && track.getCapabilities)?(track.getCapabilities()||{}):{};
+        if(caps.torch){
+          var tb=el('<button class="torch-btn" aria-label="Linterna">☀</button>');
+          modal.appendChild(tb);
+          tb.addEventListener('click',function(){
+            torchOn=!torchOn;
+            track.applyConstraints({advanced:[{torch:torchOn}]}).catch(function(){});
+            tb.classList.toggle('on',torchOn);
+          });
+        }
+        requestAnimationFrame(tick);
+      }).catch(function(){ toast('No se pudo abrir la cámara — revisa los permisos'); cerrar(); });
 
-    var registroRows = S.registros.slice().reverse().map(function(r){
-      return {
-        'Fecha': r.fecha||'', 'Hora': r.hora||'', 'ID Rollo': r.rolloId||'',
-        'Resultado': r.resultado||'', 'Familia': r.familia||'', 'Código defecto': r.defectoCode||'',
-        'Defecto': r.defecto||'', 'Variación': r.variacion||'', 'Ubicación': r.ubicacion||'',
-        'Severidad': r.severidad||'', 'Inspector': r.inspector||'',
-        'Grado': r.grado||'', 'Espesor': r.espesor||'', 'Ancho': r.ancho||'', 'Peso': r.peso||'',
-        'Fecha producción': r.fechaProduccion||'', 'Enrollador': r.enrollador||'',
-        'Fotos (cantidad)': (r.fotos||[]).length, 'Comentario': r.comentario||''
-      };
-    });
-    var wsRegistro = XLSX.utils.json_to_sheet(registroRows);
-
-    var catDefectos = [];
-    FAMILIAS.forEach(function(f){ f.defectos.forEach(function(d){ catDefectos.push({'Código':d.code,'Familia':f.name,'Defecto':d.name}); }); });
-    var wsDefectos = XLSX.utils.json_to_sheet(catDefectos);
-
-    var catVariaciones = [];
-    Object.keys(S.variacionesCat).forEach(function(code){
-      (S.variacionesCat[code]||[]).forEach(function(v){ catVariaciones.push({'Código de defecto':code, 'Variación':v}); });
-    });
-    var wsVariaciones = XLSX.utils.json_to_sheet(catVariaciones);
-
-    var wsUbicaciones = XLSX.utils.json_to_sheet(UBICACIONES.map(function(u,i){ return {'Código':i+1,'Ubicación':u}; }));
-    var wsInspectores = XLSX.utils.json_to_sheet((S.catalogs.inspectores||[]).map(function(n,i){ return {'ID':i+1,'Nombre':n}; }));
-
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, wsRegistro, 'REGISTRO');
-    XLSX.utils.book_append_sheet(wb, wsDefectos, 'CATALOGO_DEFECTOS');
-    XLSX.utils.book_append_sheet(wb, wsVariaciones, 'CATALOGO_VARIACIONES');
-    XLSX.utils.book_append_sheet(wb, wsUbicaciones, 'CATALOGO_UBICACIONES');
-    XLSX.utils.book_append_sheet(wb, wsInspectores, 'CATALOGO_INSPECTORES');
-
-    XLSX.writeFile(wb, 'inspeccion_rollos_' + (new Date().toISOString().slice(0,10)) + '.xlsx');
-    toast('Excel generado');
+      function tick(){
+        if(stop) return;
+        if(video.readyState===video.HAVE_ENOUGH_DATA && video.videoWidth){
+          var scale=Math.min(1,480/video.videoWidth);
+          canvas.width=Math.max(1,Math.round(video.videoWidth*scale));
+          canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
+          ctx.drawImage(video,0,0,canvas.width,canvas.height);
+          try{
+            var d=ctx.getImageData(0,0,canvas.width,canvas.height);
+            var code=window.jsQR(d.data,d.width,d.height,{inversionAttempts:'attemptBoth'});
+            if(code && code.data && code.data.trim()){
+              aplicarIdEscaneado(code.data);
+              if(navigator.vibrate) navigator.vibrate(60);
+              cerrar(); render(); toast(rolloId());
+              return;
+            }
+          }catch(e){}
+        }
+        requestAnimationFrame(tick);
+      }
+      function cerrar(){
+        stop=true;
+        if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
+        if(modal.parentNode) modal.remove();
+      }
+      modal.querySelector('.close-scan').addEventListener('click',cerrar);
+    }).catch(function(){ toast('No se pudo cargar el lector de QR — revisa tu conexión'); });
   }
 
-  // ---------- EVENTS ----------
-  function bindEvents(){
-    // nav
-    root.querySelectorAll('.ra-nav [data-tab]').forEach(function(b){
-      b.addEventListener('click', function(){ S.tab = b.getAttribute('data-tab'); render(); });
-    });
-
-    var inspectorBtn = root.querySelector('#btn-inspector');
-    if(inspectorBtn) inspectorBtn.addEventListener('click', function(){ S.tab='catalogo'; render(); });
-
-    // inspector gate
-    root.querySelectorAll('[data-pick-inspector]').forEach(function(b){
-      b.addEventListener('click', async function(){
-        S.inspector = b.getAttribute('data-pick-inspector');
-        await setCurrentInspector(S.inspector);
-        render();
-      });
-    });
-    var addInspBtn = root.querySelector('#btn-add-inspector');
-    if(addInspBtn) addInspBtn.addEventListener('click', async function(){
-      var input = root.querySelector('#new-inspector');
-      var name = input.value.trim();
-      if(!name) return;
-      S.catalogs.inspectores.push(name);
-      await saveCatalogs(S.catalogs);
-      S.inspector = name;
-      await setCurrentInspector(name);
-      render();
-    });
-
-    // id screen
-    var idInput = root.querySelector('#input-rollo-id');
-    if(idInput) idInput.addEventListener('input', function(){ S.rolloId = idInput.value; renderIdOnly(); });
-    var scanBtn = root.querySelector('#btn-scan');
-    if(scanBtn) scanBtn.addEventListener('click', openScanner);
-    var contBtn = root.querySelector('#btn-continue-id');
-    if(contBtn) contBtn.addEventListener('click', function(){
-      collectManualFields();
-      S.step = 'resultado';
-      render();
-    });
-
-    // resultado
-    root.querySelectorAll('[data-resultado]').forEach(function(b){
-      b.addEventListener('click', function(){
-        S.resultado = b.getAttribute('data-resultado');
-        if(S.resultado === 'Conforme'){ guardarRegistro(); return; }
-        S.step = 'familia';
-        render();
-      });
-    });
-
-    // familia
-    root.querySelectorAll('[data-familia]').forEach(function(b){
-      b.addEventListener('click', function(){
-        var fid = b.getAttribute('data-familia');
-        S.familia = FAMILIAS.filter(function(f){ return f.id===fid; })[0];
-        S.step = 'defecto';
-        render();
-      });
-    });
-
-    // defecto
-    root.querySelectorAll('[data-defecto]').forEach(function(b){
-      b.addEventListener('click', function(){
-        var code = b.getAttribute('data-defecto');
-        S.defecto = S.familia.defectos.filter(function(d){ return d.code===code; })[0];
-        var vs = currentDefectVariaciones();
-        S.step = (vs && vs.length) ? 'variacion' : 'ubicacion';
-        render();
-      });
-    });
-
-    // variacion
-    root.querySelectorAll('[data-variacion]').forEach(function(b){
-      b.addEventListener('click', function(){
-        S.variacion = b.getAttribute('data-variacion');
-        S.step = 'ubicacion';
-        render();
-      });
-    });
-
-    // ubicacion
-    root.querySelectorAll('[data-ubicacion]').forEach(function(b){
-      b.addEventListener('click', function(){
-        S.ubicacion = b.getAttribute('data-ubicacion');
-        S.step = (S.resultado === 'Defecto') ? 'severidad' : 'evidencia';
-        render();
-      });
-    });
-
-    // severidad
-    root.querySelectorAll('[data-severidad]').forEach(function(b){
-      b.addEventListener('click', function(){
-        S.severidad = b.getAttribute('data-severidad');
-        S.step = 'evidencia';
-        render();
-      });
-    });
-
-    // back
-    root.querySelectorAll('[data-goto]').forEach(function(b){
-      b.addEventListener('click', function(){ S.step = b.getAttribute('data-goto'); render(); });
-    });
-
-    // evidencia
-    var fotoInput = root.querySelector('#input-foto');
-    if(fotoInput) fotoInput.addEventListener('change', async function(){
-      if(fotoInput.files && fotoInput.files[0]){
+  /* ============ IMPORTAR GRADOS ============ */
+  function importarGrados(file){
+    var nombre = file.name.toLowerCase();
+    if(nombre.slice(-4)==='.csv'){
+      var reader=new FileReader();
+      reader.onload=function(e){ procesarFilasGrados(parseCSV(e.target.result)); };
+      reader.readAsText(file);
+      return;
+    }
+    loadSheetJS().then(function(){
+      var reader=new FileReader();
+      reader.onload=function(e){
         try{
-          var dataUrl = await compressImage(fotoInput.files[0]);
-          S.fotos.push(dataUrl);
-          render();
-        }catch(e){ toast('No se pudo procesar la foto'); }
+          var wb = window.XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          var filas = window.XLSX.utils.sheet_to_json(ws, {header:1, blankrows:false});
+          procesarFilasGrados(filas);
+        }catch(err){ toast('No se pudo leer el archivo'); }
+      };
+      reader.readAsArrayBuffer(file);
+    }).catch(function(){ toast('No se pudo cargar el lector de Excel'); });
+  }
+
+  function parseCSV(texto){
+    return texto.split(/\r?\n/).filter(function(l){ return l.trim(); })
+      .map(function(l){ return l.split(/[;,\t]/).map(function(c){ return c.trim().replace(/^"|"$/g,''); }); });
+  }
+
+  function procesarFilasGrados(filas){
+    if(!filas || !filas.length){ toast('El archivo está vacío'); return; }
+    var mapa = {};
+    (S.catalogs.grados||[]).forEach(function(g){ mapa[g.grado] = {sgf:g.sgf||'', familia:g.familia||''}; });
+    var añadidos = 0;
+    filas.forEach(function(f, i){
+      if(!f || f.length < 2) return;
+      var grado = String(f[0]==null?'':f[0]).trim();
+      var sgf = String(f[1]==null?'':f[1]).trim();
+      var familia = f.length > 2 ? String(f[2]==null?'':f[2]).trim() : '';
+      if(!grado) return;
+      if(i===0 && /grado|planch/i.test(grado)) return; // encabezado
+      if(mapa[grado] === undefined) añadidos++;
+      mapa[grado] = {sgf:sgf, familia:familia};
+    });
+    S.catalogs.grados = Object.keys(mapa).sort().map(function(g){ return {grado:g, sgf:mapa[g].sgf, familia:mapa[g].familia}; });
+    try{ set('catalogs', S.catalogs); }catch(e){ toast('No se pudo guardar el catálogo'); return; }
+    auditar('edicion','', 'Importación de catálogo de grados: '+S.catalogs.grados.length+' registros', '');
+    toast(añadidos+' grados nuevos · '+S.catalogs.grados.length+' en total');
+    render();
+  }
+
+  /* ============ EXCEL ============ */
+  function exportExcel(){
+    if(!S.registros.length){ toast('No hay registros que exportar'); return; }
+    toast('Preparando archivo…');
+    loadSheetJS().then(function(){
+      var XLSX=window.XLSX;
+      var rows=S.registros.slice().reverse().map(function(r){
+        var t = S.tracking[r.rolloId];
+        return {
+          'Fecha':r.fecha||'','Hora':r.hora||'','Turno':r.turno||'','ID Rollo':r.rolloId||'',
+          'Resultado':r.resultado||'','Familia defecto':r.familia||'','Código defecto':r.defectoCode||'',
+          'Defecto':r.defecto||'','Variación':r.variacion||'','Ubicación defecto':r.ubicacion||'',
+          'Severidad':r.severidad||'','Inspector':r.inspector||'',
+          'Grado de acero':r.grado||'','Familia SGF':r.familiaSGF||'','Familia':r.familiaDesc||'',
+          'Espesor (mm)':r.espesor||'','Ancho (mm)':r.ancho||'','Peso (kg)':r.peso||'',
+          'Fecha producción':r.fechaProduccion||'','Enrollador':r.enrollador||'',
+          'Zona actual':t?t.zona:'', 'Movimientos':t?t.movimientos.length:0,
+          'Modificaciones':(r.ediciones||[]).length,
+          'Fotos (cantidad)':(r.fotos||[]).length,'Comentario':r.comentario||''
+        };
+      });
+      var ws=XLSX.utils.json_to_sheet(rows);
+      ws['!cols']=Object.keys(rows[0]).map(function(k){ return {wch:Math.max(12,k.length+2)}; });
+
+      var movs=[];
+      Object.keys(S.tracking).forEach(function(k){
+        S.tracking[k].movimientos.forEach(function(m,i){
+          movs.push({'ID Rollo':k,'Paso':i+1,'Zona':m.zona,'Fecha':m.fecha,'Hora':m.hora,'Turno':m.turno||'','Usuario':m.usuario,'Nota':m.nota||''});
+        });
+      });
+      var ediciones=[];
+      S.registros.forEach(function(r){
+        (r.ediciones||[]).forEach(function(ed,i){
+          ediciones.push({'ID Rollo':r.rolloId,'N.º':i+1,'Fecha':ed.fecha,'Hora':ed.hora,'Turno':ed.turno||'','Usuario':ed.usuario,
+            'Cambios':ed.cambios,'Motivo':ed.motivo});
+        });
+      });
+      var audit=S.auditoria.map(function(a){
+        return {'Fecha':a.fecha,'Hora':a.hora,'Turno':a.turno||'','Usuario':a.usuario,'Tipo':a.tipo,'ID Rollo':a.rolloId,'Detalle':a.detalle,'Motivo':a.motivo};
+      });
+      var cat=[]; FAMILIAS.forEach(function(f){ f.defectos.forEach(function(d){ cat.push({'Código':d.code,'Familia':f.name,'Defecto':d.name}); }); });
+      var grados=(S.catalogs.grados||[]).map(function(g){ return {'Grado Planchón':g.grado,'SGF':g.sgf||'','Familia':g.familia||''}; });
+
+      var wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,'REGISTRO');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(movs.length?movs:[{'ID Rollo':''}]),'MOVIMIENTOS');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ediciones.length?ediciones:[{'ID Rollo':''}]),'MODIFICACIONES');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(audit.length?audit:[{'Fecha':''}]),'AUDITORIA');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(cat),'CATALOGO_DEFECTOS');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(grados.length?grados:[{'Grado Planchón':'','SGF':'','Familia':''}]),'CATALOGO_GRADOS');
+      XLSX.writeFile(wb,'inspeccion_rollos_'+fechaHoy()+'.xlsx');
+      toast('Excel generado');
+    }).catch(function(){ toast('No se pudo cargar el generador de Excel'); });
+  }
+
+  function exportAuditoria(){
+    if(!S.auditoria.length){ toast('No hay movimientos que exportar'); return; }
+    toast('Preparando reporte…');
+    loadSheetJS().then(function(){
+      var XLSX=window.XLSX;
+      var rows=S.auditoria.map(function(a){
+        return {'Fecha':a.fecha,'Hora':a.hora,'Turno':a.turno||'','Usuario':a.usuario,'Tipo':a.tipo,'ID Rollo':a.rolloId,'Detalle':a.detalle,'Motivo':a.motivo};
+      });
+      var ws=XLSX.utils.json_to_sheet(rows);
+      ws['!cols']=[{wch:12},{wch:8},{wch:7},{wch:20},{wch:14},{wch:18},{wch:52},{wch:44}];
+      var wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,'REPORTE_MOVIMIENTOS');
+      XLSX.writeFile(wb,'reporte_movimientos_'+fechaHoy()+'.xlsx');
+      toast('Reporte generado');
+    }).catch(function(){ toast('No se pudo cargar el generador de Excel'); });
+  }
+
+  /* ============ RESPALDO ============ */
+  function downloadBackup(){
+    var data={version:2,exportado:new Date().toISOString(),usuarios:S.usuarios,adminPassword:S.adminPassword,
+      catalogs:S.catalogs,variaciones:S.variacionesCat,registros:S.registros,rollosMaster:S.rollosMaster,
+      tracking:S.tracking,auditoria:S.auditoria};
+    var blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='respaldo_inspeccion_'+fechaHoy()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); },3000);
+    toast('Respaldo descargado');
+  }
+
+  function restoreBackup(file){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var d=safeParse(e.target.result,null);
+      if(!d || !d.registros){ toast('El archivo no es un respaldo válido'); return; }
+      if(!confirm('Esto reemplazará TODOS los datos de este equipo con los del respaldo. ¿Continuar?')) return;
+      S.usuarios=d.usuarios||[]; S.adminPassword=d.adminPassword||DEFAULT_ADMIN_PASS;
+      S.catalogs=migrarGrados(d.catalogs||{}); S.variacionesCat=d.variaciones||S.variacionesCat;
+      S.registros=d.registros||[]; S.rollosMaster=d.rollosMaster||{};
+      S.tracking=d.tracking||{}; S.auditoria=d.auditoria||[];
+      try{ persistAll(); toast('Respaldo restaurado'); }catch(err){ toast('No se pudo guardar — espacio insuficiente'); }
+      render();
+    };
+    reader.readAsText(file);
+  }
+
+  /* ============ EVENTOS ============ */
+  function on(sel,ev,fn){ var n=root.querySelector(sel); if(n) n.addEventListener(ev,fn); }
+  function each(sel,fn){ root.querySelectorAll(sel).forEach(fn); }
+
+  function bindEvents(){
+    each('.ra-nav [data-tab]',function(b){
+      b.addEventListener('click',function(){
+        S.tab=b.getAttribute('data-tab');
+        if(S.tab!=='rollos'){ S.trackVista='lista'; S.trackRollo=null; }
+        render();
+      });
+    });
+    on('#btn-user','click',function(){ S.tab='ajustes'; render(); });
+
+    /* acceso */
+    each('[data-pick-user]',function(b){
+      b.addEventListener('click',function(){
+        S.loginPickedUser=b.getAttribute('data-pick-user'); S.loginStep='pin'; S.loginError='';
+        render(); setTimeout(function(){ var i=root.querySelector('#login-pin-input'); if(i) i.focus(); },50);
+      });
+    });
+    on('#btn-login-back','click',function(){ S.loginStep='pick'; S.loginPickedUser=null; S.loginError=''; render(); });
+    function doLogin(){
+      var i=root.querySelector('#login-pin-input');
+      var pin=i?i.value.trim():'';
+      var u=S.usuarios.filter(function(x){ return x.nombre===S.loginPickedUser; })[0];
+      if(u && u.pin===pin){
+        var nombre = S.loginPickedUser;
+        S.inspector=nombre;
+        try{ set('sesion',nombre); }catch(e){}
+        S.loginStep='pick'; S.loginPickedUser=null; S.loginError=''; S.tab='captura';
+        mostrarBienvenida(nombre);
+        render();
+      } else { S.loginError='PIN incorrecto'; render(); sacudir('.ra-gate-card'); }
+    }
+    on('#btn-login-submit','click',doLogin);
+    on('#login-pin-input','keydown',function(e){ if(e.key==='Enter') doLogin(); });
+
+    on('#btn-show-admin-unlock','click',function(){ S.showAdminUnlock=true; S.adminUnlockError=''; render(); });
+    on('#btn-hide-admin-unlock','click',function(){ S.showAdminUnlock=false; render(); });
+    function doAdmin(){
+      var i=root.querySelector('#admin-unlock-pass');
+      if(i && i.value===S.adminPassword){
+        S.isAdmin=true; S.showAdminUnlock=false; S.adminUnlockError='';
+        if(!S.inspector) mostrarBienvenida('Administrador');
+        render();
+      } else { S.adminUnlockError='Clave incorrecta'; render(); sacudir('.ra-gate-card'); }
+    }
+    on('#btn-admin-unlock-submit','click',doAdmin);
+    on('#admin-unlock-pass','keydown',function(e){ if(e.key==='Enter') doAdmin(); });
+
+    /* ID */
+    var mid=root.querySelector('#input-id-mid');
+    if(mid){
+      mid.addEventListener('input',function(){
+        S.idMid = mid.value.replace(/\D/g,'').slice(0,ID_MID_LEN);
+        refreshIdScreen('#input-id-mid');
+      });
+      mid.addEventListener('keydown',function(e){
+        if(e.key==='Enter'){
+          if(idValido()){ collectManualFields(); S.step='resultado'; render(); }
+          else toast('El ID debe llevar exactamente '+ID_MID_LEN+' dígitos');
+        }
+      });
+    }
+    var full=root.querySelector('#input-id-full');
+    if(full){
+      full.addEventListener('input',function(){ S.idFull=full.value; refreshIdScreen('#input-id-full'); });
+      full.addEventListener('keydown',function(e){ if(e.key==='Enter' && idValido()){ collectManualFields(); S.step='resultado'; render(); } });
+    }
+    var inGrado=root.querySelector('#field-grado');
+    if(inGrado){
+      inGrado.addEventListener('input',function(){
+        S.gradoQuery = inGrado.value;
+        S.rolloData.grado = '';
+        S.gradoAbierto = true;
+        refreshIdScreen('#field-grado');
+      });
+      inGrado.addEventListener('focus',function(){
+        if(!S.rolloData.grado){ S.gradoAbierto = true; refreshIdScreen('#field-grado'); }
+      });
+      inGrado.addEventListener('keydown',function(e){
+        if(e.key==='Enter'){
+          e.preventDefault();
+          var opt=root.querySelector('[data-pick-grado]');
+          if(opt) elegirGrado(opt.getAttribute('data-pick-grado'));
+        }
+        if(e.key==='Escape'){ S.gradoAbierto=false; refreshIdScreen('#field-grado'); }
+      });
+    }
+    each('[data-pick-grado]',function(b){
+      b.addEventListener('mousedown',function(ev){ ev.preventDefault(); });
+      b.addEventListener('click',function(){ elegirGrado(b.getAttribute('data-pick-grado')); });
+    });
+    on('#btn-clear-grado','click',function(){
+      S.rolloData.grado=''; S.rolloData.familiaSGF=''; S.gradoQuery=''; S.gradoAbierto=true;
+      refreshIdScreen('#field-grado');
+    });
+    on('#btn-modo-libre','click',function(){ S.idModo='libre'; S.idFull = idValido()? rolloId() : ''; render(); });
+    on('#btn-modo-guiado','click',function(){
+      S.idModo='guiado';
+      var m = S.idFull.toUpperCase().match(new RegExp('^'+ID_PREFIX+'(\\d{'+ID_MID_LEN+'})'+ID_SUFFIX+'$'));
+      S.idMid = m ? m[1] : '';
+      render();
+    });
+    on('#btn-scan','click',openScanner);
+    on('#btn-continue-id','click',function(){
+      if(!idValido()){ toast('El ID debe llevar exactamente '+ID_MID_LEN+' dígitos'); sacudir('.ra-idbox'); return; }
+      collectManualFields(); S.step='resultado'; render();
+    });
+
+    each('[data-resultado]',function(b){
+      b.addEventListener('click',function(){
+        S.resultado=b.getAttribute('data-resultado');
+        S.step = (S.resultado==='Conforme') ? 'confirmar' : 'familia';
+        render();
+      });
+    });
+    each('[data-familia]',function(b){
+      function pick(){ S.familia=FAMILIAS.filter(function(f){ return f.id===b.getAttribute('data-familia'); })[0]; S.step='defecto'; render(); }
+      b.addEventListener('click',pick);
+      b.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); } });
+    });
+    each('[data-defecto]',function(b){
+      function pick(){
+        var code=b.getAttribute('data-defecto');
+        S.defecto=S.familia.defectos.filter(function(d){ return d.code===code; })[0];
+        var v=currentDefectVariaciones();
+        S.step=(v && v.length)?'variacion':'ubicacion'; render();
+      }
+      b.addEventListener('click',pick);
+      b.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); } });
+    });
+    each('[data-variacion]',function(b){
+      function pick(){ S.variacion=b.getAttribute('data-variacion'); S.step='ubicacion'; render(); }
+      b.addEventListener('click',pick);
+      b.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); } });
+    });
+    each('[data-ubicacion]',function(b){
+      b.addEventListener('click',function(){
+        S.ubicacion=b.getAttribute('data-ubicacion');
+        S.step=(S.resultado==='Defecto')?'severidad':'evidencia'; render();
+      });
+    });
+    each('[data-severidad]',function(b){
+      b.addEventListener('click',function(){ S.severidad=b.getAttribute('data-severidad'); S.step='evidencia'; render(); });
+    });
+    each('[data-goto]',function(b){ b.addEventListener('click',function(){ S.step=b.getAttribute('data-goto'); render(); }); });
+
+    var foto=root.querySelector('#input-foto');
+    if(foto) foto.addEventListener('change',function(){
+      if(foto.files && foto.files[0]){
+        compressImage(foto.files[0]).then(function(d){ S.fotos.push(d); render(); })
+        .catch(function(){ toast('No se pudo procesar la foto'); });
       }
     });
-    root.querySelectorAll('[data-remove-foto]').forEach(function(b){
-      b.addEventListener('click', function(){ S.fotos.splice(parseInt(b.getAttribute('data-remove-foto'),10),1); render(); });
+    each('[data-remove-foto]',function(b){
+      b.addEventListener('click',function(){ S.fotos.splice(parseInt(b.getAttribute('data-remove-foto'),10),1); render(); });
     });
-    var comentarioInput = root.querySelector('#input-comentario');
-    if(comentarioInput) comentarioInput.addEventListener('input', function(){ S.comentario = comentarioInput.value; });
-    var guardarBtn = root.querySelector('#btn-guardar');
-    if(guardarBtn) guardarBtn.addEventListener('click', guardarRegistro);
+    var com=root.querySelector('#input-comentario');
+    if(com) com.addEventListener('input',function(){ S.comentario=com.value; });
+    on('#btn-guardar','click',guardarRegistro);
 
-    // historial
-    var exportBtn = root.querySelector('#btn-export');
-    if(exportBtn) exportBtn.addEventListener('click', exportExcel);
-    root.querySelectorAll('[data-delete-registro]').forEach(function(b){
-      b.addEventListener('click', async function(){
-        var id = b.getAttribute('data-delete-registro');
-        await deleteRegistro(id);
-        S.registros = S.registros.filter(function(r){ return r.id!==id; });
+    /* edición */
+    each('[data-edit-registro]',function(b){
+      b.addEventListener('click',function(){
+        var id=b.getAttribute('data-edit-registro');
+        var r=S.registros.filter(function(x){ return x.id===id; })[0];
+        if(!r) return;
+        S.editReg=r; S.editErr=''; S.tab='captura'; render();
+      });
+    });
+    on('#btn-cancel-edit','click',function(){ S.editReg=null; S.editErr=''; S.tab='historial'; render(); });
+    var editFam=root.querySelector('#edit-familia');
+    if(editFam) editFam.addEventListener('change',function(){
+      var f=FAMILIAS.filter(function(x){ return x.id===editFam.value; })[0];
+      var sel=root.querySelector('#edit-defecto');
+      sel.innerHTML='<option value="">—</option>'+(f?f.defectos.map(function(d){
+        return '<option value="'+escAttr(d.code)+'">'+escHtml(d.code+' — '+d.name)+'</option>';
+      }).join(''):'');
+      var selVar=root.querySelector('#edit-variacion');
+      if(selVar) selVar.innerHTML='<option value="">—</option>';
+    });
+    var editDef=root.querySelector('#edit-defecto');
+    if(editDef) editDef.addEventListener('change',function(){
+      var vars=S.variacionesCat[editDef.value]||[];
+      var selVar=root.querySelector('#edit-variacion');
+      if(selVar) selVar.innerHTML='<option value="">—</option>'+vars.map(function(v){ return '<option value="'+escAttr(v)+'">'+escHtml(v)+'</option>'; }).join('');
+    });
+    on('#btn-save-edit','click',guardarEdicion);
+
+    /* tracking */
+    var tf=root.querySelector('#track-filtro');
+    if(tf) tf.addEventListener('input',function(){
+      S.trackFiltro=tf.value;
+      var pos=tf.selectionStart; render();
+      var n=root.querySelector('#track-filtro');
+      if(n){ n.focus(); n.setSelectionRange(pos,pos); }
+    });
+    each('[data-zona-filtro]',function(b){
+      b.addEventListener('click',function(){
+        S.trackZona = b.getAttribute('data-zona-filtro');
+        render();
+      });
+    });
+    ['#field-espesor','#field-ancho','#field-peso'].forEach(function(sel){
+      var n=root.querySelector(sel);
+      if(!n) return;
+      n.addEventListener('input',function(){
+        var limpio=soloNumero(n.value);
+        if(limpio!==n.value){
+          var pos=n.selectionStart-(n.value.length-limpio.length);
+          n.value=limpio;
+          try{ n.setSelectionRange(pos,pos); }catch(e){}
+        }
+      });
+      n.addEventListener('keypress',function(e){
+        if(e.key && e.key.length===1 && !/[0-9.]/.test(e.key)) e.preventDefault();
+      });
+      n.addEventListener('blur',function(){ n.value=soloNumero(n.value).replace(/\.$/,''); });
+    });
+    on('#btn-ver-detenidos','click',function(){ S.trackZona='Detenidos'; S.tab='rollos'; render(); });
+    on('#btn-sel-modo','click',function(){ S.trackModoSel=true; S.trackSeleccion=[]; render(); });
+    on('#btn-sel-cancelar','click',function(){ S.trackModoSel=false; S.trackSeleccion=[]; render(); });
+    on('#btn-sel-ninguno','click',function(){ S.trackSeleccion=[]; render(); });
+    on('#btn-sel-todos','click',function(){
+      var q=S.trackFiltro.trim().toLowerCase();
+      S.trackSeleccion = trackingList().filter(function(t){
+        if(S.trackZona==='Detenidos'){ if(!estaDetenido(t)) return false; }
+        else if(S.trackZona!=='Todas' && t.zona!==S.trackZona) return false;
+        return !q || t.rolloId.toLowerCase().indexOf(q)!==-1;
+      }).map(function(t){ return t.rolloId; });
+      render();
+    });
+    each('[data-sel-rollo]',function(b){
+      b.addEventListener('click',function(){
+        var id=b.getAttribute('data-sel-rollo');
+        var i=S.trackSeleccion.indexOf(id);
+        if(i===-1) S.trackSeleccion.push(id); else S.trackSeleccion.splice(i,1);
+        render();
+      });
+    });
+    each('[data-mover-lote]',function(b){
+      b.addEventListener('click',function(){
+        var zona=b.getAttribute('data-mover-lote');
+        var n=S.trackSeleccion.length;
+        if(!n) return;
+        if(!confirm('¿Mover '+n+' rollo(s) a '+zona+'?')) return;
+        var nota=root.querySelector('#mover-nota-lote');
+        moverLote(S.trackSeleccion.slice(), zona, nota?nota.value.trim():'');
+      });
+    });
+    each('[data-track-open]',function(b){
+      b.addEventListener('click',function(){
+        var id=b.getAttribute('data-track-open');
+        if(!S.tracking[id]){ toast('Este rollo aún no tiene seguimiento'); return; }
+        S.trackRollo=id; S.trackVista='detalle'; S.tab='rollos'; render();
+      });
+    });
+    on('#btn-track-back','click',function(){ S.trackVista='lista'; S.trackRollo=null; render(); });
+    each('[data-mover-zona]',function(b){
+      b.addEventListener('click',function(){
+        var nota=root.querySelector('#mover-nota');
+        moverRollo(S.trackRollo, b.getAttribute('data-mover-zona'), nota?nota.value.trim():'');
+      });
+    });
+
+    /* historial */
+    on('#btn-export','click',exportExcel);
+    on('#btn-export-auditoria','click',exportAuditoria);
+    each('[data-rep-filtro]',function(b){ b.addEventListener('click',function(){ S.reporteFiltro=b.getAttribute('data-rep-filtro'); render(); }); });
+    var filtro=root.querySelector('#input-filtro');
+    if(filtro) filtro.addEventListener('input',function(){
+      S.filtro=filtro.value;
+      var pos=filtro.selectionStart; render();
+      var nf=root.querySelector('#input-filtro');
+      if(nf){ nf.focus(); nf.setSelectionRange(pos,pos); }
+    });
+    each('[data-filtro-res]',function(b){ b.addEventListener('click',function(){ S.filtroResultado=b.getAttribute('data-filtro-res'); render(); }); });
+    each('[data-filtro-fecha]',function(b){ b.addEventListener('click',function(){ S.filtroFecha=b.getAttribute('data-filtro-fecha'); render(); }); });
+    each('[data-filtro-turno]',function(b){ b.addEventListener('click',function(){ S.filtroTurno=b.getAttribute('data-filtro-turno'); render(); }); });
+    var fDesde=root.querySelector('#filtro-desde');
+    if(fDesde) fDesde.addEventListener('change',function(){ S.filtroDesde=fDesde.value; render(); });
+    var fHasta=root.querySelector('#filtro-hasta');
+    if(fHasta) fHasta.addEventListener('change',function(){ S.filtroHasta=fHasta.value; render(); });
+    on('#btn-limpiar-filtros','click',function(){
+      S.filtroResultado='Todos'; S.filtroFecha='Todas'; S.filtroTurno='Todos';
+      S.filtroDesde=''; S.filtroHasta=''; S.filtro='';
+      render();
+    });
+    each('[data-foto-reg]',function(img){
+      img.addEventListener('click',function(){
+        var r=S.registros.filter(function(x){ return x.id===img.getAttribute('data-foto-reg'); })[0];
+        if(!r) return;
+        var i=parseInt(img.getAttribute('data-foto-idx'),10);
+        abrirFoto(r.fotos[i], r.rolloId+' · '+(r.fecha||'')+' '+(r.hora||'')+' · '+(r.inspector||''));
+      });
+    });
+    each('[data-delete-registro]',function(b){
+      b.addEventListener('click',function(){
+        var id=b.getAttribute('data-delete-registro');
+        var r=S.registros.filter(function(x){ return x.id===id; })[0];
+        if(!r) return;
+        var motivo=prompt('Motivo de la eliminación (obligatorio):','');
+        if(motivo===null) return;
+        if(motivo.trim().length<5){ toast('Escribe un motivo de al menos 5 caracteres'); return; }
+        S.registros=S.registros.filter(function(x){ return x.id!==id; });
+        try{ set('registros',S.registros); }catch(e){}
+        auditar('eliminacion', r.rolloId, 'Registro eliminado ('+r.resultado+')', motivo.trim());
+        toast('Registro eliminado');
         render();
       });
     });
 
-    // catalogo
-    var changeInspBtn = root.querySelector('#btn-change-inspector');
-    if(changeInspBtn) changeInspBtn.addEventListener('click', async function(){ S.inspector=null; await setCurrentInspector(''); render(); });
+    /* ajustes */
+    on('#btn-logout','click',function(){ cerrarSesion(false); });
+    on('#btn-backup','click',downloadBackup);
+    var restore=root.querySelector('#input-restore');
+    if(restore) restore.addEventListener('change',function(){ if(restore.files && restore.files[0]) restoreBackup(restore.files[0]); });
 
-    root.querySelectorAll('[data-add-simple]').forEach(function(b){
-      b.addEventListener('click', async function(){
-        var kind = b.getAttribute('data-add-simple');
-        var inputId = kind==='grados' ? '#new-grado' : kind==='enrolladores' ? '#new-enrollador' : '#new-inspector-cat';
-        var input = root.querySelector(inputId);
-        var val = input.value.trim();
+    on('#btn-change-pin','click',function(){ S.showChangePin=true; S.changePinError=''; render(); });
+    on('#btn-cancel-change-pin','click',function(){ S.showChangePin=false; render(); });
+    on('#btn-change-pin-submit','click',function(){
+      var cur=root.querySelector('#cp-current').value.trim();
+      var nw=root.querySelector('#cp-new').value.trim();
+      var me=S.usuarios.filter(function(u){ return u.nombre===S.inspector; })[0];
+      if(!me || me.pin!==cur){ S.changePinError='PIN actual incorrecto'; render(); return; }
+      if(!/^\d{4,6}$/.test(nw)){ S.changePinError='El PIN nuevo debe tener de 4 a 6 dígitos'; render(); return; }
+      me.pin=nw;
+      try{ set('usuarios',S.usuarios); S.showChangePin=false; S.changePinError=''; toast('PIN actualizado'); }
+      catch(e){ S.changePinError='No se pudo guardar'; }
+      render();
+    });
+
+    each('[data-del-usuario]',function(b){
+      b.addEventListener('click',function(){
+        var i=parseInt(b.getAttribute('data-del-usuario'),10);
+        if(!confirm('¿Quitar a '+S.usuarios[i].nombre+'? Sus registros anteriores se conservan.')) return;
+        var nombre=S.usuarios[i].nombre;
+        S.usuarios.splice(i,1);
+        if(S.inspector===nombre){ S.inspector=null; try{ set('sesion',null); }catch(e){} }
+        try{ set('usuarios',S.usuarios); }catch(e){}
+        auditar('edicion','','Inspector dado de baja: '+nombre,'');
+        render();
+      });
+    });
+    each('[data-edit-usuario]',function(b){ b.addEventListener('click',function(){ S.editingUserIdx=parseInt(b.getAttribute('data-edit-usuario'),10); render(); }); });
+    each('[data-save-pin]',function(b){
+      b.addEventListener('click',function(){
+        var i=parseInt(b.getAttribute('data-save-pin'),10);
+        var val=root.querySelector('#edit-pin-input').value.trim();
+        if(!/^\d{4,6}$/.test(val)){ toast('El PIN debe tener de 4 a 6 dígitos'); return; }
+        S.usuarios[i].pin=val;
+        try{ set('usuarios',S.usuarios); toast('PIN actualizado'); }catch(e){ toast('No se pudo guardar'); }
+        S.editingUserIdx=null; render();
+      });
+    });
+    on('#btn-add-usuario','click',function(){
+      var name=root.querySelector('#new-usuario-nombre').value.trim();
+      var pin=root.querySelector('#new-usuario-pin').value.trim();
+      if(!name){ toast('Escribe el nombre del inspector'); return; }
+      if(!/^\d{4,6}$/.test(pin)){ toast('El PIN debe tener de 4 a 6 dígitos'); return; }
+      if(S.usuarios.some(function(u){ return u.nombre.toLowerCase()===name.toLowerCase(); })){ toast('Ese nombre ya existe'); return; }
+      S.usuarios.push({nombre:name,pin:pin});
+      try{ set('usuarios',S.usuarios); toast('Inspector agregado'); }catch(e){ toast('No se pudo guardar'); }
+      auditar('edicion','','Inspector dado de alta: '+name,'');
+      render();
+    });
+    on('#btn-save-admin-pass','click',function(){
+      var val=root.querySelector('#new-admin-pass').value.trim();
+      if(val.length<4){ toast('La clave debe tener al menos 4 caracteres'); return; }
+      S.adminPassword=val;
+      try{ set('adminPassword',val); toast('Clave actualizada'); }catch(e){ toast('No se pudo guardar'); }
+      render();
+    });
+
+    /* grados */
+    on('#btn-add-grado','click',function(){
+      var g=root.querySelector('#new-grado').value.trim().toUpperCase();
+      var sgf=root.querySelector('#new-grado-sgf').value.trim();
+      var f=root.querySelector('#new-grado-familia').value.trim();
+      if(!g){ toast('Escribe el grado'); return; }
+      S.catalogs.grados=S.catalogs.grados||[];
+      if(S.catalogs.grados.some(function(x){ return x.grado.toUpperCase()===g; })){ toast('Ese grado ya existe'); return; }
+      S.catalogs.grados.push({grado:g, sgf:sgf, familia:f});
+      S.catalogs.grados.sort(function(a,b){ return a.grado.localeCompare(b.grado); });
+      try{ set('catalogs',S.catalogs); }catch(e){ toast('No se pudo guardar'); }
+      render();
+    });
+    each('[data-del-grado]',function(b){
+      b.addEventListener('click',function(){
+        S.catalogs.grados.splice(parseInt(b.getAttribute('data-del-grado'),10),1);
+        try{ set('catalogs',S.catalogs); }catch(e){}
+        render();
+      });
+    });
+    on('#btn-clear-grados','click',function(){
+      if(!confirm('¿Vaciar todo el catálogo de grados?')) return;
+      S.catalogs.grados=[];
+      try{ set('catalogs',S.catalogs); }catch(e){}
+      render();
+    });
+    var impGrados=root.querySelector('#input-import-grados');
+    if(impGrados) impGrados.addEventListener('change',function(){
+      if(impGrados.files && impGrados.files[0]) importarGrados(impGrados.files[0]);
+    });
+
+    /* zonas */
+    on('#btn-add-zona','click',function(){
+      var z=root.querySelector('#new-zona').value.trim();
+      if(!z) return;
+      S.catalogs.zonas=S.catalogs.zonas||[];
+      if(S.catalogs.zonas.indexOf(z)!==-1){ toast('Esa zona ya existe'); return; }
+      S.catalogs.zonas.push(z);
+      try{ set('catalogs',S.catalogs); }catch(e){ toast('No se pudo guardar'); }
+      auditar('edicion','','Zona agregada: '+z,'');
+      render();
+    });
+    each('[data-del-zona]',function(b){
+      b.addEventListener('click',function(){
+        var i=parseInt(b.getAttribute('data-del-zona'),10);
+        var z=S.catalogs.zonas[i];
+        if(z===ZONA_ORIGEN) return;
+        if(!confirm('¿Quitar la zona «'+z+'»? Los movimientos ya registrados se conservan.')) return;
+        S.catalogs.zonas.splice(i,1);
+        try{ set('catalogs',S.catalogs); }catch(e){}
+        auditar('edicion','','Zona eliminada: '+z,'');
+        render();
+      });
+    });
+
+    each('[data-add-simple]',function(b){
+      b.addEventListener('click',function(){
+        var kind=b.getAttribute('data-add-simple');
+        var input=root.querySelector('#new-'+kind);
+        var val=input.value.trim();
         if(!val) return;
-        S.catalogs[kind] = S.catalogs[kind] || [];
+        S.catalogs[kind]=S.catalogs[kind]||[];
+        if(S.catalogs[kind].indexOf(val)!==-1){ toast('Ya existe'); return; }
         S.catalogs[kind].push(val);
-        await saveCatalogs(S.catalogs);
+        try{ set('catalogs',S.catalogs); }catch(e){ toast('No se pudo guardar'); }
         render();
       });
     });
-    root.querySelectorAll('[data-del-simple]').forEach(function(b){
-      b.addEventListener('click', async function(){
-        var kind = b.getAttribute('data-del-simple');
-        var idx = parseInt(b.getAttribute('data-idx'),10);
-        S.catalogs[kind].splice(idx,1);
-        await saveCatalogs(S.catalogs);
+    each('[data-del-simple]',function(b){
+      b.addEventListener('click',function(){
+        var kind=b.getAttribute('data-del-simple');
+        S.catalogs[kind].splice(parseInt(b.getAttribute('data-idx'),10),1);
+        try{ set('catalogs',S.catalogs); }catch(e){}
         render();
       });
     });
-    root.querySelectorAll('[data-add-var]').forEach(function(b){
-      b.addEventListener('click', async function(){
-        var code = b.getAttribute('data-add-var');
-        var input = root.querySelector('#newvar-' + code);
-        var val = input.value.trim();
+    each('[data-add-var]',function(b){
+      b.addEventListener('click',function(){
+        var code=b.getAttribute('data-add-var');
+        var input=root.querySelector('[data-var-input="'+(window.CSS&&CSS.escape?CSS.escape(code):code)+'"]');
+        var val=input?input.value.trim():'';
         if(!val) return;
-        S.variacionesCat[code] = S.variacionesCat[code] || [];
+        S.variacionesCat[code]=S.variacionesCat[code]||[];
         S.variacionesCat[code].push(val);
-        await saveVariaciones(S.variacionesCat);
+        try{ set('variaciones',S.variacionesCat); }catch(e){ toast('No se pudo guardar'); }
         render();
       });
     });
-    root.querySelectorAll('[data-del-var]').forEach(function(b){
-      b.addEventListener('click', async function(){
-        var code = b.getAttribute('data-del-var');
-        var idx = parseInt(b.getAttribute('data-idx'),10);
-        S.variacionesCat[code].splice(idx,1);
-        await saveVariaciones(S.variacionesCat);
+    each('[data-del-var]',function(b){
+      b.addEventListener('click',function(){
+        var code=b.getAttribute('data-del-var');
+        S.variacionesCat[code].splice(parseInt(b.getAttribute('data-idx'),10),1);
+        if(!S.variacionesCat[code].length) delete S.variacionesCat[code];
+        try{ set('variaciones',S.variacionesCat); }catch(e){}
         render();
       });
+    });
+
+    on('#btn-demo','click',function(){ if(confirm('Se agregarán inspectores y rollos de ejemplo. ¿Continuar?')) cargarDemo(); });
+    on('#btn-wipe','click',function(){
+      if(!confirm('Se borrarán TODOS los inspectores, registros, movimientos y catálogos. ¿Continuar?')) return;
+      if(!confirm('Última confirmación: esta acción no se puede deshacer.')) return;
+      try{ Object.keys(localStorage).filter(function(k){ return k.indexOf(PREFIX)===0; }).forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
+      location.reload();
     });
   }
 
-  function renderIdOnly(){
-    // lightweight re-render just for the id step to avoid losing focus on every keystroke
-    var body = root.querySelector('.ra-body');
-    if(body){ body.innerHTML = screenId(); bindEvents(); var inp = root.querySelector('#input-rollo-id'); if(inp){ inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }
+  function refreshIdScreen(focusSel){
+    var body=root.querySelector('.ra-body');
+    if(!body) return;
+    body.innerHTML=screenId();
+    bindEvents();
+    var i=root.querySelector(focusSel||'#input-id-mid');
+    if(i){ i.focus(); try{ i.setSelectionRange(i.value.length,i.value.length); }catch(e){} }
+  }
+
+  function elegirGrado(g){
+    S.rolloData.grado = g;
+    S.rolloData.familiaSGF = familiaDeGrado(g);
+    S.rolloData.familiaDesc = descripcionDeGrado(g);
+    S.gradoQuery = g;
+    S.gradoAbierto = false;
+    refreshIdScreen('#field-espesor');
   }
 
   function collectManualFields(){
-    var g = root.querySelector('#field-grado'); if(g && g.value) S.rolloData.grado = g.value;
-    var e = root.querySelector('#field-enrollador'); if(e && e.value) S.rolloData.enrollador = e.value;
-    var esp = root.querySelector('#field-espesor'); if(esp && esp.value) S.rolloData.espesor = esp.value;
-    var anc = root.querySelector('#field-ancho'); if(anc && anc.value) S.rolloData.ancho = anc.value;
-    var pes = root.querySelector('#field-peso'); if(pes && pes.value) S.rolloData.peso = pes.value;
-    var fec = root.querySelector('#field-fecha'); if(fec && fec.value) S.rolloData.fecha = fec.value;
+    [['#field-enrollador','enrollador'],['#field-espesor','espesor'],
+     ['#field-ancho','ancho'],['#field-peso','peso'],['#field-fecha','fecha']].forEach(function(p){
+      var n=root.querySelector(p[0]);
+      if(n && n.value) S.rolloData[p[1]]=n.value;
+    });
+    var g=root.querySelector('#field-grado');
+    if(g){
+      var txt=(g.value||'').trim().toUpperCase();
+      if(txt && buscarGrado(txt)) S.rolloData.grado = txt;
+    }
+    if(S.rolloData.grado){
+      S.rolloData.familiaSGF = familiaDeGrado(S.rolloData.grado);
+      S.rolloData.familiaDesc = descripcionDeGrado(S.rolloData.grado);
+    }
   }
 
-  async function guardarRegistro(){
-    var now = new Date();
-    var master = S.rollosMaster[S.rolloId.trim().toUpperCase()] || {};
-    var reg = {
-      id: 'r' + now.getTime() + Math.random().toString(36).slice(2,7),
-      ts: now.getTime(),
-      fecha: now.toISOString().slice(0,10),
-      hora: now.toTimeString().slice(0,5),
-      rolloId: S.rolloId.trim(),
-      resultado: S.resultado || 'Conforme',
-      familia: S.familia ? S.familia.name : '',
-      defectoCode: S.defecto ? S.defecto.code : '',
-      defecto: S.defecto ? S.defecto.name : '',
-      variacion: S.variacion || '',
-      ubicacion: S.ubicacion || '',
-      severidad: S.severidad || '',
-      inspector: S.inspector || '',
-      grado: master.grado || S.rolloData.grado || '',
-      espesor: master.espesor || S.rolloData.espesor || '',
-      ancho: master.ancho || S.rolloData.ancho || '',
-      peso: master.peso || S.rolloData.peso || '',
-      fechaProduccion: master.fecha || S.rolloData.fecha || '',
-      enrollador: master.enrollador || S.rolloData.enrollador || '',
-      fotos: S.fotos,
-      comentario: S.comentario || ''
+  /* ============ GUARDAR ============ */
+  function guardarRegistro(){
+    if(!idValido()){ toast('El ID debe llevar exactamente '+ID_MID_LEN+' dígitos'); S.step='id'; render(); return; }
+    var id=rolloId();
+    var now=new Date();
+    var master=S.rollosMaster[id]||{};
+    var reg={
+      id:'r'+now.getTime()+Math.random().toString(36).slice(2,7),
+      ts:now.getTime(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), rolloId:id,
+      resultado:S.resultado||'Conforme',
+      familia:S.familia?S.familia.name:'',
+      defectoCode:S.defecto?S.defecto.code:'',
+      defecto:S.defecto?S.defecto.name:'',
+      variacion:S.variacion||'', ubicacion:S.ubicacion||'', severidad:S.severidad||'',
+      inspector:usuarioActual(),
+      grado:master.grado||S.rolloData.grado||'',
+      familiaSGF:master.familiaSGF||S.rolloData.familiaSGF||'',
+      familiaDesc:master.familiaDesc||S.rolloData.familiaDesc||'',
+      espesor:master.espesor||S.rolloData.espesor||'',
+      ancho:master.ancho||S.rolloData.ancho||'',
+      peso:master.peso||S.rolloData.peso||'',
+      fechaProduccion:master.fecha||S.rolloData.fecha||'',
+      enrollador:master.enrollador||S.rolloData.enrollador||'',
+      fotos:S.fotos.slice(), comentario:S.comentario||'', ediciones:[]
     };
-    var ok = await saveRegistro(reg);
-    if(!ok){ toast('Error al guardar — intenta de nuevo'); return; }
-
-    // persist any newly-typed master data for next time this rollo id appears
-    if(!master.id && (S.rolloData.grado || S.rolloData.enrollador || S.rolloData.espesor)){
-      await saveRolloMaster({ id: S.rolloId.trim().toUpperCase(), grado:S.rolloData.grado||'', espesor:S.rolloData.espesor||'', ancho:S.rolloData.ancho||'', peso:S.rolloData.peso||'', fecha:S.rolloData.fecha||'', enrollador:S.rolloData.enrollador||'' });
-     S.rollosMaster[S.rolloId.trim().toUpperCase()] = {
-  id: S.rolloId.trim().toUpperCase(),
-  grado: S.rolloData.grado || '',
-  espesor: S.rolloData.espesor || '',
-  ancho: S.rolloData.ancho || '',
-  peso: S.rolloData.peso || '',
-  fecha: S.rolloData.fecha || '',
-  enrollador: S.rolloData.enrollador || ''
-};
-    }
-
+    var backupRegs=S.registros.slice();
     S.registros.unshift(reg);
-    toast('Rollo guardado');
+    try{ set('registros',S.registros); }
+    catch(e){
+      S.registros=backupRegs;
+      toast('Sin espacio — descarga un respaldo y borra registros antiguos');
+      return;
+    }
+    if(!master.grado && (S.rolloData.grado||S.rolloData.enrollador||S.rolloData.espesor)){
+      S.rollosMaster[id]={id:id,grado:S.rolloData.grado||'',familiaSGF:S.rolloData.familiaSGF||'',familiaDesc:S.rolloData.familiaDesc||'',
+        espesor:S.rolloData.espesor||'',ancho:S.rolloData.ancho||'',peso:S.rolloData.peso||'',
+        fecha:S.rolloData.fecha||'',enrollador:S.rolloData.enrollador||''};
+      try{ set('rollosMaster',S.rollosMaster); }catch(e){}
+    }
+    iniciarTracking(id);
+    auditar('creacion', id, 'Inspección registrada: '+reg.resultado+(reg.defecto?' · '+reg.defectoCode+' '+reg.defecto:''), '');
+    toast('Rollo guardado en '+ZONA_ORIGEN);
     resetCaptureFlow();
+    render();
+  }
+
+  function guardarEdicion(){
+    var r=S.editReg;
+    var motivo=(root.querySelector('#edit-motivo').value||'').trim();
+    if(motivo.length<10){ S.editErr='Describe el motivo del cambio (mínimo 10 caracteres).'; render(); sacudir('#edit-motivo'); return; }
+
+    var famId=root.querySelector('#edit-familia').value;
+    var fam=FAMILIAS.filter(function(f){ return f.id===famId; })[0];
+    var defCode=root.querySelector('#edit-defecto').value;
+    var def=defCode&&DEFECT_INDEX[defCode]?DEFECT_INDEX[defCode].defecto:null;
+    var nuevo={
+      resultado:root.querySelector('#edit-resultado').value,
+      familia:fam?fam.name:'',
+      defectoCode:def?def.code:'',
+      defecto:def?def.name:'',
+      variacion:root.querySelector('#edit-variacion').value,
+      ubicacion:root.querySelector('#edit-ubicacion').value,
+      severidad:root.querySelector('#edit-severidad').value,
+      comentario:root.querySelector('#edit-comentario').value
+    };
+    var etiquetas={resultado:'Resultado',familia:'Familia',defecto:'Defecto',variacion:'Variación',
+      ubicacion:'Ubicación',severidad:'Severidad',comentario:'Comentario'};
+    var cambios=[];
+    Object.keys(etiquetas).forEach(function(k){
+      var antes=r[k]||'', desp=nuevo[k]||'';
+      if(antes!==desp) cambios.push(etiquetas[k]+': "'+(antes||'—')+'" → "'+(desp||'—')+'"');
+    });
+    if(!cambios.length){ S.editErr='No cambiaste ningún campo.'; render(); return; }
+
+    var now=new Date();
+    r.ediciones=r.ediciones||[];
+    r.ediciones.push({ts:now.getTime(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now),
+      usuario:usuarioActual(), motivo:motivo, cambios:cambios.join(' | ')});
+    Object.keys(nuevo).forEach(function(k){ r[k]=nuevo[k]; });
+    r.defectoCode=nuevo.defectoCode;
+
+    try{ set('registros',S.registros); }
+    catch(e){ toast('No se pudo guardar el cambio'); return; }
+    auditar('edicion', r.rolloId, cambios.join(' | '), motivo);
+    S.editReg=null; S.editErr=''; S.tab='historial';
+    toast('Cambios guardados');
+    render();
+  }
+
+  /* ============ DEMO ============ */
+  function cargarDemo(){
+    [{nombre:'Luis Ramírez',pin:'1234'},{nombre:'Ana Castillo',pin:'5678'}].forEach(function(u){
+      if(!S.usuarios.some(function(x){ return x.nombre===u.nombre; })) S.usuarios.push(u);
+    });
+    if(!(S.catalogs.grados||[]).length){ S.catalogs.grados=JSON.parse(JSON.stringify(DEFAULT_GRADOS)); }
+    var base=Date.now();
+    var demos=[
+      {rolloId:'4A695767PM400',resultado:'Conforme',grado:'C14MC4',familiaSGF:'6',familiaDesc:'Grados comerciales Medios'},
+      {rolloId:'4A695768PM400',resultado:'Defecto',familia:'Aspecto físico',defectoCode:'593',defecto:'Devanado',variacion:'Últimas vueltas flojas',ubicacion:'DIC',severidad:'Leve',grado:'T05CR8',familiaSGF:'41',familiaDesc:'> X70'},
+      {rolloId:'4A695769PM400',resultado:'Defecto',familia:'Defectos superficiales',defectoCode:'19',defecto:'Rayas',ubicacion:'Centro',severidad:'Moderado',grado:'A06CR5',familiaSGF:'31',familiaDesc:'AHSS'},
+      {rolloId:'4A695770PM400',resultado:'Scrap',familia:'Orilla',defectoCode:'765',defecto:'Orilla trozada',ubicacion:'Todo el rollo',comentario:'Rollo retenido en patio',grado:'SIAL20',familiaSGF:'27',familiaDesc:'Eléctricos'}
+    ];
+    demos.forEach(function(d,i){
+      var t=new Date(base-(demos.length-i)*3600000);
+      var reg=Object.assign({
+        id:'demo'+t.getTime()+i, ts:t.getTime(), fecha:fechaHoy(t), hora:horaAhora(t),
+        inspector:i%2?'Ana Castillo':'Luis Ramírez',
+        espesor:'2.50',ancho:'1200',peso:'18500',enrollador:'Enrollador 2',
+        fechaProduccion:'',variacion:'',severidad:'',familia:'',defectoCode:'',defecto:'',
+        comentario:'',fotos:[],ediciones:[],grado:'',familiaSGF:'',familiaDesc:''
+      },d);
+      S.registros.unshift(reg);
+      if(!S.tracking[reg.rolloId]){
+        S.tracking[reg.rolloId]={rolloId:reg.rolloId, zona:ZONA_ORIGEN,
+          ultimoUsuario:reg.inspector, ultimaFecha:reg.fecha, ultimaHora:reg.hora, ultimoTs:t.getTime(),
+          movimientos:[{zona:ZONA_ORIGEN,usuario:reg.inspector,fecha:reg.fecha,hora:reg.hora,ts:t.getTime(),nota:'Alta por inspección'}]};
+      }
+    });
+    var t2=new Date(base-1800000);
+    var demoMov=S.tracking['4A695768PM400'];
+    if(demoMov && demoMov.movimientos.length===1){
+      demoMov.movimientos.push({zona:'Cooling Bay',usuario:'Ana Castillo',fecha:fechaHoy(t2),hora:horaAhora(t2),ts:t2.getTime(),nota:'Enfriamiento programado'});
+      demoMov.zona='Cooling Bay'; demoMov.ultimoUsuario='Ana Castillo'; demoMov.ultimaFecha=fechaHoy(t2); demoMov.ultimaHora=horaAhora(t2); demoMov.ultimoTs=t2.getTime();
+    }
+    try{ persistAll(); toast('Datos de ejemplo cargados'); }catch(e){ toast('No se pudo guardar'); }
     render();
   }
 
   init();
 })();
 </script>
+</body>
+</html>

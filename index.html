@@ -186,6 +186,12 @@
   .ra-check{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1.5px solid var(--line-strong);
     border-radius:2px;margin-right:9px;font-size:12px;vertical-align:middle;color:#fff;}
   .ra-check.on{background:var(--ink);border-color:var(--ink);}
+  .ra-defrow{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);
+    border-radius:var(--radius);margin-bottom:6px;cursor:pointer;font-size:14px;background:#fff;}
+  .ra-defrow.on{border-color:var(--ink);background:#F7F8F9;}
+  .ra-defrow .code{font-size:11px;color:var(--ink-soft);font-weight:700;background:#F1F2F4;padding:3px 7px;
+    border-radius:2px;flex:none;min-width:52px;text-align:center;}
+  .ra-defrow:active{background:#F1F2F4;}
   .ra-combo{position:relative;}
   .ra-combo-clear{position:absolute;right:8px;top:9px;background:#F1F2F4;border:1px solid var(--line);
     border-radius:2px;width:30px;height:30px;font-size:13px;color:var(--ink-soft);cursor:pointer;}
@@ -302,6 +308,29 @@
   FAMILIAS.forEach(function(f){ f.defectos.forEach(function(d){ DEFECT_INDEX[d.code] = {familia:f, defecto:d}; }); });
 
   var UBICACIONES = ['DIC','DEX','Ambos','Centro','Cabeza','Cola','Todo el rollo'];
+  /* Familias con solo los defectos habilitados por el administrador */
+  function familiasActivas(){
+    var activos = S.catalogs.defectosActivos || [];
+    var extra = S.catalogs.defectosExtra || [];
+    return FAMILIAS.map(function(f){
+      var props = f.defectos.filter(function(d){ return activos.indexOf(d.code)!==-1; });
+      extra.filter(function(d){ return d.familiaId===f.id && activos.indexOf(d.code)!==-1; })
+           .forEach(function(d){ props.push({code:d.code, name:d.name}); });
+      props.sort(function(a,b){ return a.name.localeCompare(b.name); });
+      return {id:f.id, name:f.name, defectos:props};
+    }).filter(function(f){ return f.defectos.length; });
+  }
+  function buscarDefecto(code){
+    if(DEFECT_INDEX[code]) return DEFECT_INDEX[code].defecto;
+    var e=(S.catalogs.defectosExtra||[]).filter(function(d){ return d.code===code; })[0];
+    return e ? {code:e.code, name:e.name} : null;
+  }
+  function familiaDeDefecto(code){
+    if(DEFECT_INDEX[code]) return DEFECT_INDEX[code].familia;
+    var e=(S.catalogs.defectosExtra||[]).filter(function(d){ return d.code===code; })[0];
+    return e ? FAMILIAS.filter(function(f){ return f.id===e.familiaId; })[0] : null;
+  }
+  function medios(){ return S.catalogs.medios || []; }
   var SEVERIDADES = ['Leve','Moderado','Severo'];
   var DEFAULT_VARIACIONES = { '593': ['Últimas vueltas flojas','Últimas vueltas corridas','Interior corrido','Varias vueltas corridas','DIC','DEX','Ambos lados'] };
   var DEFAULT_ADMIN_PASS = 'Ternium2026';
@@ -309,6 +338,9 @@
 
   var ID_PREFIX = '4A', ID_SUFFIX = 'PM400', ID_MID_LEN = 6;
   var ZONA_ORIGEN = 'Zona de contingencia';
+  var DEFAULT_MEDIOS = ['MCA','PLANOS'];
+  /* Defectos habilitados de inicio. El resto queda disponible en Ajustes. */
+  var DEFAULT_DEFECTOS_ACTIVOS = ['26','1154','82','593','80/180','73','747','573','21','81'];
   var HORAS_DETENIDO = 24;      /* aviso de rollo sin movimiento */
   var MINUTOS_INACTIVIDAD = 15; /* cierre de sesión automático */
   var DEFAULT_ZONAS = [ZONA_ORIGEN,'Cooling Bay','Playa','Nave 1','Laminación'];
@@ -422,7 +454,7 @@
     filtro:'', filtroResultado:'Todos', filtroFecha:'Todas', filtroTurno:'Todos', filtroDesde:'', filtroHasta:'',
     editReg:null, editErr:'',
     trackVista:'lista', trackRollo:null, trackFiltro:'', trackZona:'Todas', trackErr:'',
-    trackSeleccion:[], trackModoSel:false,
+    trackSeleccion:[], trackModoSel:false, trackMedio:'',
     reporteFiltro:'Todos',
     rollosMaster:{}, catalogs:null, variacionesCat:null, registros:[], tracking:{}, auditoria:[]
   };
@@ -477,6 +509,9 @@
       return g;
     });
     if(!cat.zonas || !cat.zonas.length) cat.zonas = DEFAULT_ZONAS.slice();
+    if(!cat.medios) cat.medios = DEFAULT_MEDIOS.slice();
+    if(!cat.defectosActivos) cat.defectosActivos = DEFAULT_DEFECTOS_ACTIVOS.slice();
+    if(!cat.defectosExtra) cat.defectosExtra = [];
     if(!cat.enrolladores) cat.enrolladores = ['Enrollador 1','Enrollador 2','Enrollador 3'];
     return cat;
   }
@@ -777,7 +812,12 @@
   }
 
   function screenFamilia(){
-    var items = FAMILIAS.map(function(f){
+    var activas = familiasActivas();
+    if(!activas.length){
+      return backRow('resultado') + '<div class="ra-card"><div class="ra-h1">Sin defectos habilitados</div>' +
+        '<div class="ra-h2">El administrador debe habilitar al menos un defecto desde Ajustes.</div></div>';
+    }
+    var items = activas.map(function(f){
       return '<div class="ra-choice" role="button" tabindex="0" data-familia="'+f.id+'"><span class="ra-choice-text">'+escHtml(f.name)+'</span><span class="ra-chev">'+f.defectos.length+' ›</span></div>';
     }).join('');
     return backRow('resultado') + '<div class="ra-card"><div class="ra-h1">Familia del defecto</div><div class="ra-h2">Selecciona la categoría.</div>'+items+'</div>';
@@ -867,8 +907,9 @@
   function screenEditar(){
     var r = S.editReg;
     var resOpts = ['Conforme','Defecto','Scrap'].map(function(x){ return '<option value="'+x+'"'+(r.resultado===x?' selected':'')+'>'+x+'</option>'; }).join('');
-    var famOpts = '<option value="">—</option>' + FAMILIAS.map(function(f){ return '<option value="'+f.id+'"'+(r.familia===f.name?' selected':'')+'>'+escHtml(f.name)+'</option>'; }).join('');
-    var famActual = FAMILIAS.filter(function(f){ return f.name===r.familia; })[0];
+    var activas = familiasActivas();
+    var famOpts = '<option value="">—</option>' + activas.map(function(f){ return '<option value="'+f.id+'"'+(r.familia===f.name?' selected':'')+'>'+escHtml(f.name)+'</option>'; }).join('');
+    var famActual = activas.filter(function(f){ return f.name===r.familia; })[0];
     var defOpts = '<option value="">—</option>' + (famActual? famActual.defectos.map(function(d){
       return '<option value="'+escAttr(d.code)+'"'+(r.defectoCode===d.code?' selected':'')+'>'+escHtml(d.code+' — '+d.name)+'</option>';
     }).join('') : '');
@@ -992,8 +1033,11 @@
             (S.trackSeleccion.length?'<button class="ra-link" id="btn-sel-ninguno">Quitar selección</button>':'') +
           '</div>' +
           (S.trackSeleccion.length
-            ? '<label class="ra-label">MOVER TODOS A</label><input class="ra-input" id="mover-nota-lote" placeholder="Nota (opcional)" autocomplete="off">' +
-              '<div class="ra-grid">'+zonasDestino+'</div>'
+            ? (medios().length ? '<label class="ra-label">MEDIO DE TRANSPORTE</label><div class="ra-zchips" style="margin-bottom:14px;">' +
+                medios().map(function(m){ return '<button class="ra-zchip'+(S.trackMedio===m?' on':'')+'" data-medio="'+escAttr(m)+'">'+escHtml(m)+'</button>'; }).join('') +
+                '</div>' : '') +
+              '<input class="ra-input" id="mover-nota-lote" placeholder="Nota (opcional)" autocomplete="off">' +
+              '<label class="ra-label">MOVER TODOS A</label><div class="ra-grid">'+zonasDestino+'</div>'
             : '<div class="ra-meta">Toca los rollos de la lista para seleccionarlos.</div>') +
         '</div>';
     }
@@ -1018,11 +1062,15 @@
       return '<div class="ra-tl-item '+cls+'"><div class="ra-tl-dot"></div>' +
           '<div class="ra-tl-zona">'+escHtml(m.zona)+(i===0?' · actual':'')+'</div>' +
           '<div class="ra-tl-meta">'+escHtml(m.fecha)+' '+escHtml(m.hora)+(m.turno?' · Turno '+escHtml(m.turno):'')+' · registrado por '+escHtml(m.usuario)+'</div>' +
+          (m.medio?'<div class="ra-tl-meta">Transportado en <b style="color:var(--ink);">'+escHtml(m.medio)+'</b></div>':'') +
           (m.nota?'<div class="ra-tl-nota">'+escHtml(m.nota)+'</div>':'') +
         '</div>';
     }).join('');
     var opciones = zonas().filter(function(z){ return z!==t.zona; })
       .map(function(z){ return '<button class="ra-btn ra-btn-outline ra-btn-sm" data-mover-zona="'+escAttr(z)+'">'+escHtml(z)+'</button>'; }).join('');
+    var chipsMedio = medios().map(function(m){
+      return '<button class="ra-zchip'+(S.trackMedio===m?' on':'')+'" data-medio="'+escAttr(m)+'">'+escHtml(m)+'</button>';
+    }).join('');
 
     return '<div class="ra-topbar"><button class="ra-back" id="btn-track-back">‹ Todos los rollos</button></div>' +
       '<div class="ra-card">' +
@@ -1034,31 +1082,36 @@
       '</div>' +
       '<div class="ra-card">' +
         '<div class="ra-h1" style="font-size:17px;">Registrar movimiento</div>' +
-        '<div class="ra-h2">Selecciona a dónde se está enviando el rollo. Quedará registrado con tu nombre y la hora.</div>' +
+        '<div class="ra-h2">Indica el medio de transporte y el destino. Quedará registrado con tu nombre y la hora.</div>' +
+        (medios().length
+          ? '<label class="ra-label">MEDIO DE TRANSPORTE</label><div class="ra-zchips" style="margin-bottom:14px;">'+chipsMedio+'</div>'
+          : '<div class="ra-note">No hay medios de transporte dados de alta. El administrador puede agregarlos en Ajustes.</div>') +
         '<label class="ra-label">NOTA (OPCIONAL)</label>' +
-        '<input class="ra-input" id="mover-nota" placeholder="Ej. trasladado por montacargas 3" autocomplete="off">' +
+        '<input class="ra-input" id="mover-nota" placeholder="Ej. traslado programado" autocomplete="off">' +
+        '<label class="ra-label">ENVIAR A</label>' +
         '<div class="ra-grid">'+opciones+'</div>' +
       '</div>';
   }
 
-  function moverRollo(rolloIdVal, zona, nota){
+  function moverRollo(rolloIdVal, zona, nota, medio){
     var t = S.tracking[rolloIdVal];
     if(!t) return;
     var now = new Date();
-    t.movimientos.push({zona:zona, usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), ts:now.getTime(), nota:nota||''});
+    t.movimientos.push({zona:zona, medio:medio||'', usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), ts:now.getTime(), nota:nota||''});
     t.zona = zona; t.ultimoUsuario = usuarioActual(); t.ultimaFecha = fechaHoy(now); t.ultimaHora = horaAhora(now); t.ultimoTurno = turnoDe(now); t.ultimoTs = now.getTime();
     try{ set('tracking', S.tracking); }catch(e){ toast('No se pudo guardar el movimiento'); return; }
-    auditar('movimiento', rolloIdVal, 'Movido a '+zona, nota||'');
-    toast('Rollo movido a '+zona);
+    auditar('movimiento', rolloIdVal, 'Movido a '+zona+(medio?' en '+medio:''), nota||'');
+    S.trackMedio='';
+    toast('Rollo movido a '+zona+(medio?' en '+medio:''));
     render();
   }
 
-  function moverLote(ids, zona, nota){
+  function moverLote(ids, zona, nota, medio){
     var now=new Date(), movidos=0;
     ids.forEach(function(id){
       var t=S.tracking[id];
       if(!t || t.zona===zona) return;
-      t.movimientos.push({zona:zona, usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now),
+      t.movimientos.push({zona:zona, medio:medio||'', usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now),
         turno:turnoDe(now), ts:now.getTime(), nota:nota||'Movimiento en lote'});
       t.zona=zona; t.ultimoUsuario=usuarioActual(); t.ultimaFecha=fechaHoy(now);
       t.ultimaHora=horaAhora(now); t.ultimoTurno=turnoDe(now); t.ultimoTs=now.getTime();
@@ -1066,8 +1119,8 @@
     });
     if(!movidos){ toast('Esos rollos ya están en '+zona); return; }
     try{ set('tracking', S.tracking); }catch(e){ toast('No se pudo guardar el movimiento'); return; }
-    auditar('movimiento','('+movidos+' rollos)','Movimiento en lote a '+zona+': '+ids.join(', '), nota||'');
-    S.trackModoSel=false; S.trackSeleccion=[];
+    auditar('movimiento','('+movidos+' rollos)','Movimiento en lote a '+zona+(medio?' en '+medio:'')+': '+ids.join(', '), nota||'');
+    S.trackModoSel=false; S.trackSeleccion=[]; S.trackMedio='';
     toast(movidos+' rollo(s) movidos a '+zona);
     render();
   }
@@ -1241,7 +1294,7 @@
         '</div>';
       return out;
     }
-    return out + reporteCard() + usersCard() + gradosCard() + zonasCard() +
+    return out + reporteCard() + usersCard() + gradosCard() + defectosCard() + zonasCard() + mediosCard() +
            simpleCatalogCard('enrolladores','Enrolladores') + adminPassCard() + variacionesCard() + demoCard();
   }
 
@@ -1309,6 +1362,56 @@
         '<div class="ra-h2">Todo rollo nace en «'+ZONA_ORIGEN+'» y desde ahí los inspectores lo mueven a cualquiera de estas zonas.</div>' +
         '<div class="ra-tag-list">'+tags+'</div>' +
         '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input" id="new-zona" placeholder="Nueva zona" style="margin-bottom:0;" autocomplete="off"><button class="ra-small-btn" id="btn-add-zona">Agregar</button></div>' +
+      '</div>';
+  }
+
+  function mediosCard(){
+    var tags=(S.catalogs.medios||[]).map(function(m,i){
+      return '<div class="ra-tag">'+escHtml(m)+'<button data-del-medio="'+i+'" aria-label="Quitar">✕</button></div>';
+    }).join('');
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Medios de transporte</div>' +
+        '<div class="ra-h2">Se elige uno al registrar cada movimiento de rollo entre zonas.</div>' +
+        '<div class="ra-tag-list">'+(tags||'<span style="font-size:12.5px;color:var(--ink-soft);">Sin medios — no se pedirá al mover rollos.</span>')+'</div>' +
+        '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input" id="new-medio" placeholder="Nuevo medio" style="margin-bottom:0;" autocomplete="off"><button class="ra-small-btn" id="btn-add-medio">Agregar</button></div>' +
+      '</div>';
+  }
+
+  function defectosCard(){
+    var activos = S.catalogs.defectosActivos||[];
+    var extra = S.catalogs.defectosExtra||[];
+    var secciones = FAMILIAS.map(function(f){
+      var props = f.defectos.slice();
+      extra.filter(function(d){ return d.familiaId===f.id; }).forEach(function(d){
+        props.push({code:d.code, name:d.name, custom:true});
+      });
+      var nActivos = props.filter(function(d){ return activos.indexOf(d.code)!==-1; }).length;
+      var filas = props.map(function(d){
+        var on = activos.indexOf(d.code)!==-1;
+        return '<div class="ra-defrow'+(on?' on':'')+'" data-toggle-defecto="'+escAttr(d.code)+'">' +
+            '<span class="ra-check'+(on?' on':'')+'">'+(on?'✓':'')+'</span>' +
+            '<span class="code">'+escHtml(d.code)+'</span>' +
+            '<span class="ra-choice-text">'+escHtml(d.name)+(d.custom?' <span style="color:var(--ink-soft);font-size:11px;">propio</span>':'')+'</span>' +
+            (d.custom?'<button class="ra-link danger" data-del-defecto-extra="'+escAttr(d.code)+'" style="flex:none;">Borrar</button>':'') +
+          '</div>';
+      }).join('');
+      return '<details><summary class="ra-section-title" style="cursor:pointer;">'+escHtml(f.name)+' ('+nActivos+' de '+props.length+' activos)</summary>' +
+          '<div style="margin-bottom:14px;">'+filas+'</div>' +
+        '</details>';
+    }).join('');
+    var famOpts = FAMILIAS.map(function(f){ return '<option value="'+f.id+'">'+escHtml(f.name)+'</option>'; }).join('');
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Defectos habilitados</div>' +
+        '<div class="ra-h2">Solo los marcados aparecen durante la captura. '+activos.length+' activo(s) de '+(FAMILIAS.reduce(function(a,f){ return a+f.defectos.length; },0)+extra.length)+' disponibles. Desactivar uno no borra los registros que ya lo usan.</div>' +
+        '<div class="ra-actions" style="margin:0 0 14px;">' +
+          '<button class="ra-link" id="btn-defectos-base">Volver a la selección inicial</button>' +
+          '<button class="ra-link" id="btn-defectos-ninguno">Desactivar todos</button>' +
+        '</div>' + secciones +
+        '<div class="ra-label" style="margin-top:16px;">AGREGAR UN DEFECTO PROPIO</div>' +
+        '<div class="ra-inline-form"><input class="ra-input" id="new-def-code" placeholder="Código" style="margin-bottom:0;max-width:110px;" autocomplete="off">' +
+          '<input class="ra-input" id="new-def-name" placeholder="Nombre del defecto" style="margin-bottom:0;" autocomplete="off"></div>' +
+        '<div class="ra-inline-form" style="margin-bottom:0;"><select class="ra-input" id="new-def-familia" style="margin-bottom:0;">'+famOpts+'</select>' +
+          '<button class="ra-small-btn" id="btn-add-defecto">Agregar</button></div>' +
       '</div>';
   }
 
@@ -1568,7 +1671,7 @@
       var movs=[];
       Object.keys(S.tracking).forEach(function(k){
         S.tracking[k].movimientos.forEach(function(m,i){
-          movs.push({'ID Rollo':k,'Paso':i+1,'Zona':m.zona,'Fecha':m.fecha,'Hora':m.hora,'Turno':m.turno||'','Usuario':m.usuario,'Nota':m.nota||''});
+          movs.push({'ID Rollo':k,'Paso':i+1,'Zona':m.zona,'Medio de transporte':m.medio||'','Fecha':m.fecha,'Hora':m.hora,'Turno':m.turno||'','Usuario':m.usuario,'Nota':m.nota||''});
         });
       });
       var ediciones=[];
@@ -1762,7 +1865,7 @@
       });
     });
     each('[data-familia]',function(b){
-      function pick(){ S.familia=FAMILIAS.filter(function(f){ return f.id===b.getAttribute('data-familia'); })[0]; S.step='defecto'; render(); }
+      function pick(){ S.familia=familiasActivas().filter(function(f){ return f.id===b.getAttribute('data-familia'); })[0]; S.step='defecto'; render(); }
       b.addEventListener('click',pick);
       b.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); } });
     });
@@ -1818,7 +1921,7 @@
     on('#btn-cancel-edit','click',function(){ S.editReg=null; S.editErr=''; S.tab='historial'; render(); });
     var editFam=root.querySelector('#edit-familia');
     if(editFam) editFam.addEventListener('change',function(){
-      var f=FAMILIAS.filter(function(x){ return x.id===editFam.value; })[0];
+      var f=familiasActivas().filter(function(x){ return x.id===editFam.value; })[0];
       var sel=root.querySelector('#edit-defecto');
       sel.innerHTML='<option value="">—</option>'+(f?f.defectos.map(function(d){
         return '<option value="'+escAttr(d.code)+'">'+escHtml(d.code+' — '+d.name)+'</option>';
@@ -1890,9 +1993,10 @@
         var zona=b.getAttribute('data-mover-lote');
         var n=S.trackSeleccion.length;
         if(!n) return;
-        if(!confirm('¿Mover '+n+' rollo(s) a '+zona+'?')) return;
+        if(medios().length && !S.trackMedio){ toast('Selecciona el medio de transporte'); return; }
+        if(!confirm('¿Mover '+n+' rollo(s) a '+zona+(S.trackMedio?' en '+S.trackMedio:'')+'?')) return;
         var nota=root.querySelector('#mover-nota-lote');
-        moverLote(S.trackSeleccion.slice(), zona, nota?nota.value.trim():'');
+        moverLote(S.trackSeleccion.slice(), zona, nota?nota.value.trim():'', S.trackMedio);
       });
     });
     each('[data-track-open]',function(b){
@@ -1903,10 +2007,14 @@
       });
     });
     on('#btn-track-back','click',function(){ S.trackVista='lista'; S.trackRollo=null; render(); });
+    each('[data-medio]',function(b){
+      b.addEventListener('click',function(){ S.trackMedio=b.getAttribute('data-medio'); render(); });
+    });
     each('[data-mover-zona]',function(b){
       b.addEventListener('click',function(){
+        if(medios().length && !S.trackMedio){ toast('Selecciona el medio de transporte'); return; }
         var nota=root.querySelector('#mover-nota');
-        moverRollo(S.trackRollo, b.getAttribute('data-mover-zona'), nota?nota.value.trim():'');
+        moverRollo(S.trackRollo, b.getAttribute('data-mover-zona'), nota?nota.value.trim():'', S.trackMedio);
       });
     });
 
@@ -2051,6 +2159,83 @@
     });
 
     /* zonas */
+    /* medios de transporte */
+    on('#btn-add-medio','click',function(){
+      var m=root.querySelector('#new-medio').value.trim().toUpperCase();
+      if(!m) return;
+      S.catalogs.medios=S.catalogs.medios||[];
+      if(S.catalogs.medios.indexOf(m)!==-1){ toast('Ese medio ya existe'); return; }
+      S.catalogs.medios.push(m);
+      try{ set('catalogs',S.catalogs); }catch(e){ toast('No se pudo guardar'); }
+      auditar('edicion','','Medio de transporte agregado: '+m,'');
+      render();
+    });
+    each('[data-del-medio]',function(b){
+      b.addEventListener('click',function(){
+        var i=parseInt(b.getAttribute('data-del-medio'),10);
+        var m=S.catalogs.medios[i];
+        if(!confirm('¿Quitar el medio «'+m+'»? Los movimientos ya registrados se conservan.')) return;
+        S.catalogs.medios.splice(i,1);
+        try{ set('catalogs',S.catalogs); }catch(e){}
+        auditar('edicion','','Medio de transporte eliminado: '+m,'');
+        render();
+      });
+    });
+
+    /* defectos habilitados */
+    each('[data-toggle-defecto]',function(b){
+      b.addEventListener('click',function(ev){
+        if(ev.target.hasAttribute('data-del-defecto-extra')) return;
+        var code=b.getAttribute('data-toggle-defecto');
+        S.catalogs.defectosActivos=S.catalogs.defectosActivos||[];
+        var i=S.catalogs.defectosActivos.indexOf(code);
+        if(i===-1) S.catalogs.defectosActivos.push(code); else S.catalogs.defectosActivos.splice(i,1);
+        try{ set('catalogs',S.catalogs); }catch(e){ toast('No se pudo guardar'); }
+        render();
+      });
+    });
+    on('#btn-defectos-base','click',function(){
+      if(!confirm('¿Volver a la selección inicial de defectos?')) return;
+      S.catalogs.defectosActivos=DEFAULT_DEFECTOS_ACTIVOS.slice();
+      try{ set('catalogs',S.catalogs); }catch(e){}
+      auditar('edicion','','Defectos activos restaurados a la selección inicial','');
+      render();
+    });
+    on('#btn-defectos-ninguno','click',function(){
+      if(!confirm('¿Desactivar todos los defectos? No se podrá capturar ningún defecto hasta activar alguno.')) return;
+      S.catalogs.defectosActivos=[];
+      try{ set('catalogs',S.catalogs); }catch(e){}
+      render();
+    });
+    on('#btn-add-defecto','click',function(){
+      var code=root.querySelector('#new-def-code').value.trim();
+      var name=root.querySelector('#new-def-name').value.trim();
+      var fam=root.querySelector('#new-def-familia').value;
+      if(!code || !name){ toast('Escribe el código y el nombre'); return; }
+      if(DEFECT_INDEX[code] || (S.catalogs.defectosExtra||[]).some(function(d){ return d.code===code; })){
+        toast('Ese código ya existe'); return;
+      }
+      S.catalogs.defectosExtra=S.catalogs.defectosExtra||[];
+      S.catalogs.defectosExtra.push({code:code, name:name, familiaId:fam});
+      S.catalogs.defectosActivos=S.catalogs.defectosActivos||[];
+      S.catalogs.defectosActivos.push(code);
+      try{ set('catalogs',S.catalogs); }catch(e){ toast('No se pudo guardar'); }
+      auditar('edicion','','Defecto propio agregado: '+code+' '+name,'');
+      toast('Defecto agregado y activado');
+      render();
+    });
+    each('[data-del-defecto-extra]',function(b){
+      b.addEventListener('click',function(ev){
+        ev.stopPropagation();
+        var code=b.getAttribute('data-del-defecto-extra');
+        if(!confirm('¿Borrar este defecto propio? Los registros que ya lo usan se conservan.')) return;
+        S.catalogs.defectosExtra=(S.catalogs.defectosExtra||[]).filter(function(d){ return d.code!==code; });
+        S.catalogs.defectosActivos=(S.catalogs.defectosActivos||[]).filter(function(c){ return c!==code; });
+        try{ set('catalogs',S.catalogs); }catch(e){}
+        render();
+      });
+    });
+
     on('#btn-add-zona','click',function(){
       var z=root.querySelector('#new-zona').value.trim();
       if(!z) return;
@@ -2215,7 +2400,7 @@
     var famId=root.querySelector('#edit-familia').value;
     var fam=FAMILIAS.filter(function(f){ return f.id===famId; })[0];
     var defCode=root.querySelector('#edit-defecto').value;
-    var def=defCode&&DEFECT_INDEX[defCode]?DEFECT_INDEX[defCode].defecto:null;
+    var def=defCode?buscarDefecto(defCode):null;
     var nuevo={
       resultado:root.querySelector('#edit-resultado').value,
       familia:fam?fam.name:'',

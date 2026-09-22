@@ -248,12 +248,40 @@
     .ra-nav{max-width:700px;left:50%;transform:translateX(-50%);right:auto;}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+  .ra-offline{background:#6E4B10;color:#fff;font-size:12px;font-weight:600;text-align:center;padding:7px 14px;line-height:1.4;}
+  .ra-offline.sync{background:var(--info);}
 </style>
 </head>
 <body>
 <div id="rollo-app"></div>
 
-<script>
+<script type="module">
+/* =====================================================================
+   CONFIGURACIÓN DE FIREBASE  ·  PEGA AQUÍ LA DE TU PROYECTO
+   Consola de Firebase → ⚙ Configuración del proyecto → General → Tus apps
+   → "Configuración del SDK" → opción "Config". Copia solo los valores.
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyC7PU8WKmcKrGaJ9v6SMpSjiZeB2KpKXqA",
+  authDomain: "inspeccion-rollos.firebaseapp.com",
+  projectId: "inspeccion-rollos",
+  storageBucket: "inspeccion-rollos.firebasestorage.app",
+  messagingSenderId: "723319172040",
+  appId: "1:723319172040:web:06a0b4b6b3c4ad077eeefd"
+};
+/* Dominio de los correos sintéticos (usuario@rollos.app). Los inspectores
+   nunca lo ven. No lo cambies después de dar de alta cuentas. */
+const DOMINIO_CORREO = 'rollos.app';
+/* ======================= FIN DE LA CONFIGURACIÓN ======================= */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { getAuth, initializeAuth, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword,
+         createUserWithEmailAndPassword, signOut, reauthenticateWithCredential, EmailAuthProvider,
+         updatePassword } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection,
+         getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch, arrayUnion, query,
+         orderBy } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
 (function(){
   "use strict";
 
@@ -345,7 +373,6 @@
   var FAMILIA_CAPTURA = 'ASP';
   var SEVERIDADES = ['Leve','Moderado','Severo'];
   var DEFAULT_VARIACIONES = { '593': ['Últimas vueltas flojas','Últimas vueltas corridas','Interior corrido','Varias vueltas corridas','DIC','DEX','Ambos lados'] };
-  var DEFAULT_ADMIN_PASS = 'Ternium2026';
   var PREFIX = 'ternium_rollos_';
 
   var ID_PREFIX = '4A', ID_SUFFIX = 'PM400', ID_MID_LEN = 6;
@@ -424,7 +451,7 @@
     '</svg>';
   }
 
-  /* ============ ALMACENAMIENTO ============ */
+  /* ============ ALMACENAMIENTO LOCAL (solo perfiles de este equipo) ============ */
   function safeParse(s, fb){ try{ return JSON.parse(s); }catch(e){ return fb; } }
   var storageOK = (function(){
     try{ localStorage.setItem(PREFIX+'__t','1'); localStorage.removeItem(PREFIX+'__t'); return true; }catch(e){ return false; }
@@ -434,35 +461,220 @@
     var raw = localStorage.getItem(PREFIX+key);
     return raw === null ? fb : safeParse(raw, fb);
   }
+  function lset(key, val){
+    if(!storageOK) return;
+    try{ localStorage.setItem(PREFIX+key, JSON.stringify(val)); }catch(e){}
+  }
+
+  /* ============ FIREBASE ============ */
+  var fbApp = initializeApp(firebaseConfig);
+  var auth = getAuth(fbApp);
+  /* Caché persistente: permite capturar sin señal y sube todo al reconectar */
+  var db = initializeFirestore(fbApp, {
+    ignoreUndefinedProperties: true,
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+  var COL = { usuarios:'usuarios', alias:'alias', config:'config', registros:'registros', fotos:'fotos',
+              tracking:'tracking', master:'rollosMaster', auditoria:'auditoria' };
+  function docId(id){ return String(id||'').replace(/\//g,'_') || '_'; }
+  function ref(col, id){ return doc(db, col, docId(id)); }
+  function copia(o){ return JSON.parse(JSON.stringify(o)); }
+  function errFirebase(e){
+    console.error(e);
+    if(e && e.code==='permission-denied') toast('Sin permiso: tu cuenta no está activa o no tiene acceso');
+    else toast('No se pudo guardar en la nube');
+  }
+  /* Las escrituras no se esperan: con o sin señal se aplican al momento en este
+     equipo y Firestore las sube en cuanto haya conexión. */
+  function escribir(p){ if(p && p.catch) p.catch(errFirebase); return p; }
+  /* Compatibilidad con el código de catálogos: set('catalogs', ...) y set('variaciones', ...) */
   function set(key, val){
-    if(!storageOK) throw new Error('sin almacenamiento');
-    localStorage.setItem(PREFIX+key, JSON.stringify(val));
+    if(key==='catalogs') escribir(setDoc(ref(COL.config,'catalogos'), copia(val)));
+    else if(key==='variaciones') escribir(setDoc(ref(COL.config,'variaciones'), {mapa: copia(val)}));
   }
-  function persistAll(){
-    set('usuarios',S.usuarios); set('adminPassword',S.adminPassword); set('catalogs',S.catalogs);
-    set('variaciones',S.variacionesCat); set('registros',S.registros); set('rollosMaster',S.rollosMaster);
-    set('tracking',S.tracking); set('auditoria',S.auditoria);
+  /* Escribe muchas operaciones en lotes (máx. 450 operaciones o ~8 MB por lote) */
+  function commitEnLotes(ops, progreso){
+    var lotes=[], actual=[], bytes=0;
+    ops.forEach(function(op){
+      var tam = op.data ? JSON.stringify(op.data).length : 100;
+      if(actual.length && (actual.length>=450 || bytes+tam>8000000)){ lotes.push(actual); actual=[]; bytes=0; }
+      actual.push(op); bytes+=tam;
+    });
+    if(actual.length) lotes.push(actual);
+    var i=0;
+    function siguiente(){
+      if(i>=lotes.length) return Promise.resolve(ops.length);
+      var b=writeBatch(db);
+      lotes[i].forEach(function(op){
+        if(op.tipo==='delete') b.delete(op.ref);
+        else b.set(op.ref, op.data, op.merge?{merge:true}:{});
+      });
+      return b.commit().then(function(){ i++; if(progreso) progreso(i, lotes.length); return siguiente(); });
+    }
+    return siguiente();
   }
-  function estimateUsage(){
-    var t=0;
-    try{ for(var k in localStorage){ if(Object.prototype.hasOwnProperty.call(localStorage,k) && k.indexOf(PREFIX)===0) t+=(localStorage.getItem(k)||'').length; } }catch(e){}
-    return t;
+
+  /* ============ CUENTAS Y PERFILES ============ */
+  var PIN_LEN = 6;
+  function normUsuario(s){
+    return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'');
   }
+  function usuarioValido(u){ return /^[a-z0-9_-]{3,20}$/.test(u); }
+  function pinValido(p){ return new RegExp('^\\d{'+PIN_LEN+'}$').test(p); }
+  /* usuario@dominio; al restablecer un PIN se crea usuario.2@dominio, usuario.3@... (el punto no se permite en usuarios) */
+  function correoDe(usuario, n){ return usuario + (n ? '.'+n : '') + '@' + DOMINIO_CORREO; }
+
+  function perfilesLocales(){ return get('perfiles', []); }
+  function guardarPerfiles(l){
+    l.sort(function(a,b){ return String(a.nombre).localeCompare(String(b.nombre)); });
+    lset('perfiles', l); S.perfiles = l;
+  }
+  function upsertPerfil(p){
+    var l = perfilesLocales(), prev = l.filter(function(x){ return x.usuario===p.usuario; })[0];
+    if(prev && prev.uid===p.uid && !p.pinHash){ p.pinHash = prev.pinHash; p.salt = prev.salt; }
+    l = l.filter(function(x){ return x.usuario!==p.usuario; });
+    l.push({usuario:p.usuario, nombre:p.nombre, email:p.email||'', uid:p.uid, rol:p.rol||'inspector',
+            pinHash:p.pinHash||'', salt:p.salt||''});
+    guardarPerfiles(l);
+  }
+  function quitarPerfil(usuario){ guardarPerfiles(perfilesLocales().filter(function(x){ return x.usuario!==usuario; })); }
+  function perfilLocal(usuario){ return perfilesLocales().filter(function(x){ return x.usuario===usuario; })[0] || null; }
+
+  /* Huella del PIN (PBKDF2) para poder desbloquear sin señal. El PIN nunca se guarda. */
+  function hashPin(pin, salt){
+    if(!(window.crypto && crypto.subtle && window.TextEncoder)) return Promise.resolve('');
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey('raw', enc.encode(pin), 'PBKDF2', false, ['deriveBits']).then(function(k){
+      return crypto.subtle.deriveBits({name:'PBKDF2', salt:enc.encode(salt), iterations:120000, hash:'SHA-256'}, k, 256);
+    }).then(function(bits){
+      return Array.prototype.map.call(new Uint8Array(bits), function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
+    }).catch(function(){ return ''; });
+  }
+  function guardarPerfilConPin(p, pin){
+    var salt = p.uid + '.' + Math.random().toString(36).slice(2);
+    return hashPin(pin, salt).then(function(h){
+      upsertPerfil({usuario:p.usuario, nombre:p.nombre, email:(auth.currentUser&&auth.currentUser.email)||p.email||'',
+                    uid:p.uid, rol:p.rol, pinHash:h, salt:h?salt:''});
+    });
+  }
+  function cargarPerfil(uid){
+    return getDoc(ref(COL.usuarios, uid)).then(function(s){
+      return s.exists() ? Object.assign({}, s.data(), {uid:uid}) : null;
+    });
+  }
+  /* Revisa (sin iniciar sesión) que los perfiles de este equipo sigan activos.
+     Solo consulta cada usuario por su nombre exacto; nunca lista a todos. */
+  var verificando = false;
+  function verificarPerfiles(){
+    if(verificando || !navigator.onLine) return;
+    var l = perfilesLocales();
+    if(!l.length) return;
+    verificando = true;
+    Promise.all(l.map(function(p){
+      return getDoc(ref(COL.alias, p.usuario)).then(function(s){
+        if(!s.exists() || !s.data().activo) return {usuario:p.usuario, quitar:true};
+        var a = s.data();
+        if(a.uid !== p.uid) return {usuario:p.usuario, uid:a.uid, email:a.email};
+        return null;
+      }).catch(function(){ return null; });
+    })).then(function(res){
+      var cambio = false, lista = perfilesLocales();
+      res.forEach(function(r){
+        if(!r) return;
+        cambio = true;
+        if(r.quitar) lista = lista.filter(function(x){ return x.usuario!==r.usuario; });
+        else lista.forEach(function(x){ if(x.usuario===r.usuario){ x.uid=r.uid; x.email=r.email; x.pinHash=''; x.salt=''; } });
+      });
+      verificando = false;
+      if(cambio){ guardarPerfiles(lista); if(!S.inspector) render(); }
+    });
+  }
+
+  /* ============ SINCRONIZACIÓN EN TIEMPO REAL ============ */
+  var unsubs = [];
+  function detenerEscuchas(){ unsubs.forEach(function(u){ try{ u(); }catch(e){} }); unsubs = []; }
+  function ocupado(){
+    var a = document.activeElement;
+    if(a && root.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type!=='file') return true;
+    return !!(S.editReg || S.showChangePin || S.resetUid);
+  }
+  /* Los cambios que llegan de otros equipos no interrumpen a quien está escribiendo */
+  function marcarCambios(){ if(ocupado()) S.dirty = true; else render(); }
+  document.addEventListener('focusout', function(){
+    setTimeout(function(){ if(S.dirty && !ocupado()) render(); }, 250);
+  });
+  function iniciarEscuchas(){
+    detenerEscuchas();
+    var uid = S.perfil.uid;
+    function errEscucha(e){
+      console.error(e);
+      if(e && e.code==='permission-denied' && S.inspector){ toast('Tu cuenta ya no tiene acceso'); cerrarSesion(false); }
+    }
+    unsubs.push(onSnapshot(ref(COL.usuarios, uid), function(s){
+      if(!s.exists() || !s.data().activo){
+        var u = S.perfil ? S.perfil.usuario : '';
+        toast('Tu cuenta fue desactivada');
+        if(u) quitarPerfil(u);
+        cerrarSesion(false); return;
+      }
+      var d = s.data(), eraAdmin = S.isAdmin;
+      S.perfil = Object.assign({}, d, {uid:uid}); S.inspector = d.nombre; S.isAdmin = d.rol==='admin';
+      if(eraAdmin !== S.isAdmin) iniciarEscuchas(); else marcarCambios();
+    }, errEscucha));
+    unsubs.push(onSnapshot(ref(COL.config,'catalogos'), function(s){
+      S.catalogs = migrarGrados(s.exists() ? s.data() : {});
+      if(!s.exists() && S.isAdmin && !s.metadata.fromCache) set('catalogs', S.catalogs);
+      marcarCambios();
+    }, errEscucha));
+    unsubs.push(onSnapshot(ref(COL.config,'variaciones'), function(s){
+      S.variacionesCat = s.exists() ? (s.data().mapa || {}) : copia(DEFAULT_VARIACIONES);
+      if(!s.exists() && S.isAdmin && !s.metadata.fromCache) set('variaciones', S.variacionesCat);
+      marcarCambios();
+    }, errEscucha));
+    unsubs.push(onSnapshot(query(collection(db, COL.registros), orderBy('ts','desc')), {includeMetadataChanges:true}, function(qs){
+      S.registros = qs.docs.map(function(d){ var x = d.data(); x.id = d.id; return x; });
+      S.pendRegs = qs.metadata.hasPendingWrites;
+      marcarCambios();
+    }, errEscucha));
+    unsubs.push(onSnapshot(collection(db, COL.tracking), {includeMetadataChanges:true}, function(qs){
+      var m = {};
+      qs.docs.forEach(function(d){ var t = d.data(); t.movimientos = t.movimientos || []; m[t.rolloId || d.id] = t; });
+      S.tracking = m; S.pendTrack = qs.metadata.hasPendingWrites;
+      marcarCambios();
+    }, errEscucha));
+    unsubs.push(onSnapshot(collection(db, COL.master), function(qs){
+      var m = {};
+      qs.docs.forEach(function(d){ var x = d.data(); m[x.id || d.id] = x; });
+      S.rollosMaster = m; marcarCambios();
+    }, errEscucha));
+    if(S.isAdmin){
+      unsubs.push(onSnapshot(collection(db, COL.usuarios), function(qs){
+        S.usuarios = qs.docs.map(function(d){ return Object.assign({}, d.data(), {uid:d.id}); });
+        marcarCambios();
+      }, errEscucha));
+      unsubs.push(onSnapshot(query(collection(db, COL.auditoria), orderBy('ts','desc')), function(qs){
+        S.auditoria = qs.docs.map(function(d){ return d.data(); });
+        marcarCambios();
+      }, errEscucha));
+    } else { S.usuarios = []; S.auditoria = []; }
+  }
+  function actualizarConexion(){ S.online = navigator.onLine; if(S.online && !S.inspector) verificarPerfiles(); marcarCambios(); }
+  window.addEventListener('online', actualizarConexion);
+  window.addEventListener('offline', actualizarConexion);
 
   /* ============ ESTADO ============ */
   var root = document.getElementById('rollo-app');
   var S = {
     tab:'captura', step:'id',
-    inspector:null, isAdmin:false,
-    adminPassword:DEFAULT_ADMIN_PASS, usuarios:[],
-    loginStep:'pick', loginPickedUser:null, loginError:'',
-    showAdminUnlock:false, adminUnlockError:'',
-    showChangePin:false, changePinError:'',
-    editingUserIdx:null,
+    inspector:null, isAdmin:false, perfil:null, perfiles:[],
+    usuarios:[], cargando:true, online:navigator.onLine, pendRegs:false, pendTrack:false, dirty:false,
+    loginStep:'pick', loginPickedUser:null, loginError:'', loginBusy:false, loginUsuario:'',
+    showChangePin:false, changePinError:'', changePinBusy:false,
+    resetUid:null, userBusy:false,
     idMid:'', idFull:'', idModo:'guiado',
     rolloData:{}, gradoQuery:'', gradoAbierto:false,
     resultado:null, familia:null, defecto:null, variacion:null, ubicacion:null, severidad:null,
-    fotos:[], comentario:'',
+    fotos:[], comentario:'', fotoCache:{},
     filtro:'', filtroResultado:'Todos', filtroFecha:'Todas', filtroTurno:'Todos', filtroDesde:'', filtroHasta:'',
     editReg:null, editErr:'',
     trackVista:'lista', trackRollo:null, trackFiltro:'', trackZona:'Todas', trackErr:'',
@@ -528,22 +740,38 @@
     return cat;
   }
 
+  /* ============ SESIÓN ============ */
   var inactTimer=null;
-  function cerrarSesion(porInactividad){
-    S.inspector=null; S.isAdmin=false; S.tab='captura';
-    try{ set('sesion',null); }catch(e){}
+  function limpiarPantallas(){
+    S.tab='captura';
     resetCaptureFlow();
     S.editReg=null; S.trackVista='lista'; S.trackRollo=null;
     S.trackModoSel=false; S.trackSeleccion=[];
-    S.loginStep='pick'; S.loginPickedUser=null; S.showAdminUnlock=false; S.showChangePin=false;
+    S.loginStep='pick'; S.loginPickedUser=null; S.loginError=''; S.loginBusy=false;
+    S.showChangePin=false; S.resetUid=null;
+  }
+  /* Bloqueo (inactividad): la cuenta sigue abierta en Firebase para poder volver a
+     entrar con el PIN aunque no haya señal. */
+  function bloquear(porInactividad){
+    detenerEscuchas();
+    S.inspector=null; S.isAdmin=false; S.perfil=null; S.usuarios=[]; S.auditoria=[];
+    lset('sesionAbierta', null);
+    limpiarPantallas();
+    S.perfiles = perfilesLocales();
     render();
     if(porInactividad) toast('Sesión cerrada por inactividad');
+    verificarPerfiles();
+  }
+  /* Cierre de sesión completo (botón "Cerrar sesión" o cuenta desactivada) */
+  function cerrarSesion(porInactividad){
+    bloquear(porInactividad);
+    signOut(auth).catch(function(){});
   }
   function reiniciarInactividad(){
     if(inactTimer) clearTimeout(inactTimer);
-    if(!S.inspector && !S.isAdmin) return;
+    if(!S.inspector) return;
     inactTimer = setTimeout(function(){
-      if(S.inspector || S.isAdmin) cerrarSesion(true);
+      if(S.inspector) bloquear(true);
     }, MINUTOS_INACTIVIDAD*60*1000);
   }
   ['click','keydown','touchstart','focusin'].forEach(function(ev){
@@ -553,18 +781,93 @@
     if(!document.hidden) reiniciarInactividad();
   });
 
-  function init(){
-    S.adminPassword = get('adminPassword', DEFAULT_ADMIN_PASS);
-    S.usuarios      = get('usuarios', []);
-    S.catalogs      = migrarGrados(get('catalogs', {}));
-    S.variacionesCat= get('variaciones', JSON.parse(JSON.stringify(DEFAULT_VARIACIONES)));
-    S.registros     = get('registros', []);
-    S.rollosMaster  = get('rollosMaster', {});
-    S.tracking      = get('tracking', {});
-    S.auditoria     = get('auditoria', []);
-    var saved = get('sesion', null);
-    if(saved && S.usuarios.some(function(u){ return u.nombre===saved; })) S.inspector = saved;
+  function activarSesion(perfil, bienvenida){
+    S.perfil = perfil; S.inspector = perfil.nombre; S.isAdmin = perfil.rol==='admin';
+    lset('sesionAbierta', perfil.uid);
+    limpiarPantallas();
+    iniciarEscuchas();
+    if(bienvenida) mostrarBienvenida(perfil.nombre);
     render();
+  }
+  function falloLogin(msg){
+    S.loginBusy=false; S.loginError=msg; render(); sacudir('.ra-gate-card');
+    setTimeout(function(){ var i=root.querySelector('#login-pin-input'); if(i){ i.value=''; i.focus(); } },60);
+  }
+  function mensajeAuth(e){
+    var c = (e && e.code) || '';
+    if(c==='app/inactivo') return 'Esta cuenta está desactivada. Consulta al administrador.';
+    if(c==='auth/too-many-requests') return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
+    if(c==='auth/network-request-failed' || c==='unavailable') return 'Sin conexión. Revisa la señal e inténtalo de nuevo.';
+    if(c.indexOf('auth/')===0 || c==='app/no-usuario') return 'Usuario o PIN incorrecto';
+    return 'No se pudo iniciar sesión';
+  }
+  function iniciarSesion(usuario, pin){
+    usuario = normUsuario(usuario);
+    if(!usuarioValido(usuario)){ falloLogin('Escribe tu usuario (3 a 20 letras o números, sin espacios)'); return; }
+    if(!pinValido(pin)){ falloLogin('El PIN debe tener exactamente '+PIN_LEN+' dígitos'); return; }
+    S.loginBusy=true; S.loginError=''; render();
+    var local = perfilLocal(usuario);
+    if(!navigator.onLine){ intentarSinSenal(usuario, pin, local); return; }
+    getDoc(ref(COL.alias, usuario)).then(function(s){
+      if(!s.exists()) throw {code:'app/no-usuario'};
+      if(!s.data().activo) throw {code:'app/inactivo'};
+      return s.data().email;
+    }, function(){
+      return local && local.email ? local.email : correoDe(usuario);
+    }).then(function(email){
+      return signInWithEmailAndPassword(auth, email, pin);
+    }).then(function(cred){
+      return cargarPerfil(cred.user.uid).then(function(p){
+        if(!p || !p.activo) return signOut(auth).then(function(){ throw {code:'app/inactivo'}; });
+        return guardarPerfilConPin(p, pin).then(function(){ activarSesion(p, true); });
+      });
+    }).catch(function(e){
+      if(e && e.code==='auth/network-request-failed'){ intentarSinSenal(usuario, pin, local); return; }
+      if(e && e.code==='app/inactivo') quitarPerfil(usuario);
+      falloLogin(mensajeAuth(e));
+    });
+  }
+  /* Sin señal solo puede volver a entrar quien dejó su cuenta abierta en este equipo */
+  function intentarSinSenal(usuario, pin, local){
+    var u = auth.currentUser;
+    if(!local || !u || u.uid!==local.uid || !local.pinHash){
+      falloLogin('Sin conexión. Sin señal solo puede entrar quien fue el último en usar este equipo.'); return;
+    }
+    hashPin(pin, local.salt).then(function(h){
+      if(h!==local.pinHash){ falloLogin('PIN incorrecto'); return; }
+      cargarPerfil(u.uid).then(function(p){
+        if(p && !p.activo){ quitarPerfil(usuario); falloLogin(mensajeAuth({code:'app/inactivo'})); return; }
+        activarSesion(p || {uid:u.uid, usuario:local.usuario, nombre:local.nombre, rol:local.rol, activo:true}, true);
+      }).catch(function(){
+        activarSesion({uid:u.uid, usuario:local.usuario, nombre:local.nombre, rol:local.rol, activo:true}, true);
+      });
+    });
+  }
+
+  function init(){
+    S.catalogs      = migrarGrados({});
+    S.variacionesCat= copia(DEFAULT_VARIACIONES);
+    S.perfiles      = perfilesLocales();
+    render();
+    var arrancado = false;
+    onAuthStateChanged(auth, function(user){
+      if(!arrancado){
+        arrancado = true; S.cargando = false;
+        var abierta = get('sesionAbierta', null);
+        if(user && abierta===user.uid){
+          var l = perfilesLocales().filter(function(x){ return x.uid===user.uid; })[0];
+          cargarPerfil(user.uid).then(function(p){
+            if(p && p.activo) activarSesion(p, false); else cerrarSesion(false);
+          }).catch(function(){
+            if(l) activarSesion({uid:user.uid, usuario:l.usuario, nombre:l.nombre, rol:l.rol, activo:true}, false);
+            else render();
+          });
+        } else render();
+        verificarPerfiles();
+        return;
+      }
+      if(!user && S.inspector) bloquear(false);
+    });
   }
 
   /* ============ HELPERS ============ */
@@ -599,13 +902,14 @@
 
   function auditar(tipo, rolloId, detalle, motivo){
     var now=new Date();
-    S.auditoria.unshift({
+    var a = {
       id:'a'+now.getTime()+Math.random().toString(36).slice(2,6), ts:now.getTime(),
       fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), usuario:usuarioActual(),
+      uid:S.perfil?S.perfil.uid:'',
       tipo:tipo, rolloId:rolloId||'', detalle:detalle||'', motivo:motivo||''
-    });
-    if(S.auditoria.length > 800) S.auditoria = S.auditoria.slice(0,800);
-    try{ set('auditoria', S.auditoria); }catch(e){}
+    };
+    if(S.isAdmin) S.auditoria.unshift(a);
+    escribir(setDoc(ref(COL.auditoria, a.id), a));
   }
 
   function stepOrder(){
@@ -629,7 +933,8 @@
 
   /* ============ RENDER ============ */
   function render(){
-    if(!S.inspector && !S.isAdmin){ root.innerHTML = renderGate(); bindEvents(); return; }
+    S.dirty = false;
+    if(!S.inspector){ root.innerHTML = renderGate(); bindEvents(); return; }
     var body;
     if(S.tab==='captura') body = renderCaptura();
     else if(S.tab==='rollos') body = renderTracking();
@@ -637,6 +942,7 @@
     else body = renderAjustes();
     root.innerHTML = renderHeader() + '<div class="ra-body">' + body + '</div>' + renderNav();
     bindEvents();
+    cargarFotosPendientes();
     reiniciarInactividad();
   }
 
@@ -648,7 +954,7 @@
         '<button class="ra-home" id="btn-home" aria-label="Ir al inicio">' + logoSVG() + '<div class="sub">' + sub + '</div></button>' +
         '<button class="ra-user" id="btn-user">' + escHtml(usuarioActual()) + '</button>' +
       '</div>' +
-      (S.tab==='captura' && !S.editReg ? '<div class="ra-steps">'+dots+'</div>' : '');
+      (S.tab==='captura' && !S.editReg ? '<div class="ra-steps">'+dots+'</div>' : '') + bannerConexion();
   }
 
   function renderNav(){
@@ -661,37 +967,47 @@
   }
 
   /* ============ ACCESO ============ */
+  function bannerConexion(){
+    if(!S.online) return '<div class="ra-offline">Sin conexión · lo que captures se guarda aquí y se sube al volver la señal</div>';
+    if(S.pendRegs || S.pendTrack) return '<div class="ra-offline sync">Sincronizando con la nube…</div>';
+    return '';
+  }
   function renderGate(){
     var warn = storageOK ? '' :
-      '<div class="ra-warn">El navegador está bloqueando el guardado local, algo típico del modo privado. Usa una ventana normal o los datos no se conservarán.</div>';
+      '<div class="ra-warn">El navegador está bloqueando el guardado local, algo típico del modo privado. Este equipo no podrá recordar los perfiles.</div>';
+    var sinSenal = S.online ? '' :
+      '<div class="ra-note">Sin conexión. Solo puede entrar quien fue el último en usar este equipo; los demás podrán entrar al volver la señal.</div>';
+    var err = S.loginError ? '<div class="ra-err">'+escHtml(S.loginError)+'</div>' : '';
+    var btnEntrar = '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-login-submit" style="margin-bottom:0;"'+(S.loginBusy?' disabled':'')+'>'+(S.loginBusy?'Entrando…':'Entrar')+'</button>';
+    var pinInput = '<input class="ra-input ra-pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="'+PIN_LEN+'" id="login-pin-input" autocomplete="off"'+(S.loginBusy?' disabled':'')+'>';
     var inner;
-    if(S.showAdminUnlock){
-      inner = '<div class="ra-gate-card">' +
-          '<div class="ra-topbar"><button class="ra-back" id="btn-hide-admin-unlock">‹ Atrás</button></div>' +
-          '<div class="ra-h1">Administrador</div>' +
-          '<div class="ra-h2">Ingresa la clave para gestionar inspectores y catálogos.</div>' + warn +
-          '<input class="ra-input" type="password" id="admin-unlock-pass" placeholder="Clave" autocomplete="off">' +
-          (S.adminUnlockError?'<div class="ra-err">'+escHtml(S.adminUnlockError)+'</div>':'') +
-          '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-admin-unlock-submit" style="margin-bottom:0;">Entrar</button>' +
-        '</div>';
+    if(S.cargando){
+      inner = '<div class="ra-gate-card"><div class="ra-h1">Conectando…</div><div class="ra-h2" style="margin-bottom:0;">Preparando la app.</div></div>';
     } else if(S.loginStep==='pin' && S.loginPickedUser){
+      var p = perfilLocal(S.loginPickedUser) || {nombre:S.loginPickedUser};
       inner = '<div class="ra-gate-card">' +
           '<div class="ra-topbar"><button class="ra-back" id="btn-login-back">‹ Atrás</button></div>' +
-          '<div class="ra-h1">'+escHtml(S.loginPickedUser)+'</div>' +
-          '<div class="ra-h2">Ingresa tu PIN para continuar.</div>' +
-          '<input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="6" id="login-pin-input" autocomplete="off">' +
-          (S.loginError?'<div class="ra-err">'+escHtml(S.loginError)+'</div>':'') +
-          '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-login-submit" style="margin-bottom:0;">Entrar</button>' +
+          '<div class="ra-h1">'+escHtml(p.nombre)+'</div>' +
+          '<div class="ra-h2">Ingresa tu PIN de '+PIN_LEN+' dígitos.</div>' + sinSenal + pinInput + err + btnEntrar +
+        '</div>';
+    } else if(S.loginStep==='nuevo' || !S.perfiles.length){
+      inner = '<div class="ra-gate-card">' +
+          (S.perfiles.length ? '<div class="ra-topbar"><button class="ra-back" id="btn-login-back">‹ Atrás</button></div>' : '') +
+          '<div class="ra-h1">Entrar con mi usuario</div>' +
+          '<div class="ra-h2">La primera vez en este equipo escribe tu usuario y tu PIN. Después solo tendrás que tocar tu nombre.</div>' + warn + sinSenal +
+          '<label class="ra-label" for="login-usuario">USUARIO</label>' +
+          '<input class="ra-input" id="login-usuario" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Ej. jperez" value="'+escAttr(S.loginUsuario)+'"'+(S.loginBusy?' disabled':'')+'>' +
+          '<label class="ra-label" for="login-pin-input">PIN</label>' + pinInput + err + btnEntrar +
         '</div>';
     } else {
-      var lista = S.usuarios.length
-        ? S.usuarios.map(function(u){ return '<button class="ra-btn ra-btn-outline ra-btn-block" data-pick-user="'+escAttr(u.nombre)+'">'+escHtml(u.nombre)+'</button>'; }).join('')
-        : '<div class="ra-h2" style="margin-bottom:0;">Todavía no hay inspectores dados de alta en este equipo. Entra como administrador para agregarlos.</div>';
+      var lista = S.perfiles.map(function(u){
+        return '<button class="ra-btn ra-btn-outline ra-btn-block" data-pick-user="'+escAttr(u.usuario)+'">'+escHtml(u.nombre)+'</button>';
+      }).join('');
       inner = '<div class="ra-gate-card">' +
           '<div class="ra-h1">Selecciona tu nombre</div>' +
           '<div class="ra-h2">Solo el personal autorizado puede capturar inspecciones.</div>' + warn + lista +
         '</div>' +
-        '<button class="ra-link" id="btn-show-admin-unlock" style="display:block;width:100%;text-align:center;color:#fff;margin-top:18px;">Entrar como administrador</button>';
+        '<button class="ra-link" id="btn-login-nuevo" style="display:block;width:100%;text-align:center;color:#fff;margin-top:18px;">¿No apareces? Entra con tu usuario</button>';
     }
     return '<div class="ra-gate"><div class="ra-gate-inner">' +
         '<div class="ra-gate-brand">' +
@@ -1146,13 +1462,27 @@
       '</div>';
   }
 
+  function camposTracking(t){
+    return {rolloId:t.rolloId, zona:t.zona, ultimoUsuario:t.ultimoUsuario, ultimaFecha:t.ultimaFecha,
+            ultimaHora:t.ultimaHora, ultimoTurno:t.ultimoTurno, ultimoTs:t.ultimoTs};
+  }
+  function nuevoMovimiento(zona, nota, medio, now){
+    return {zona:zona, medio:medio||'', usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now),
+            turno:turnoDe(now), ts:now.getTime(), nota:nota||''};
+  }
+  function aplicarMovimiento(t, mov){
+    t.movimientos.push(mov);
+    t.zona=mov.zona; t.ultimoUsuario=mov.usuario; t.ultimaFecha=mov.fecha; t.ultimaHora=mov.hora;
+    t.ultimoTurno=mov.turno; t.ultimoTs=mov.ts;
+    /* arrayUnion: si dos equipos mueven el mismo rollo sin señal, se conservan ambos movimientos */
+    return Object.assign(camposTracking(t), {movimientos:arrayUnion(mov)});
+  }
+
   function moverRollo(rolloIdVal, zona, nota, medio){
     var t = S.tracking[rolloIdVal];
     if(!t) return;
-    var now = new Date();
-    t.movimientos.push({zona:zona, medio:medio||'', usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), ts:now.getTime(), nota:nota||''});
-    t.zona = zona; t.ultimoUsuario = usuarioActual(); t.ultimaFecha = fechaHoy(now); t.ultimaHora = horaAhora(now); t.ultimoTurno = turnoDe(now); t.ultimoTs = now.getTime();
-    try{ set('tracking', S.tracking); }catch(e){ toast('No se pudo guardar el movimiento'); return; }
+    var mov = nuevoMovimiento(zona, nota, medio, new Date());
+    escribir(setDoc(ref(COL.tracking, rolloIdVal), aplicarMovimiento(t, mov), {merge:true}));
     auditar('movimiento', rolloIdVal, 'Movido a '+zona+(medio?' en '+medio:''), nota||'');
     S.trackMedio='';
     toast('Rollo movido a '+zona+(medio?' en '+medio:''));
@@ -1160,33 +1490,31 @@
   }
 
   function moverLote(ids, zona, nota, medio){
-    var now=new Date(), movidos=0;
+    var now=new Date(), ops=[];
     ids.forEach(function(id){
       var t=S.tracking[id];
       if(!t || t.zona===zona) return;
-      t.movimientos.push({zona:zona, medio:medio||'', usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now),
-        turno:turnoDe(now), ts:now.getTime(), nota:nota||'Movimiento en lote'});
-      t.zona=zona; t.ultimoUsuario=usuarioActual(); t.ultimaFecha=fechaHoy(now);
-      t.ultimaHora=horaAhora(now); t.ultimoTurno=turnoDe(now); t.ultimoTs=now.getTime();
-      movidos++;
+      var mov = nuevoMovimiento(zona, nota||'Movimiento en lote', medio, now);
+      ops.push({ref:ref(COL.tracking,id), data:aplicarMovimiento(t, mov), merge:true});
     });
-    if(!movidos){ toast('Esos rollos ya están en '+zona); return; }
-    try{ set('tracking', S.tracking); }catch(e){ toast('No se pudo guardar el movimiento'); return; }
-    auditar('movimiento','('+movidos+' rollos)','Movimiento en lote a '+zona+(medio?' en '+medio:'')+': '+ids.join(', '), nota||'');
+    if(!ops.length){ toast('Esos rollos ya están en '+zona); return; }
+    escribir(commitEnLotes(ops));
+    auditar('movimiento','('+ops.length+' rollos)','Movimiento en lote a '+zona+(medio?' en '+medio:'')+': '+ids.join(', '), nota||'');
     S.trackModoSel=false; S.trackSeleccion=[]; S.trackMedio='';
-    toast(movidos+' rollo(s) movidos a '+zona);
+    toast(ops.length+' rollo(s) movidos a '+zona);
     render();
   }
 
-  function iniciarTracking(rolloIdVal){
+  function iniciarTracking(rolloIdVal, batch){
     if(S.tracking[rolloIdVal]) return;
     var now = new Date();
-    S.tracking[rolloIdVal] = {
-      rolloId:rolloIdVal, zona:ZONA_ORIGEN,
-      ultimoUsuario:usuarioActual(), ultimaFecha:fechaHoy(now), ultimaHora:horaAhora(now), ultimoTurno:turnoDe(now), ultimoTs:now.getTime(),
-      movimientos:[{zona:ZONA_ORIGEN, usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), ts:now.getTime(), nota:'Alta por inspección'}]
-    };
-    try{ set('tracking', S.tracking); }catch(e){}
+    var mov = {zona:ZONA_ORIGEN, medio:'', usuario:usuarioActual(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), ts:now.getTime(), nota:'Alta por inspección'};
+    var t = {rolloId:rolloIdVal, zona:ZONA_ORIGEN, ultimoUsuario:usuarioActual(), ultimaFecha:fechaHoy(now),
+             ultimaHora:horaAhora(now), ultimoTurno:turnoDe(now), ultimoTs:now.getTime(), movimientos:[mov]};
+    S.tracking[rolloIdVal] = t;
+    var data = Object.assign(camposTracking(t), {movimientos:arrayUnion(mov)});
+    if(batch) batch.set(ref(COL.tracking, rolloIdVal), data, {merge:true});
+    else escribir(setDoc(ref(COL.tracking, rolloIdVal), data, {merge:true}));
   }
 
   /* ============ HISTORIAL ============ */
@@ -1276,7 +1604,7 @@
     var hayFiltro = S.filtroResultado!=='Todos' || S.filtroFecha!=='Todas' || S.filtroTurno!=='Todos' || S.filtro.trim();
     var items = regs.length ? regs.map(historyItem).join('') :
       (all.length ? '<div class="ra-empty">Ningún rollo coincide con los filtros.</div>'
-                  : '<div class="ra-empty"><div class="big">▤</div>Aún no hay rollos capturados en este equipo.</div>');
+                  : '<div class="ra-empty"><div class="big">▤</div>Aún no hay rollos capturados.</div>');
     return resumenHoyCard() +
       '<div class="ra-stats">'+stat(all.length,'TOTAL')+stat(c,'ACEPTADO')+stat(d,'DEFECTO')+'</div>' +
       '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-export">Exportar a Excel</button>' +
@@ -1297,7 +1625,10 @@
     var meta=[r.familia, r.defectoCode?r.defectoCode+' '+r.defecto:'', r.variacion, r.ubicacion, r.severidad].filter(Boolean).join(' · ');
     var acero=[r.grado, r.familiaSGF?'SGF '+r.familiaSGF:'', r.familiaDesc].filter(Boolean).join(' · ');
     var zona = S.tracking[r.rolloId] ? S.tracking[r.rolloId].zona : '';
-    var fotos = (r.fotos||[]).map(function(f,i){ return '<img src="'+f+'" data-foto-reg="'+escAttr(r.id)+'" data-foto-idx="'+i+'" alt="Evidencia">'; }).join('');
+    var fotos = fotosDe(r).map(function(f,i){
+      var src = f.data || S.fotoCache[f.id] || PIXEL;
+      return '<img src="'+src+'"'+(f.id?' data-foto-id="'+escAttr(f.id)+'"':'')+' data-foto-reg="'+escAttr(r.id)+'" data-foto-idx="'+i+'" alt="Evidencia">';
+    }).join('');
     var ed = (r.ediciones||[]).length;
     return '<div class="ra-item">' +
         '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(r.rolloId)+'</span><span class="ra-badge '+cls+'">'+escHtml(etqRes(r.resultado).toUpperCase())+'</span></div>' +
@@ -1317,38 +1648,36 @@
 
   /* ============ AJUSTES ============ */
   function renderAjustes(){
-    var out='', kb=Math.round(estimateUsage()/1024);
+    var out='';
     out += '<div class="ra-card">' +
         '<div class="ra-h1">Sesión</div>' +
-        '<div class="ra-h2">'+escHtml(usuarioActual())+(S.isAdmin?'<span class="ra-pill">ADMIN</span>':'')+'</div>' +
-        (S.inspector?'<button class="ra-link" id="btn-change-pin" style="margin-right:22px;">Cambiar mi PIN</button>':'') +
+        '<div class="ra-h2">'+escHtml(usuarioActual())+(S.isAdmin?'<span class="ra-pill">ADMIN</span>':'')+
+          (S.perfil&&S.perfil.usuario?'<br>Usuario: '+escHtml(S.perfil.usuario):'')+'</div>' +
+        '<button class="ra-link" id="btn-change-pin" style="margin-right:22px;">Cambiar mi PIN</button>' +
         '<button class="ra-link danger" id="btn-logout">Cerrar sesión</button>' +
-        '<div class="ra-meta" style="margin-top:10px;">La sesión se cierra sola tras '+MINUTOS_INACTIVIDAD+' minutos sin actividad.</div>' +
+        '<div class="ra-meta" style="margin-top:10px;">La pantalla se bloquea sola tras '+MINUTOS_INACTIVIDAD+' minutos sin actividad; para volver basta tu PIN, aunque no haya señal. «Cerrar sesión» la cierra por completo.</div>' +
       '</div>';
     if(S.showChangePin) out += changePinCard();
+    out += datosAnterioresCard();
 
     out += '<div class="ra-card">' +
-        '<div class="ra-h1">Respaldo</div>' +
-        '<div class="ra-h2">La información vive solo en este equipo. Descarga respaldos con frecuencia. Uso actual: '+kb+' KB.</div>' +
-        '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-backup">Descargar respaldo</button>' +
-        '<label class="ra-btn ra-btn-outline ra-btn-block" style="cursor:pointer;margin-bottom:0;">Restaurar respaldo<input type="file" accept="application/json,.json" id="input-restore" style="display:none;"></label>' +
+        '<div class="ra-h1">Datos y respaldo</div>' +
+        '<div class="ra-h2">La información se guarda en Firebase y se comparte en tiempo real con todos los equipos. Si se cae la señal puedes seguir capturando: todo se sube solo al reconectarse. ' +
+          (S.online ? 'Estado: <b>conectado</b>.' : 'Estado: <b>sin conexión</b>.') + '</div>' +
+        '<button class="ra-btn ra-btn-outline ra-btn-block"'+(S.isAdmin?'':' style="margin-bottom:0;"')+' id="btn-backup">Descargar respaldo</button>' +
+        (S.isAdmin ? '<label class="ra-btn ra-btn-outline ra-btn-block" style="cursor:pointer;margin-bottom:0;">Importar respaldo JSON a Firebase<input type="file" accept="application/json,.json" id="input-restore" style="display:none;"></label>' +
+          '<div class="ra-meta" style="margin-top:10px;">Acepta los respaldos que generaba la versión anterior. Importar dos veces el mismo archivo no duplica registros.</div>' : '') +
       '</div>';
 
     if(!S.isAdmin){
       out += '<div class="ra-card">' +
           '<div class="ra-h1">Panel de administrador</div>' +
-          '<div class="ra-h2">Inspectores, catálogos, zonas y el reporte de movimientos solo los ve el administrador.</div>' +
-          (S.showAdminUnlock ?
-            ('<input class="ra-input" type="password" id="admin-unlock-pass" placeholder="Clave de administrador" autocomplete="off">' +
-             (S.adminUnlockError?'<div class="ra-err">'+escHtml(S.adminUnlockError)+'</div>':'') +
-             '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-admin-unlock-submit">Entrar</button>' +
-             '<button class="ra-link" id="btn-hide-admin-unlock">Cancelar</button>')
-            : '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-show-admin-unlock" style="margin-bottom:0;">Desbloquear con clave</button>') +
+          '<div class="ra-h2" style="margin-bottom:0;">Inspectores, catálogos, zonas y el reporte de movimientos solo los ven las cuentas con rol de administrador.</div>' +
         '</div>';
       return out;
     }
-    return out + reporteCard() + usersCard() + gradosCard() + defectosCard() + zonasCard() + mediosCard() +
-           simpleCatalogCard('enrolladores','Enrolladores') + adminPassCard() + variacionesCard() + demoCard();
+    return out + reporteCard() + usersCard() + perfilesEquipoCard() + gradosCard() + defectosCard() + zonasCard() + mediosCard() +
+           simpleCatalogCard('enrolladores','Enrolladores') + variacionesCard() + demoCard();
   }
 
   function reporteCard(){
@@ -1468,41 +1797,71 @@
   function changePinCard(){
     return '<div class="ra-card">' +
         '<div class="ra-h1">Cambiar mi PIN</div>' +
-        '<label class="ra-label">PIN ACTUAL</label><input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="6" id="cp-current">' +
-        '<label class="ra-label">PIN NUEVO (4 A 6 DÍGITOS)</label><input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="6" id="cp-new">' +
+        '<div class="ra-h2">Necesitas conexión para cambiarlo.</div>' +
+        '<label class="ra-label">PIN ACTUAL</label><input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="'+PIN_LEN+'" id="cp-current" autocomplete="off">' +
+        '<label class="ra-label">PIN NUEVO ('+PIN_LEN+' DÍGITOS)</label><input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="'+PIN_LEN+'" id="cp-new" autocomplete="off">' +
+        '<label class="ra-label">CONFIRMA EL PIN NUEVO</label><input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="'+PIN_LEN+'" id="cp-new2" autocomplete="off">' +
         (S.changePinError?'<div class="ra-err">'+escHtml(S.changePinError)+'</div>':'') +
-        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-change-pin-submit">Guardar nuevo PIN</button>' +
+        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-change-pin-submit"'+(S.changePinBusy?' disabled':'')+'>'+(S.changePinBusy?'Guardando…':'Guardar nuevo PIN')+'</button>' +
         '<button class="ra-link" id="btn-cancel-change-pin">Cancelar</button>' +
       '</div>';
   }
 
+  /* Cuentas vigentes (al restablecer un PIN la cuenta anterior queda marcada como reemplazada) */
+  function cuentasVigentes(){
+    return S.usuarios.filter(function(u){ return !u.reemplazadoPor; })
+      .sort(function(a,b){ return (b.activo?1:0)-(a.activo?1:0) || String(a.nombre).localeCompare(String(b.nombre)); });
+  }
+
   function usersCard(){
-    var rows = S.usuarios.map(function(u,i){
-      var editing = S.editingUserIdx===i;
+    var rows = cuentasVigentes().map(function(u){
       var count = S.registros.filter(function(r){ return r.inspector===u.nombre; }).length;
-      return '<div class="ra-item">' +
-          '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(u.nombre)+'</span><button class="ra-link danger" data-del-usuario="'+i+'">Eliminar</button></div>' +
-          '<div class="ra-meta">'+count+' inspecciones capturadas</div>' +
-          (editing
-            ? '<div class="ra-inline-form" style="margin-top:9px;margin-bottom:0;"><input class="ra-input ra-pin-input" type="tel" inputmode="numeric" maxlength="6" id="edit-pin-input" placeholder="PIN" style="margin-bottom:0;"><button class="ra-small-btn" data-save-pin="'+i+'">Guardar</button></div>'
-            : '<button class="ra-link" data-edit-usuario="'+i+'">Cambiar PIN</button>') +
+      var yo = S.perfil && u.uid===S.perfil.uid;
+      var reset = S.resetUid===u.uid;
+      return '<div class="ra-item"'+(u.activo?'':' style="opacity:.62;"')+'>' +
+          '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(u.nombre)+(u.rol==='admin'?'<span class="ra-pill">ADMIN</span>':'')+'</span>' +
+            (u.activo?'':'<span class="ra-badge scrap">INACTIVO</span>')+'</div>' +
+          '<div class="ra-meta">Usuario: <b>'+escHtml(u.usuario)+'</b> · '+count+' inspecciones capturadas'+(yo?' · tu cuenta':'')+'</div>' +
+          (reset
+            ? '<div class="ra-meta" style="margin-top:9px;">PIN nuevo para '+escHtml(u.nombre)+' ('+PIN_LEN+' dígitos):</div>' +
+              '<div class="ra-inline-form" style="margin-top:6px;margin-bottom:0;"><input class="ra-input ra-pin-input" type="tel" inputmode="numeric" maxlength="'+PIN_LEN+'" id="reset-pin-input" placeholder="PIN" style="margin-bottom:0;" autocomplete="off">' +
+              '<button class="ra-small-btn" data-save-reset="'+escAttr(u.uid)+'"'+(S.userBusy?' disabled':'')+'>'+(S.userBusy?'…':'Guardar')+'</button></div>' +
+              '<button class="ra-link" id="btn-cancel-reset">Cancelar</button>'
+            : '<div class="ra-actions">' +
+                (u.activo && !yo ? '<button class="ra-link" data-reset-usuario="'+escAttr(u.uid)+'">Restablecer PIN</button>' : '') +
+                (yo ? '' : (u.activo
+                  ? '<button class="ra-link danger" data-desactivar="'+escAttr(u.uid)+'">Desactivar</button>'
+                  : '<button class="ra-link" data-reactivar="'+escAttr(u.uid)+'">Reactivar</button>')) +
+              '</div>') +
         '</div>';
     }).join('');
     return '<div class="ra-card">' +
-        '<div class="ra-h1">Inspectores autorizados</div>' +
-        '<div class="ra-h2">Solo estas personas pueden entrar a capturar en este equipo.</div>' +
-        (rows || '<div class="ra-h2">Todavía no agregas a nadie.</div>') +
-        '<div class="ra-inline-form" style="margin-top:14px;"><input class="ra-input" id="new-usuario-nombre" placeholder="Nombre del inspector" style="margin-bottom:0;" autocomplete="off"></div>' +
-        '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input ra-pin-input" type="tel" inputmode="numeric" maxlength="6" id="new-usuario-pin" placeholder="PIN" style="margin-bottom:0;"><button class="ra-small-btn" id="btn-add-usuario">Agregar</button></div>' +
+        '<div class="ra-h1">Usuarios</div>' +
+        '<div class="ra-h2">Quitar a alguien lo desactiva: no puede entrar desde ningún equipo, desaparece de las pantallas de inicio y su historial se conserva. Puedes reactivarlo cuando quieras.</div>' +
+        (rows || '<div class="ra-h2">Todavía no hay usuarios.</div>') +
+        '<div class="ra-label" style="margin-top:16px;">DAR DE ALTA</div>' +
+        '<input class="ra-input" id="new-usuario-nombre" placeholder="Nombre completo (ej. Juan Pérez)" autocomplete="off">' +
+        '<input class="ra-input" id="new-usuario-usuario" placeholder="Usuario (ej. jperez)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">' +
+        '<div class="ra-inline-form"><input class="ra-input ra-pin-input" type="tel" inputmode="numeric" maxlength="'+PIN_LEN+'" id="new-usuario-pin" placeholder="PIN" style="margin-bottom:0;" autocomplete="off">' +
+          '<select class="ra-input" id="new-usuario-rol" style="margin-bottom:0;max-width:150px;"><option value="inspector">Inspector</option><option value="admin">Administrador</option></select></div>' +
+        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-add-usuario" style="margin-bottom:0;"'+(S.userBusy?' disabled':'')+'>'+(S.userBusy?'Creando cuenta…':'Dar de alta')+'</button>' +
+        '<div class="ra-meta" style="margin-top:10px;">El usuario lleva de 3 a 20 letras minúsculas o números, sin espacios ni puntos. El PIN lleva exactamente '+PIN_LEN+' dígitos. Dar de alta requiere conexión.</div>' +
       '</div>';
   }
 
-  function adminPassCard(){
+  function perfilesEquipoCard(){
+    var locales = perfilesLocales();
+    var filas = cuentasVigentes().filter(function(u){ return u.activo; }).map(function(u){
+      var on = locales.some(function(p){ return p.usuario===u.usuario; });
+      return '<div class="ra-defrow'+(on?' on':'')+'" data-toggle-perfil="'+escAttr(u.uid)+'">' +
+          '<span class="ra-check'+(on?' on':'')+'">'+(on?'✓':'')+'</span>' +
+          '<span class="ra-choice-text">'+escHtml(u.nombre)+' <span style="color:var(--ink-soft);font-size:12px;">'+escHtml(u.usuario)+'</span></span>' +
+        '</div>';
+    }).join('');
     return '<div class="ra-card">' +
-        '<div class="ra-h1">Clave de administrador</div>' +
-        '<div class="ra-h2">Cámbiala en cuanto entres. Clave por defecto: '+escHtml(DEFAULT_ADMIN_PASS)+'</div>' +
-        '<input class="ra-input" type="password" id="new-admin-pass" placeholder="Nueva clave" autocomplete="off">' +
-        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-save-admin-pass" style="margin-bottom:0;">Actualizar clave</button>' +
+        '<div class="ra-h1">Perfiles en este equipo</div>' +
+        '<div class="ra-h2">Marca quién debe aparecer como botón en la pantalla de inicio de este equipo. También se agregan solos cuando alguien entra aquí con su usuario por primera vez. La lista se guarda solo en este equipo.</div>' +
+        (filas || '<div class="ra-note">No hay usuarios activos.</div>') +
       '</div>';
   }
 
@@ -1537,7 +1896,7 @@
   function demoCard(){
     return '<div class="ra-card">' +
         '<div class="ra-h1">Herramientas de demostración</div>' +
-        '<div class="ra-h2">Carga inspectores y rollos de ejemplo para presentar la app, o borra todo para dejarla limpia.</div>' +
+        '<div class="ra-h2">Carga rollos de ejemplo para presentar la app, o borra la base compartida para dejarla limpia. Afecta a todos los equipos; las cuentas de usuario no se tocan.</div>' +
         '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-demo">Cargar datos de ejemplo</button>' +
         '<button class="ra-btn ra-btn-scrap ra-btn-block" id="btn-wipe" style="margin-bottom:0;">Borrar todos los datos</button>' +
       '</div>';
@@ -1545,20 +1904,56 @@
 
   /* ============ FOTOS ============ */
   function compressImage(file){
+    function reducir(img, maxW, q){
+      var scale=Math.min(1,maxW/img.width);
+      var c=document.createElement('canvas');
+      c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      return c.toDataURL('image/jpeg',q);
+    }
     return new Promise(function(resolve,reject){
       var reader=new FileReader();
       reader.onload=function(e){
         var img=new Image();
         img.onload=function(){
-          var maxW=900, scale=Math.min(1,maxW/img.width);
-          var c=document.createElement('canvas');
-          c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
-          c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-          resolve(c.toDataURL('image/jpeg',0.55));
+          /* Cada foto va en su propio documento de Firestore (límite 1 MB) */
+          var d=reducir(img,900,0.55);
+          if(d.length>700000) d=reducir(img,700,0.45);
+          if(d.length>700000) d=reducir(img,520,0.4);
+          resolve(d);
         };
         img.onerror=reject; img.src=e.target.result;
       };
       reader.onerror=reject; reader.readAsDataURL(file);
+    });
+  }
+
+  var PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+  /* Fotos de un registro: nuevas (en la colección fotos) o antiguas (incrustadas) */
+  function fotosDe(r){
+    return (r.fotoIds||[]).map(function(id){ return {id:id}; })
+      .concat((r.fotos||[]).map(function(d){ return {data:d}; }));
+  }
+  var fotosEnCamino = {};
+  function cargarFoto(id){
+    if(S.fotoCache[id]) return Promise.resolve(S.fotoCache[id]);
+    if(fotosEnCamino[id]) return fotosEnCamino[id];
+    fotosEnCamino[id] = getDoc(ref(COL.fotos, id)).then(function(s){
+      delete fotosEnCamino[id];
+      if(s.exists()) S.fotoCache[id] = s.data().data;
+      return S.fotoCache[id] || null;
+    }).catch(function(){ delete fotosEnCamino[id]; return null; });
+    return fotosEnCamino[id];
+  }
+  /* Las fotos se descargan solo cuando se muestran y se guardan en memoria */
+  function cargarFotosPendientes(){
+    root.querySelectorAll('img[data-foto-id]').forEach(function(img){
+      var id = img.getAttribute('data-foto-id');
+      if(S.fotoCache[id]) return;
+      cargarFoto(id).then(function(src){
+        if(!src) return;
+        root.querySelectorAll('img[data-foto-id="'+id+'"]').forEach(function(n){ n.src = src; });
+      });
     });
   }
 
@@ -1767,33 +2162,190 @@
   }
 
   /* ============ RESPALDO ============ */
-  function downloadBackup(){
-    var data={version:2,exportado:new Date().toISOString(),usuarios:S.usuarios,adminPassword:S.adminPassword,
-      catalogs:S.catalogs,variaciones:S.variacionesCat,registros:S.registros,rollosMaster:S.rollosMaster,
-      tracking:S.tracking,auditoria:S.auditoria};
+  function descargarJSON(data, nombre){
     var blob=new Blob([JSON.stringify(data)],{type:'application/json'});
     var a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
-    a.download='respaldo_inspeccion_'+fechaHoy()+'.json';
+    a.download=nombre;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(a.href); },3000);
-    toast('Respaldo descargado');
+  }
+  function downloadBackup(){
+    toast('Preparando respaldo…');
+    var regs = copia(S.registros);
+    var ids = [];
+    regs.forEach(function(r){ (r.fotoIds||[]).forEach(function(id){ ids.push(id); }); });
+    Promise.all(ids.map(cargarFoto)).then(function(){
+      regs.forEach(function(r){
+        r.fotos = (r.fotos||[]).concat((r.fotoIds||[]).map(function(id){ return S.fotoCache[id]; }).filter(Boolean));
+        delete r.fotoIds;
+      });
+      var data={version:3, origen:'firebase', exportado:new Date().toISOString(),
+        usuarios: S.isAdmin ? cuentasVigentes().map(function(u){ return {nombre:u.nombre, usuario:u.usuario, rol:u.rol, activo:u.activo}; }) : [],
+        catalogs:S.catalogs, variaciones:S.variacionesCat, registros:regs, rollosMaster:S.rollosMaster,
+        tracking:S.tracking, auditoria:S.isAdmin?S.auditoria:[]};
+      descargarJSON(data, 'respaldo_inspeccion_'+fechaHoy()+'.json');
+      toast('Respaldo descargado');
+    });
   }
 
+  /* Importa a Firebase un respaldo JSON (de la versión con localStorage o de esta).
+     Usa los mismos IDs: importar dos veces el mismo archivo no duplica nada. */
   function restoreBackup(file){
+    if(!S.isAdmin) return;
     var reader=new FileReader();
-    reader.onload=function(e){
-      var d=safeParse(e.target.result,null);
-      if(!d || !d.registros){ toast('El archivo no es un respaldo válido'); return; }
-      if(!confirm('Esto reemplazará TODOS los datos de este equipo con los del respaldo. ¿Continuar?')) return;
-      S.usuarios=d.usuarios||[]; S.adminPassword=d.adminPassword||DEFAULT_ADMIN_PASS;
-      S.catalogs=migrarGrados(d.catalogs||{}); S.variacionesCat=d.variaciones||S.variacionesCat;
-      S.registros=d.registros||[]; S.rollosMaster=d.rollosMaster||{};
-      S.tracking=d.tracking||{}; S.auditoria=d.auditoria||[];
-      try{ persistAll(); toast('Respaldo restaurado'); }catch(err){ toast('No se pudo guardar — espacio insuficiente'); }
-      render();
-    };
+    reader.onload=function(e){ importarDatos(safeParse(e.target.result,null)); };
     reader.readAsText(file);
+  }
+  function importarDatos(d){
+      if(!S.isAdmin) return;
+      if(!d || !Array.isArray(d.registros)){ toast('El archivo no es un respaldo válido'); return; }
+      if(!navigator.onLine){ toast('Necesitas conexión para importar'); return; }
+      var tracking = d.tracking||{}, master = d.rollosMaster||{}, audit = d.auditoria||[];
+      var nFotos = 0;
+      d.registros.forEach(function(r){ nFotos += (r.fotos||[]).length; });
+      if(!confirm('Se importarán a Firebase:\n· '+d.registros.length+' registros ('+nFotos+' fotos)\n· '+Object.keys(tracking).length+' rollos en seguimiento\n· '+audit.length+' movimientos de auditoría\n\nLo que ya exista con el mismo ID se actualiza, no se duplica. ¿Continuar?')) return;
+      var conCatalogos = !!d.catalogs && confirm('¿Reemplazar también los catálogos (grados, zonas, medios, defectos, enrolladores) y las variaciones por los del respaldo?\n\nAceptar = reemplazar · Cancelar = conservar los actuales');
+      var ops=[], uid=S.perfil.uid;
+      d.registros.forEach(function(r0){
+        var r = copia(r0);
+        if(!r.id) r.id = 'r'+(r.ts||Date.now())+Math.random().toString(36).slice(2,7);
+        var fotoIds = (r.fotoIds||[]).slice();
+        (r.fotos||[]).forEach(function(f, i){
+          if(typeof f!=='string' || f.length>1000000) return;
+          var fid = docId(r.id)+'_'+i;
+          fotoIds.push(fid);
+          ops.push({ref:ref(COL.fotos,fid), data:{registroId:r.id, rolloId:r.rolloId||'', data:f, ts:r.ts||0, uid:uid, importado:true}});
+        });
+        delete r.fotos;
+        r.fotoIds = fotoIds;
+        r.ediciones = r.ediciones||[];
+        r.inspectorUid = r.inspectorUid||'';
+        ops.push({ref:ref(COL.registros,r.id), data:r});
+      });
+      Object.keys(tracking).forEach(function(k){
+        var t = copia(tracking[k]); t.rolloId = t.rolloId||k; t.movimientos = t.movimientos||[];
+        ops.push({ref:ref(COL.tracking,k), data:t});
+      });
+      Object.keys(master).forEach(function(k){
+        var m = copia(master[k]); m.id = m.id||k;
+        ops.push({ref:ref(COL.master,k), data:m});
+      });
+      audit.forEach(function(a0){
+        var a = copia(a0);
+        if(!a.id) a.id = 'a'+(a.ts||Date.now())+Math.random().toString(36).slice(2,6);
+        a.uid = a.uid||'';
+        ops.push({ref:ref(COL.auditoria,a.id), data:a});
+      });
+      if(conCatalogos){
+        ops.push({ref:ref(COL.config,'catalogos'), data:copia(migrarGrados(copia(d.catalogs)))});
+        if(d.variaciones) ops.push({ref:ref(COL.config,'variaciones'), data:{mapa:copia(d.variaciones)}});
+      }
+      toast('Importando…');
+      commitEnLotes(ops, function(i,n){ toast('Importando… lote '+i+' de '+n); }).then(function(){
+        auditar('edicion','','Importación de respaldo: '+d.registros.length+' registros, '+Object.keys(tracking).length+' rollos'+(conCatalogos?' y catálogos':''),'');
+        var nombres = (d.usuarios||[]).map(function(u){ return u.nombre; }).filter(Boolean);
+        alert('Importación terminada: '+ops.length+' documentos escritos.' +
+          (nombres.length ? '\n\nLas cuentas no se importan (los PIN no viajan en el respaldo). Da de alta en «Usuarios» a quien siga activo:\n· '+nombres.join('\n· ') : ''));
+      }).catch(function(err){
+        console.error(err);
+        alert('La importación se detuvo: '+(err && err.message ? err.message : err)+'\nPuedes volver a importar el mismo archivo; lo ya subido no se duplica.');
+      });
+  }
+
+  /* Datos que dejó en este equipo la versión anterior (localStorage) */
+  function datosAnteriores(){
+    var regs = get('registros', null), tr = get('tracking', null);
+    if(!(regs && regs.length) && !(tr && Object.keys(tr).length)) return null;
+    return {version:2, origen:'localStorage', exportado:new Date().toISOString(),
+      usuarios:(get('usuarios',[])||[]).map(function(u){ return {nombre:u.nombre}; }),
+      catalogs:get('catalogs',null), variaciones:get('variaciones',null), registros:regs||[],
+      rollosMaster:get('rollosMaster',{}), tracking:tr||{}, auditoria:get('auditoria',[])};
+  }
+  function datosAnterioresCard(){
+    var d = datosAnteriores();
+    if(!d) return '';
+    return '<div class="ra-card" style="border-color:var(--defecto);">' +
+        '<div class="ra-h1">Datos de la versión anterior</div>' +
+        '<div class="ra-h2">Este equipo todavía guarda '+d.registros.length+' inspección(es) y '+Object.keys(d.tracking).length+' rollo(s) de cuando la app guardaba todo localmente. ' +
+          (S.isAdmin ? 'Súbelos a Firebase para que todos los vean.' : 'Descárgalos y envíalos al administrador, o pídele que entre en este equipo para subirlos.') + '</div>' +
+        (S.isAdmin ? '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-subir-anteriores">Subir estos datos a Firebase</button>' : '') +
+        '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-bajar-anteriores" style="margin-bottom:0;">Descargar como respaldo JSON</button>' +
+      '</div>';
+  }
+
+  /* ============ CUENTAS (solo administrador) ============ */
+  var appAltas = null, authAltas = null;
+  /* Segunda instancia de Firebase: crear cuentas ahí no cierra la sesión del admin */
+  function authSecundaria(){
+    if(!authAltas){
+      appAltas = initializeApp(firebaseConfig, 'altas');
+      authAltas = initializeAuth(appAltas, {persistence: inMemoryPersistence});
+    }
+    return authAltas;
+  }
+  function crearCuentaAuth(usuario, pin, n){
+    var sa = authSecundaria(), email = correoDe(usuario, n);
+    return createUserWithEmailAndPassword(sa, email, pin).then(function(cred){
+      var uid = cred.user.uid;
+      return signOut(sa).then(function(){ return {uid:uid, email:email, version:n}; });
+    }, function(e){
+      if(e && e.code==='auth/email-already-in-use' && n<20) return crearCuentaAuth(usuario, pin, n ? n+1 : 2);
+      throw e;
+    });
+  }
+  function mensajeAlta(e){
+    var c=(e&&e.code)||'';
+    if(c==='app/existe') return 'Ese usuario ya existe';
+    if(c==='auth/network-request-failed') return 'Sin conexión: dar de alta requiere señal';
+    if(c==='auth/weak-password') return 'El PIN no es válido para Firebase';
+    if(c==='auth/too-many-requests') return 'Demasiadas altas seguidas. Espera unos minutos.';
+    if(c==='permission-denied') return 'Sin permiso para dar de alta usuarios';
+    return 'No se pudo crear la cuenta'+(c?' ('+c+')':'');
+  }
+  function darDeAlta(nombre, usuario, pin, rol){
+    S.userBusy=true; render();
+    getDoc(ref(COL.alias, usuario)).then(function(s){
+      if(s.exists()) throw {code:'app/existe'};
+      return crearCuentaAuth(usuario, pin, 0);
+    }).then(function(c){
+      var b = writeBatch(db);
+      b.set(ref(COL.usuarios, c.uid), {usuario:usuario, nombre:nombre, rol:rol, activo:true, email:c.email, version:c.version,
+        creado:Date.now(), creadoPor:S.perfil.usuario, reemplazaA:''});
+      b.set(ref(COL.alias, usuario), {uid:c.uid, email:c.email, activo:true});
+      return b.commit();
+    }).then(function(){
+      S.userBusy=false;
+      auditar('edicion','','Usuario dado de alta: '+nombre+' ('+usuario+', '+rol+')','');
+      toast('Cuenta creada: '+usuario);
+      render();
+    }).catch(function(e){ console.error(e); S.userBusy=false; render(); toast(mensajeAlta(e)); });
+  }
+  /* Restablecer PIN (plan Spark): cuenta nueva ligada al mismo usuario; la anterior queda desactivada */
+  function restablecerPin(anterior, pin){
+    S.userBusy=true; render();
+    crearCuentaAuth(anterior.usuario, pin, (anterior.version||1)+1).then(function(c){
+      var b = writeBatch(db);
+      b.set(ref(COL.usuarios, c.uid), {usuario:anterior.usuario, nombre:anterior.nombre, rol:anterior.rol||'inspector', activo:true,
+        email:c.email, version:c.version, creado:Date.now(), creadoPor:S.perfil.usuario, reemplazaA:anterior.uid});
+      b.update(ref(COL.usuarios, anterior.uid), {activo:false, reemplazadoPor:c.uid});
+      b.set(ref(COL.alias, anterior.usuario), {uid:c.uid, email:c.email, activo:true});
+      return b.commit();
+    }).then(function(){
+      S.userBusy=false; S.resetUid=null;
+      auditar('edicion','','PIN restablecido: '+anterior.nombre+' ('+anterior.usuario+')','');
+      toast('PIN restablecido para '+anterior.nombre);
+      render();
+    }).catch(function(e){ console.error(e); S.userBusy=false; render(); toast(mensajeAlta(e)); });
+  }
+  function cambiarActivo(u, activo){
+    var b = writeBatch(db);
+    b.update(ref(COL.usuarios, u.uid), {activo:activo});
+    b.set(ref(COL.alias, u.usuario), {uid:u.uid, email:u.email||correoDe(u.usuario, u.version), activo:activo});
+    escribir(b.commit());
+    if(!activo) quitarPerfil(u.usuario);
+    auditar('edicion','',(activo?'Usuario reactivado: ':'Usuario desactivado: ')+u.nombre+' ('+u.usuario+')','');
+    toast(activo?'Usuario reactivado':'Usuario desactivado');
   }
 
   /* ============ EVENTOS ============ */
@@ -1814,7 +2366,7 @@
       S.editReg=null; S.editErr='';
       S.trackVista='lista'; S.trackRollo=null; S.trackModoSel=false; S.trackSeleccion=[]; S.trackMedio='';
       S.trackFiltro=''; S.trackZona='Todas';
-      S.showChangePin=false; S.editingUserIdx=null;
+      S.showChangePin=false; S.resetUid=null;
       document.querySelectorAll('.ra-video-modal,.ra-lightbox').forEach(function(n){
         var v=n.querySelector('video');
         if(v && v.srcObject) v.srcObject.getTracks().forEach(function(t){ t.stop(); });
@@ -1833,34 +2385,33 @@
       });
     });
     on('#btn-login-back','click',function(){ S.loginStep='pick'; S.loginPickedUser=null; S.loginError=''; render(); });
+    on('#btn-login-nuevo','click',function(){
+      S.loginStep='nuevo'; S.loginError=''; render();
+      setTimeout(function(){ var i=root.querySelector('#login-usuario'); if(i) i.focus(); },50);
+    });
+    var loginUsuario=root.querySelector('#login-usuario');
+    if(loginUsuario){
+      loginUsuario.addEventListener('input',function(){ S.loginUsuario=loginUsuario.value; });
+      loginUsuario.addEventListener('keydown',function(e){
+        if(e.key==='Enter'){ e.preventDefault(); var p=root.querySelector('#login-pin-input'); if(p) p.focus(); }
+      });
+    }
     function doLogin(){
+      if(S.loginBusy) return;
       var i=root.querySelector('#login-pin-input');
       var pin=i?i.value.trim():'';
-      var u=S.usuarios.filter(function(x){ return x.nombre===S.loginPickedUser; })[0];
-      if(u && u.pin===pin){
-        var nombre = S.loginPickedUser;
-        S.inspector=nombre;
-        try{ set('sesion',nombre); }catch(e){}
-        S.loginStep='pick'; S.loginPickedUser=null; S.loginError=''; S.tab='captura';
-        mostrarBienvenida(nombre);
-        render();
-      } else { S.loginError='PIN incorrecto'; render(); sacudir('.ra-gate-card'); }
+      var usuario = S.loginStep==='pin' ? S.loginPickedUser : S.loginUsuario;
+      iniciarSesion(usuario, pin);
     }
     on('#btn-login-submit','click',doLogin);
-    on('#login-pin-input','keydown',function(e){ if(e.key==='Enter') doLogin(); });
-
-    on('#btn-show-admin-unlock','click',function(){ S.showAdminUnlock=true; S.adminUnlockError=''; render(); });
-    on('#btn-hide-admin-unlock','click',function(){ S.showAdminUnlock=false; render(); });
-    function doAdmin(){
-      var i=root.querySelector('#admin-unlock-pass');
-      if(i && i.value===S.adminPassword){
-        S.isAdmin=true; S.showAdminUnlock=false; S.adminUnlockError='';
-        if(!S.inspector) mostrarBienvenida('Administrador');
-        render();
-      } else { S.adminUnlockError='Clave incorrecta'; render(); sacudir('.ra-gate-card'); }
+    var loginPin=root.querySelector('#login-pin-input');
+    if(loginPin){
+      loginPin.addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
+      loginPin.addEventListener('input',function(){
+        loginPin.value = loginPin.value.replace(/\D/g,'').slice(0,PIN_LEN);
+        if(loginPin.value.length===PIN_LEN && (S.loginStep==='pin' || S.loginUsuario.trim())) doLogin();
+      });
     }
-    on('#btn-admin-unlock-submit','click',doAdmin);
-    on('#admin-unlock-pass','keydown',function(e){ if(e.key==='Enter') doAdmin(); });
 
     /* ID */
     var mid=root.querySelector('#input-id-mid');
@@ -2124,8 +2675,11 @@
       img.addEventListener('click',function(){
         var r=S.registros.filter(function(x){ return x.id===img.getAttribute('data-foto-reg'); })[0];
         if(!r) return;
-        var i=parseInt(img.getAttribute('data-foto-idx'),10);
-        abrirFoto(r.fotos[i], r.rolloId+' · '+(r.fecha||'')+' '+(r.hora||'')+' · '+(r.inspector||''));
+        var f=fotosDe(r)[parseInt(img.getAttribute('data-foto-idx'),10)];
+        if(!f) return;
+        var meta=r.rolloId+' · '+(r.fecha||'')+' '+(r.hora||'')+' · '+(r.inspector||'');
+        if(f.data){ abrirFoto(f.data, meta); return; }
+        cargarFoto(f.id).then(function(src){ if(src) abrirFoto(src, meta); else toast('No se pudo cargar la foto — revisa la conexión'); });
       });
     });
     each('[data-delete-registro]',function(b){
@@ -2137,7 +2691,10 @@
         if(motivo===null) return;
         if(motivo.trim().length<5){ toast('Escribe un motivo de al menos 5 caracteres'); return; }
         S.registros=S.registros.filter(function(x){ return x.id!==id; });
-        try{ set('registros',S.registros); }catch(e){}
+        var batch=writeBatch(db);
+        batch.delete(ref(COL.registros,id));
+        (r.fotoIds||[]).forEach(function(fid){ batch.delete(ref(COL.fotos,fid)); });
+        escribir(batch.commit());
         auditar('eliminacion', r.rolloId, 'Registro eliminado ('+r.resultado+')', motivo.trim());
         toast('Registro eliminado');
         render();
@@ -2147,63 +2704,101 @@
     /* ajustes */
     on('#btn-logout','click',function(){ cerrarSesion(false); });
     on('#btn-backup','click',downloadBackup);
+    on('#btn-subir-anteriores','click',function(){ importarDatos(datosAnteriores()); });
+    on('#btn-bajar-anteriores','click',function(){
+      var d=datosAnteriores(); if(d){ descargarJSON(d,'datos_equipo_version_anterior_'+fechaHoy()+'.json'); toast('Respaldo descargado'); }
+    });
     var restore=root.querySelector('#input-restore');
-    if(restore) restore.addEventListener('change',function(){ if(restore.files && restore.files[0]) restoreBackup(restore.files[0]); });
+    if(restore) restore.addEventListener('change',function(){ if(restore.files && restore.files[0]) restoreBackup(restore.files[0]); restore.value=''; });
 
     on('#btn-change-pin','click',function(){ S.showChangePin=true; S.changePinError=''; render(); });
     on('#btn-cancel-change-pin','click',function(){ S.showChangePin=false; render(); });
     on('#btn-change-pin-submit','click',function(){
+      if(S.changePinBusy) return;
       var cur=root.querySelector('#cp-current').value.trim();
       var nw=root.querySelector('#cp-new').value.trim();
-      var me=S.usuarios.filter(function(u){ return u.nombre===S.inspector; })[0];
-      if(!me || me.pin!==cur){ S.changePinError='PIN actual incorrecto'; render(); return; }
-      if(!/^\d{4,6}$/.test(nw)){ S.changePinError='El PIN nuevo debe tener de 4 a 6 dígitos'; render(); return; }
-      me.pin=nw;
-      try{ set('usuarios',S.usuarios); S.showChangePin=false; S.changePinError=''; toast('PIN actualizado'); }
-      catch(e){ S.changePinError='No se pudo guardar'; }
-      render();
-    });
-
-    each('[data-del-usuario]',function(b){
-      b.addEventListener('click',function(){
-        var i=parseInt(b.getAttribute('data-del-usuario'),10);
-        if(!confirm('¿Quitar a '+S.usuarios[i].nombre+'? Sus registros anteriores se conservan.')) return;
-        var nombre=S.usuarios[i].nombre;
-        S.usuarios.splice(i,1);
-        if(S.inspector===nombre){ S.inspector=null; try{ set('sesion',null); }catch(e){} }
-        try{ set('usuarios',S.usuarios); }catch(e){}
-        auditar('edicion','','Inspector dado de baja: '+nombre,'');
+      var nw2=root.querySelector('#cp-new2').value.trim();
+      if(!pinValido(nw)){ S.changePinError='El PIN nuevo debe tener exactamente '+PIN_LEN+' dígitos'; render(); return; }
+      if(nw!==nw2){ S.changePinError='La confirmación no coincide con el PIN nuevo'; render(); return; }
+      if(nw===cur){ S.changePinError='El PIN nuevo debe ser distinto del actual'; render(); return; }
+      if(!navigator.onLine){ S.changePinError='Necesitas conexión para cambiar el PIN'; render(); return; }
+      var u=auth.currentUser;
+      if(!u){ S.changePinError='Vuelve a iniciar sesión e inténtalo de nuevo'; render(); return; }
+      S.changePinBusy=true; S.changePinError=''; render();
+      reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, cur)).then(function(){
+        return updatePassword(u, nw);
+      }).then(function(){
+        return guardarPerfilConPin(S.perfil, nw);
+      }).then(function(){
+        S.changePinBusy=false; S.showChangePin=false; S.changePinError='';
+        auditar('edicion','','Cambio de PIN propio','');
+        toast('PIN actualizado'); render();
+      }).catch(function(e){
+        var c=(e&&e.code)||'';
+        S.changePinBusy=false;
+        S.changePinError = (c==='auth/invalid-credential'||c==='auth/wrong-password') ? 'PIN actual incorrecto'
+          : c==='auth/too-many-requests' ? 'Demasiados intentos. Espera unos minutos.'
+          : c==='auth/network-request-failed' ? 'Sin conexión. Inténtalo con señal.'
+          : 'No se pudo cambiar el PIN';
         render();
       });
     });
-    each('[data-edit-usuario]',function(b){ b.addEventListener('click',function(){ S.editingUserIdx=parseInt(b.getAttribute('data-edit-usuario'),10); render(); }); });
-    each('[data-save-pin]',function(b){
+
+    function buscarCuenta(uid){ return S.usuarios.filter(function(u){ return u.uid===uid; })[0]; }
+    on('#btn-add-usuario','click',function(){
+      if(S.userBusy) return;
+      var nombre=root.querySelector('#new-usuario-nombre').value.trim().replace(/\s+/g,' ');
+      var usuario=normUsuario(root.querySelector('#new-usuario-usuario').value);
+      var pin=root.querySelector('#new-usuario-pin').value.trim();
+      var rol=root.querySelector('#new-usuario-rol').value==='admin'?'admin':'inspector';
+      if(nombre.length<3){ toast('Escribe el nombre completo'); return; }
+      if(!usuarioValido(usuario)){ toast('Usuario: de 3 a 20 letras minúsculas, números, - o _'); return; }
+      if(!pinValido(pin)){ toast('El PIN debe tener exactamente '+PIN_LEN+' dígitos'); return; }
+      if(cuentasVigentes().some(function(u){ return u.nombre.toLowerCase()===nombre.toLowerCase(); })){ toast('Ya existe alguien con ese nombre'); return; }
+      if(!navigator.onLine){ toast('Sin conexión: dar de alta requiere señal'); return; }
+      darDeAlta(nombre, usuario, pin, rol);
+    });
+    each('[data-reset-usuario]',function(b){
       b.addEventListener('click',function(){
-        var i=parseInt(b.getAttribute('data-save-pin'),10);
-        var val=root.querySelector('#edit-pin-input').value.trim();
-        if(!/^\d{4,6}$/.test(val)){ toast('El PIN debe tener de 4 a 6 dígitos'); return; }
-        S.usuarios[i].pin=val;
-        try{ set('usuarios',S.usuarios); toast('PIN actualizado'); }catch(e){ toast('No se pudo guardar'); }
-        S.editingUserIdx=null; render();
+        S.resetUid=b.getAttribute('data-reset-usuario'); render();
+        setTimeout(function(){ var i=root.querySelector('#reset-pin-input'); if(i) i.focus(); },50);
       });
     });
-    on('#btn-add-usuario','click',function(){
-      var name=root.querySelector('#new-usuario-nombre').value.trim();
-      var pin=root.querySelector('#new-usuario-pin').value.trim();
-      if(!name){ toast('Escribe el nombre del inspector'); return; }
-      if(!/^\d{4,6}$/.test(pin)){ toast('El PIN debe tener de 4 a 6 dígitos'); return; }
-      if(S.usuarios.some(function(u){ return u.nombre.toLowerCase()===name.toLowerCase(); })){ toast('Ese nombre ya existe'); return; }
-      S.usuarios.push({nombre:name,pin:pin});
-      try{ set('usuarios',S.usuarios); toast('Inspector agregado'); }catch(e){ toast('No se pudo guardar'); }
-      auditar('edicion','','Inspector dado de alta: '+name,'');
-      render();
+    on('#btn-cancel-reset','click',function(){ S.resetUid=null; render(); });
+    each('[data-save-reset]',function(b){
+      b.addEventListener('click',function(){
+        if(S.userBusy) return;
+        var u=buscarCuenta(b.getAttribute('data-save-reset'));
+        var pin=root.querySelector('#reset-pin-input').value.trim();
+        if(!u) return;
+        if(!pinValido(pin)){ toast('El PIN debe tener exactamente '+PIN_LEN+' dígitos'); return; }
+        if(!navigator.onLine){ toast('Sin conexión: restablecer requiere señal'); return; }
+        if(!confirm('Se asignará un PIN nuevo a '+u.nombre+'. Su PIN anterior dejará de funcionar en todos los equipos. ¿Continuar?')) return;
+        restablecerPin(u, pin);
+      });
     });
-    on('#btn-save-admin-pass','click',function(){
-      var val=root.querySelector('#new-admin-pass').value.trim();
-      if(val.length<4){ toast('La clave debe tener al menos 4 caracteres'); return; }
-      S.adminPassword=val;
-      try{ set('adminPassword',val); toast('Clave actualizada'); }catch(e){ toast('No se pudo guardar'); }
-      render();
+    each('[data-desactivar]',function(b){
+      b.addEventListener('click',function(){
+        var u=buscarCuenta(b.getAttribute('data-desactivar'));
+        if(!u) return;
+        if(!confirm('¿Desactivar a '+u.nombre+'? No podrá entrar desde ningún equipo. Sus registros se conservan y puedes reactivarlo después.')) return;
+        cambiarActivo(u, false); render();
+      });
+    });
+    each('[data-reactivar]',function(b){
+      b.addEventListener('click',function(){
+        var u=buscarCuenta(b.getAttribute('data-reactivar'));
+        if(u){ cambiarActivo(u, true); render(); }
+      });
+    });
+    each('[data-toggle-perfil]',function(b){
+      b.addEventListener('click',function(){
+        var u=buscarCuenta(b.getAttribute('data-toggle-perfil'));
+        if(!u) return;
+        if(perfilLocal(u.usuario)) quitarPerfil(u.usuario);
+        else upsertPerfil({usuario:u.usuario, nombre:u.nombre, email:u.email||correoDe(u.usuario,u.version), uid:u.uid, rol:u.rol});
+        render();
+      });
     });
 
     /* grados */
@@ -2381,12 +2976,12 @@
       });
     });
 
-    on('#btn-demo','click',function(){ if(confirm('Se agregarán inspectores y rollos de ejemplo. ¿Continuar?')) cargarDemo(); });
+    on('#btn-demo','click',function(){ if(confirm('Se agregarán rollos de ejemplo a la base compartida (todos los equipos los verán). ¿Continuar?')) cargarDemo(); });
     on('#btn-wipe','click',function(){
-      if(!confirm('Se borrarán TODOS los inspectores, registros, movimientos y catálogos. ¿Continuar?')) return;
-      if(!confirm('Última confirmación: esta acción no se puede deshacer.')) return;
-      try{ Object.keys(localStorage).filter(function(k){ return k.indexOf(PREFIX)===0; }).forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
-      location.reload();
+      if(!confirm('Se borrarán en TODOS los equipos los registros, fotos, movimientos, auditoría y catálogos (vuelven a los valores iniciales). Las cuentas de usuario se conservan. ¿Continuar?')) return;
+      if(!confirm('Última confirmación: esta acción no se puede deshacer. Descarga un respaldo antes si lo necesitas.')) return;
+      if(!navigator.onLine){ toast('Necesitas conexión para borrar la base'); return; }
+      borrarTodo();
     });
   }
 
@@ -2431,15 +3026,23 @@
     var id=rolloId();
     var now=new Date();
     var master=S.rollosMaster[id]||{};
+    var regId='r'+now.getTime()+Math.random().toString(36).slice(2,7);
+    var batch=writeBatch(db);
+    var fotoIds=S.fotos.map(function(f,i){
+      var fid=regId+'_'+i;
+      S.fotoCache[fid]=f;
+      batch.set(ref(COL.fotos,fid), {registroId:regId, rolloId:id, data:f, ts:now.getTime(), uid:S.perfil.uid});
+      return fid;
+    });
     var reg={
-      id:'r'+now.getTime()+Math.random().toString(36).slice(2,7),
+      id:regId,
       ts:now.getTime(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now), rolloId:id,
       resultado:S.resultado||'Conforme',
       familia:S.familia?S.familia.name:'',
       defectoCode:S.defecto?S.defecto.code:'',
       defecto:S.defecto?S.defecto.name:'',
       variacion:S.variacion||'', ubicacion:S.ubicacion||'', severidad:S.severidad||'',
-      inspector:usuarioActual(),
+      inspector:usuarioActual(), inspectorUid:S.perfil.uid, inspectorUsuario:S.perfil.usuario||'',
       grado:master.grado||S.rolloData.grado||'',
       familiaSGF:master.familiaSGF||S.rolloData.familiaSGF||'',
       familiaDesc:master.familiaDesc||S.rolloData.familiaDesc||'',
@@ -2448,25 +3051,21 @@
       peso:master.peso||S.rolloData.peso||'',
       fechaProduccion:master.fecha||S.rolloData.fecha||'',
       enrollador:master.enrollador||S.rolloData.enrollador||'',
-      fotos:S.fotos.slice(), comentario:S.comentario||'', ediciones:[]
+      fotoIds:fotoIds, comentario:S.comentario||'', ediciones:[]
     };
-    var backupRegs=S.registros.slice();
+    batch.set(ref(COL.registros,regId), reg);
     S.registros.unshift(reg);
-    try{ set('registros',S.registros); }
-    catch(e){
-      S.registros=backupRegs;
-      toast('Sin espacio — descarga un respaldo y borra registros antiguos');
-      return;
-    }
     if(!master.grado && (S.rolloData.grado||S.rolloData.enrollador||S.rolloData.espesor)){
-      S.rollosMaster[id]={id:id,grado:S.rolloData.grado||'',familiaSGF:S.rolloData.familiaSGF||'',familiaDesc:S.rolloData.familiaDesc||'',
+      var m={id:id,grado:S.rolloData.grado||'',familiaSGF:S.rolloData.familiaSGF||'',familiaDesc:S.rolloData.familiaDesc||'',
         espesor:S.rolloData.espesor||'',ancho:S.rolloData.ancho||'',peso:S.rolloData.peso||'',
         fecha:S.rolloData.fecha||'',enrollador:S.rolloData.enrollador||''};
-      try{ set('rollosMaster',S.rollosMaster); }catch(e){}
+      S.rollosMaster[id]=m;
+      batch.set(ref(COL.master,id), m, {merge:true});
     }
-    iniciarTracking(id);
+    iniciarTracking(id, batch);
+    escribir(batch.commit());
     auditar('creacion', id, 'Inspección registrada: '+etqResLarga(reg.resultado)+(reg.defecto?' · '+reg.defectoCode+' '+reg.defecto:''), '');
-    toast('Rollo guardado en '+ZONA_ORIGEN);
+    toast(S.online ? 'Rollo guardado en '+ZONA_ORIGEN : 'Guardado sin señal · se subirá al reconectar');
     resetCaptureFlow();
     render();
   }
@@ -2503,27 +3102,21 @@
     if(!cambios.length){ S.editErr='No cambiaste ningún campo.'; render(); return; }
 
     var now=new Date();
+    var ed={ts:now.getTime(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now),
+      usuario:usuarioActual(), motivo:motivo, cambios:cambios.join(' | ')};
     r.ediciones=r.ediciones||[];
-    r.ediciones.push({ts:now.getTime(), fecha:fechaHoy(now), hora:horaAhora(now), turno:turnoDe(now),
-      usuario:usuarioActual(), motivo:motivo, cambios:cambios.join(' | ')});
+    r.ediciones.push(ed);
     Object.keys(nuevo).forEach(function(k){ r[k]=nuevo[k]; });
-    r.defectoCode=nuevo.defectoCode;
-
-    try{ set('registros',S.registros); }
-    catch(e){ toast('No se pudo guardar el cambio'); return; }
+    escribir(updateDoc(ref(COL.registros,r.id), Object.assign({}, nuevo, {ediciones:arrayUnion(ed)})));
     auditar('edicion', r.rolloId, cambios.join(' | '), motivo);
     S.editReg=null; S.editErr=''; S.tab='historial';
     toast('Cambios guardados');
     render();
   }
 
-  /* ============ DEMO ============ */
+  /* ============ DEMO Y BORRADO (solo administrador) ============ */
   function cargarDemo(){
-    [{nombre:'Luis Ramírez',pin:'1234'},{nombre:'Ana Castillo',pin:'5678'}].forEach(function(u){
-      if(!S.usuarios.some(function(x){ return x.nombre===u.nombre; })) S.usuarios.push(u);
-    });
-    if(!(S.catalogs.grados||[]).length){ S.catalogs.grados=JSON.parse(JSON.stringify(DEFAULT_GRADOS)); }
-    var base=Date.now();
+    var base=Date.now(), batch=writeBatch(db);
     var demos=[
       {rolloId:'4A695767PM400',resultado:'Conforme',grado:'C14MC4',familiaSGF:'6',familiaDesc:'Grados comerciales Medios'},
       {rolloId:'4A695768PM400',resultado:'Defecto',familia:'Aspecto físico',defectoCode:'593',defecto:'Devanado',variacion:'Últimas vueltas flojas',ubicacion:'DIC',severidad:'Leve',grado:'T05CR8',familiaSGF:'41',familiaDesc:'> X70'},
@@ -2533,27 +3126,44 @@
     demos.forEach(function(d,i){
       var t=new Date(base-(demos.length-i)*3600000);
       var reg=Object.assign({
-        id:'demo'+t.getTime()+i, ts:t.getTime(), fecha:fechaHoy(t), hora:horaAhora(t),
-        inspector:i%2?'Ana Castillo':'Luis Ramírez',
+        id:'demo'+t.getTime()+i, ts:t.getTime(), fecha:fechaHoy(t), hora:horaAhora(t), turno:turnoDe(t),
+        inspector:i%2?'Ana Castillo':'Luis Ramírez', inspectorUid:'', inspectorUsuario:'',
         espesor:'2.50',ancho:'1200',peso:'18500',enrollador:'Enrollador 2',
         fechaProduccion:'',variacion:'',severidad:'',familia:'',defectoCode:'',defecto:'',
-        comentario:'',fotos:[],ediciones:[],grado:'',familiaSGF:'',familiaDesc:''
+        comentario:'',fotoIds:[],ediciones:[],grado:'',familiaSGF:'',familiaDesc:''
       },d);
-      S.registros.unshift(reg);
+      batch.set(ref(COL.registros,reg.id), reg);
       if(!S.tracking[reg.rolloId]){
-        S.tracking[reg.rolloId]={rolloId:reg.rolloId, zona:ZONA_ORIGEN,
-          ultimoUsuario:reg.inspector, ultimaFecha:reg.fecha, ultimaHora:reg.hora, ultimoTs:t.getTime(),
-          movimientos:[{zona:ZONA_ORIGEN,usuario:reg.inspector,fecha:reg.fecha,hora:reg.hora,ts:t.getTime(),nota:'Alta por inspección'}]};
+        var mov={zona:ZONA_ORIGEN,medio:'',usuario:reg.inspector,fecha:reg.fecha,hora:reg.hora,turno:reg.turno,ts:t.getTime(),nota:'Alta por inspección'};
+        var tr={rolloId:reg.rolloId, zona:ZONA_ORIGEN, ultimoUsuario:reg.inspector, ultimaFecha:reg.fecha, ultimaHora:reg.hora,
+          ultimoTurno:reg.turno, ultimoTs:t.getTime(), movimientos:[mov]};
+        if(reg.rolloId==='4A695768PM400'){
+          var t2=new Date(base-1800000);
+          var mov2={zona:'Cooling Bay',medio:'MCA',usuario:'Ana Castillo',fecha:fechaHoy(t2),hora:horaAhora(t2),turno:turnoDe(t2),ts:t2.getTime(),nota:'Enfriamiento programado'};
+          tr.movimientos.push(mov2);
+          tr.zona='Cooling Bay'; tr.ultimoUsuario='Ana Castillo'; tr.ultimaFecha=mov2.fecha; tr.ultimaHora=mov2.hora; tr.ultimoTurno=mov2.turno; tr.ultimoTs=mov2.ts;
+        }
+        batch.set(ref(COL.tracking,reg.rolloId), tr);
       }
     });
-    var t2=new Date(base-1800000);
-    var demoMov=S.tracking['4A695768PM400'];
-    if(demoMov && demoMov.movimientos.length===1){
-      demoMov.movimientos.push({zona:'Cooling Bay',usuario:'Ana Castillo',fecha:fechaHoy(t2),hora:horaAhora(t2),ts:t2.getTime(),nota:'Enfriamiento programado'});
-      demoMov.zona='Cooling Bay'; demoMov.ultimoUsuario='Ana Castillo'; demoMov.ultimaFecha=fechaHoy(t2); demoMov.ultimaHora=horaAhora(t2); demoMov.ultimoTs=t2.getTime();
-    }
-    try{ persistAll(); toast('Datos de ejemplo cargados'); }catch(e){ toast('No se pudo guardar'); }
-    render();
+    escribir(batch.commit().then(function(){ toast('Datos de ejemplo cargados'); }));
+    auditar('creacion','','Carga de datos de ejemplo (4 rollos)','');
+  }
+
+  function borrarTodo(){
+    toast('Borrando…');
+    var cols=[COL.registros, COL.fotos, COL.tracking, COL.master, COL.auditoria];
+    Promise.all(cols.map(function(c){ return getDocs(collection(db,c)); })).then(function(res){
+      var ops=[];
+      res.forEach(function(qs){ qs.docs.forEach(function(d){ ops.push({tipo:'delete', ref:d.ref}); }); });
+      ops.push({ref:ref(COL.config,'catalogos'), data:copia(migrarGrados({}))});
+      ops.push({ref:ref(COL.config,'variaciones'), data:{mapa:copia(DEFAULT_VARIACIONES)}});
+      return commitEnLotes(ops, function(i,n){ toast('Borrando… lote '+i+' de '+n); }).then(function(){ return ops.length; });
+    }).then(function(n){
+      S.fotoCache={};
+      auditar('eliminacion','','Borrado total de la base ('+n+' documentos)','');
+      toast('Base borrada'); render();
+    }).catch(function(e){ console.error(e); toast('No se pudo borrar todo — revisa la conexión'); });
   }
 
   init();

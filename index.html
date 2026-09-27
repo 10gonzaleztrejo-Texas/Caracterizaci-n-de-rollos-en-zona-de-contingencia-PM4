@@ -281,7 +281,7 @@ import { getAuth, initializeAuth, inMemoryPersistence, onAuthStateChanged, signI
          updatePassword, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection,
          getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch, arrayUnion, query,
-         orderBy } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+         orderBy, deleteField } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 (function(){
   "use strict";
@@ -383,7 +383,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   var DEFAULT_DEFECTOS_ACTIVOS = ['1154','82','593','80/180','73','747','573','81'];
   var HORAS_DETENIDO = 24;      /* aviso de rollo sin movimiento */
   var MINUTOS_INACTIVIDAD = 15; /* bloqueo por inactividad (valor inicial; el admin lo cambia en Ajustes) */
-  var OPCIONES_BLOQUEO = [5,10,15,30,60,120,0]; /* 0 = nunca */
+  var OPCIONES_BLOQUEO = [3,5,10,15,30,60,120,0]; /* 0 = nunca */
   function minutosBloqueo(){
     var m = S.catalogs && S.catalogs.minutosBloqueo;
     return (typeof m === 'number' && m >= 0) ? m : MINUTOS_INACTIVIDAD;
@@ -863,6 +863,14 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     escribir(setDoc(ref(COL.publico,'inspectores'), {mapa:m}, {merge:true}));
     auditar('edicion','','Inspector dado de alta: '+nombre,'');
     toast('Inspector agregado: '+nombre);
+  }
+  function eliminarInspector(id){
+    var i = S.inspectoresPub[id]; if(!i) return;
+    var m = {}; m[id] = deleteField();
+    delete S.inspectoresPub[id];
+    escribir(setDoc(ref(COL.publico,'inspectores'), {mapa:m}, {merge:true}));
+    auditar('eliminacion','','Inspector eliminado: '+i.nombre,'');
+    toast('Inspector eliminado');
   }
   function cambiarInspectorActivo(id, activo){
     var i = S.inspectoresPub[id]; if(!i) return;
@@ -2145,16 +2153,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       .sort(function(a,b){ return String(a.nombre).localeCompare(String(b.nombre)); });
   }
   function adminsCard(){
-    var pr = S.adminsPub && S.adminsPub.principal;
-    var principal = ((S.adminsPub && S.adminsPub.lista) || []).filter(function(a){ return a.principal; })[0];
-    if(!soyPrincipal()){
-      return '<div class="ra-card">' +
-          '<div class="ra-h1">Administradores</div>' +
-          '<div class="ra-h2" style="margin-bottom:0;">' + (pr
-            ? 'Administrador principal: <b>'+escHtml(principal?principal.nombre:'—')+'</b>. Tú eres segundo administrador: tienes acceso a la misma información y a las descargas, pero solo el administrador principal puede nombrar, bloquear o quitar al segundo administrador.'
-            : 'Todavía no hay un administrador principal asignado.') + '</div>' +
-        '</div>';
-    }
+    if(!soyPrincipal()) return '';  /* el segundo administrador no ve esta sección */
     var rows = segundosAdmins().map(function(u){
       var reset = S.resetUid===u.uid;
       return '<div class="ra-item"'+(u.activo?'':' style="opacity:.7;"')+'>' +
@@ -2171,7 +2170,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
                   ? '<button class="ra-link danger" data-desactivar="'+escAttr(u.uid)+'">Bloquear</button>'
                   : '<button class="ra-link" data-reactivar="'+escAttr(u.uid)+'">Desbloquear</button>') +
                 '<button class="ra-link" data-reset-usuario="'+escAttr(u.uid)+'">Restablecer contraseña</button>' +
-                '<button class="ra-link danger" data-quitar-admin="'+escAttr(u.uid)+'">Quitar</button>' +
+                '<button class="ra-link danger" data-quitar-admin="'+escAttr(u.uid)+'">Eliminar</button>' +
               '</div>') +
         '</div>';
     }).join('');
@@ -2184,7 +2183,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div class="ra-meta" style="margin-top:10px;">Requiere conexión. Entrará tocando su nombre en la sección Administradores de la pantalla de inicio.</div>';
     return '<div class="ra-card">' +
         '<div class="ra-h1">Administradores</div>' +
-        '<div class="ra-h2">Eres el administrador principal. Si quieres, nombra a un segundo administrador con su propia contraseña: verá la misma información y también podrá descargarla, pero solo tú puedes bloquearlo o quitarlo.</div>' +
+        '<div class="ra-h2">Eres el administrador principal. Si quieres, nombra a un segundo administrador con su propia contraseña: verá la misma información y también podrá descargarla, pero solo tú puedes bloquearlo o eliminarlo.</div>' +
         rows + form +
       '</div>';
   }
@@ -2202,12 +2201,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
           '<div class="ra-meta">'+count+' inspección(es) capturada(s)</div>' +
           '<div class="ra-actions">' + (i.activo
             ? '<button class="ra-link danger" data-insp-off="'+escAttr(i.id)+'">Desactivar</button>'
-            : '<button class="ra-link" data-insp-on="'+escAttr(i.id)+'">Reactivar</button>') + '</div>' +
+            : '<button class="ra-link" data-insp-on="'+escAttr(i.id)+'">Reactivar</button>') +
+            '<button class="ra-link danger" data-insp-del="'+escAttr(i.id)+'">Eliminar</button>' + '</div>' +
         '</div>';
     }).join('');
     return '<div class="ra-card">' +
         '<div class="ra-h1">Inspectores</div>' +
-        '<div class="ra-h2">Entran tocando su nombre en la pantalla de inicio, sin contraseña. Desactivar a alguien lo quita de la lista en todos los equipos; su historial se conserva.</div>' +
+        '<div class="ra-h2">Entran tocando su nombre en la pantalla de inicio, sin contraseña. Desactivar a alguien lo quita de la lista y puedes reactivarlo; Eliminar borra su perfil definitivamente. En ambos casos sus inspecciones ya capturadas se conservan.</div>' +
         (rows || '<div class="ra-note">Todavía no hay inspectores registrados.</div>') +
         '<div class="ra-label" style="margin-top:16px;">REGISTRAR INSPECTOR</div>' +
         '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input" id="new-insp-nombre" placeholder="Nombre completo (ej. Juan Pérez)" style="margin-bottom:0;" autocomplete="off">' +
@@ -2804,14 +2804,19 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     auditar('edicion','',(activo?'Administrador desbloqueado: ':'Administrador bloqueado: ')+u.nombre+' ('+u.usuario+')','');
     toast(activo?'Administrador desbloqueado':'Administrador bloqueado');
   }
+  /* Eliminar definitivamente al segundo administrador: se borra su perfil (y los de
+     restablecimientos anteriores) y su usuario queda libre. Sus registros se conservan. */
   function quitarAdmin(u){
     var b = writeBatch(db);
-    b.update(ref(COL.usuarios, u.uid), {activo:false, eliminado:true});
-    b.set(ref(COL.alias, u.usuario), {uid:u.uid, email:u.email||correoDe(u.usuario, u.version), activo:false});
+    S.usuarios.filter(function(x){ return x.uid===u.uid || (x.usuario===u.usuario && x.rol==='admin' && x.uid!==(S.perfil&&S.perfil.uid)); })
+      .forEach(function(x){ b.delete(ref(COL.usuarios, x.uid)); });
+    b.delete(ref(COL.alias, u.usuario));
     escribir(b.commit());
+    S.usuarios = S.usuarios.filter(function(x){ return !(x.uid===u.uid || (x.usuario===u.usuario && x.rol==='admin' && x.uid!==(S.perfil&&S.perfil.uid))); });
     quitarPerfil(u.usuario);
-    auditar('edicion','','Administrador quitado: '+u.nombre+' ('+u.usuario+')','');
-    toast('Administrador quitado');
+    sincronizarPublicoAdmins();
+    auditar('eliminacion','','Administrador eliminado: '+u.nombre+' ('+u.usuario+')','');
+    toast('Administrador eliminado');
   }
 
   /* ============ EVENTOS ============ */
@@ -3270,6 +3275,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     each('[data-insp-on]',function(b){
       b.addEventListener('click',function(){ cambiarInspectorActivo(b.getAttribute('data-insp-on'),true); render(); });
     });
+    each('[data-insp-del]',function(b){
+      b.addEventListener('click',function(){
+        var id=b.getAttribute('data-insp-del'), i=S.inspectoresPub[id];
+        if(!i || !confirm('¿Eliminar definitivamente a '+i.nombre+'? Su perfil se borra de todos los equipos y no se puede deshacer. Sus inspecciones ya capturadas se conservan.')) return;
+        eliminarInspector(id); render();
+      });
+    });
     each('[data-bloqueo]',function(b){
       b.addEventListener('click',function(){
         var m=parseInt(b.getAttribute('data-bloqueo'),10);
@@ -3283,7 +3295,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       b.addEventListener('click',function(){
         var u=buscarCuenta(b.getAttribute('data-quitar-admin'));
         if(!u || !soyPrincipal()) return;
-        if(!confirm('¿Quitar a '+u.nombre+' como administrador? Ya no podrá entrar y podrás nombrar a otro.')) return;
+        if(!confirm('¿Eliminar definitivamente a '+u.nombre+' como administrador? Ya no podrá entrar y no se puede deshacer. Después podrás nombrar a otro.')) return;
         quitarAdmin(u); render();
       });
     });

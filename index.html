@@ -49,6 +49,7 @@
   .ra-input{width:100%;padding:14px;font-size:16px;border-radius:var(--radius);border:1px solid var(--line-strong);
     background:#fff;color:var(--ink);margin-bottom:12px;font-family:inherit;}
   .ra-input:focus{outline:none;border-color:var(--ink);}
+  .ra-input-err{border-color:var(--scrap)!important;background:#FDF4F3!important;}
   .ra-pin-input{text-align:center;font-size:24px;letter-spacing:10px;font-weight:700;}
   .ra-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
 
@@ -277,7 +278,7 @@ const DOMINIO_CORREO = 'rollos.app';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getAuth, initializeAuth, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword,
          createUserWithEmailAndPassword, signOut, reauthenticateWithCredential, EmailAuthProvider,
-         updatePassword } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+         updatePassword, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection,
          getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch, arrayUnion, query,
          orderBy } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
@@ -381,7 +382,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   /* Defectos habilitados de inicio. El resto queda disponible en Ajustes. */
   var DEFAULT_DEFECTOS_ACTIVOS = ['1154','82','593','80/180','73','747','573','81'];
   var HORAS_DETENIDO = 24;      /* aviso de rollo sin movimiento */
-  var MINUTOS_INACTIVIDAD = 15; /* cierre de sesión automático */
+  var MINUTOS_INACTIVIDAD = 15; /* bloqueo por inactividad (valor inicial; el admin lo cambia en Ajustes) */
+  var OPCIONES_BLOQUEO = [5,10,15,30,60,120,0]; /* 0 = nunca */
+  function minutosBloqueo(){
+    var m = S.catalogs && S.catalogs.minutosBloqueo;
+    return (typeof m === 'number' && m >= 0) ? m : MINUTOS_INACTIVIDAD;
+  }
+  function etqBloqueo(m){ return m===0 ? 'Nunca' : m<60 ? m+' min' : (m/60)+(m===60?' hora':' horas'); }
   var DEFAULT_ZONAS = [ZONA_ORIGEN,'Cooling Bay','Playa','Nave 1','Laminación'];
   /* Catálogo grado de acero (grado de planchón) → SGF y familia. Editable desde Ajustes. */
   var DEFAULT_GRADOS = [
@@ -475,7 +482,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
   });
   var COL = { usuarios:'usuarios', alias:'alias', config:'config', registros:'registros', fotos:'fotos',
-              tracking:'tracking', master:'rollosMaster', auditoria:'auditoria' };
+              tracking:'tracking', master:'rollosMaster', auditoria:'auditoria',
+              publico:'publico', sesiones:'sesiones' };
   function docId(id){ return String(id||'').replace(/\//g,'_') || '_'; }
   function ref(col, id){ return doc(db, col, docId(id)); }
   function copia(o){ return JSON.parse(JSON.stringify(o)); }
@@ -521,6 +529,9 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   }
   function usuarioValido(u){ return /^[a-z0-9_-]{3,20}$/.test(u); }
   function pinValido(p){ return new RegExp('^\\d{'+PIN_LEN+'}$').test(p); }
+  /* Contraseña de administrador: mínimo 6 caracteres (los PIN anteriores siguen sirviendo) */
+  var PASS_MIN = 6;
+  function passValida(p){ return typeof p==='string' && p.length>=PASS_MIN && p.length<=64; }
   /* usuario@dominio; al restablecer un PIN se crea usuario.2@dominio, usuario.3@... (el punto no se permite en usuarios) */
   function correoDe(usuario, n){ return usuario + (n ? '.'+n : '') + '@' + DOMINIO_CORREO; }
 
@@ -608,10 +619,21 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     var uid = S.perfil.uid;
     function errEscucha(e){
       console.error(e);
-      if(e && e.code==='permission-denied' && S.inspector){ toast('Tu cuenta ya no tiene acceso'); cerrarSesion(false); }
+      if(e && e.code==='permission-denied' && S.inspector){
+        /* Inspector recién entrado: su sesión puede tardar un momento en llegar a la nube */
+        if(S.perfil && S.perfil.anonimo && !S.reintentoPermiso){
+          S.reintentoPermiso = true;
+          detenerEscuchas();
+          setDoc(ref(COL.sesiones, S.perfil.uid), {inspectorId:S.perfil.inspectorId, nombre:S.perfil.nombre, ts:Date.now()})
+            .catch(function(){}).then(function(){ return esperar(1500); })
+            .then(function(){ if(S.perfil && S.perfil.anonimo) iniciarEscuchas(); });
+          return;
+        }
+        toast('Tu cuenta ya no tiene acceso'); cerrarSesion(false);
+      }
     }
-    unsubs.push(onSnapshot(ref(COL.usuarios, uid), function(s){
-      if(!s.exists() || !s.data().activo){
+    if(!S.perfil.anonimo) unsubs.push(onSnapshot(ref(COL.usuarios, uid), function(s){
+      if(!s.exists() || !s.data().activo || s.data().rol!=='admin'){
         var u = S.perfil ? S.perfil.usuario : '';
         toast('Tu cuenta fue desactivada');
         if(u) quitarPerfil(u);
@@ -648,8 +670,9 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       S.rollosMaster = m; marcarCambios();
     }, errEscucha));
     if(S.isAdmin){
-      unsubs.push(onSnapshot(collection(db, COL.usuarios), function(qs){
+      unsubs.push(onSnapshot(collection(db, COL.usuarios), {includeMetadataChanges:true}, function(qs){
         S.usuarios = qs.docs.map(function(d){ return Object.assign({}, d.data(), {uid:d.id}); });
+        if(!qs.metadata.fromCache){ S.usuariosCargados = true; sincronizarPublicoAdmins(); migrarInspectoresAntiguos(); }
         marcarCambios();
       }, errEscucha));
       unsubs.push(onSnapshot(query(collection(db, COL.auditoria), orderBy('ts','desc')), function(qs){
@@ -670,6 +693,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     usuarios:[], cargando:true, online:navigator.onLine, pendRegs:false, pendTrack:false, dirty:false,
     loginStep:'pick', loginPickedUser:null, loginError:'', loginBusy:false, loginUsuario:'',
     showChangePin:false, changePinError:'', changePinBusy:false,
+    inspectoresPub:{}, adminsPub:null, gateBusqueda:'', medidaErr:false,
     resetUid:null, userBusy:false,
     idMid:'', idFull:'', idModo:'guiado',
     rolloData:{}, gradoQuery:'', gradoAbierto:false,
@@ -722,7 +746,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   function resetCaptureFlow(){
     S.step='id'; S.idMid=''; S.idFull=''; S.idModo='guiado'; S.rolloData={}; S.gradoQuery=''; S.gradoAbierto=false;
     S.resultado=null; S.familia=null; S.defecto=null; S.variacion=null; S.ubicacion=null; S.severidad=null;
-    S.fotos=[]; S.comentario='';
+    S.fotos=[]; S.comentario=''; S.medidaErr=false;
   }
 
   function migrarGrados(cat){
@@ -740,6 +764,150 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     return cat;
   }
 
+  /* ============ LISTAS PÚBLICAS Y ROLES ============
+     publico/inspectores: {mapa:{id:{nombre, activo, creado, creadoPor}}}
+     publico/admins:      {principal:uid, lista:[{uid, usuario, nombre, activo, principal}]}
+     Se leen sin iniciar sesión para mostrar los nombres en la pantalla de inicio;
+     solo los administradores las modifican (reglas de Firestore). */
+  function inspectoresActivos(){
+    var m = S.inspectoresPub || {};
+    return Object.keys(m).map(function(id){ return Object.assign({id:id}, m[id]); })
+      .filter(function(i){ return i.activo; })
+      .sort(function(a,b){ return String(a.nombre).localeCompare(String(b.nombre)); });
+  }
+  function adminsVisibles(){
+    var l = ((S.adminsPub && S.adminsPub.lista) || []).filter(function(a){ return a.activo; });
+    if(!l.length) l = perfilesLocales().filter(function(p){ return p.rol==='admin'; })
+      .map(function(p){ return {usuario:p.usuario, nombre:p.nombre, principal:false}; });
+    return l.slice().sort(function(a,b){ return (b.principal?1:0)-(a.principal?1:0) || String(a.nombre).localeCompare(String(b.nombre)); });
+  }
+  function soyPrincipal(){ return !!(S.isAdmin && S.perfil && S.adminsPub && S.adminsPub.principal===S.perfil.uid); }
+  function sinAcentos(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+
+  function escucharPublico(){
+    S.inspectoresPub = get('pubInspectores', {}) || {};
+    S.adminsPub = get('pubAdmins', null);
+    onSnapshot(ref(COL.publico,'inspectores'), {includeMetadataChanges:true}, function(s){
+      S.inspectoresPub = s.exists() ? (s.data().mapa || {}) : {};
+      lset('pubInspectores', S.inspectoresPub);
+      var p = S.perfil;
+      if(p && p.anonimo && !s.metadata.fromCache){
+        var yo = S.inspectoresPub[p.inspectorId];
+        if(!yo || !yo.activo){ toast('Tu nombre fue desactivado por el administrador'); cerrarSesion(false); return; }
+      }
+      marcarCambios();
+    }, function(e){ console.error(e); });
+    onSnapshot(ref(COL.publico,'admins'), {includeMetadataChanges:true}, function(s){
+      S.adminsPubVacio = !s.exists() && !s.metadata.fromCache;
+      if(s.exists()){ S.adminsPub = s.data(); lset('pubAdmins', S.adminsPub); }
+      else if(!s.metadata.fromCache){ S.adminsPub = null; lset('pubAdmins', null); }
+      if(S.adminsPubVacio) reclamarPrincipal();
+      sincronizarPublicoAdmins(); migrarInspectoresAntiguos();
+      marcarCambios();
+    }, function(e){ console.error(e); });
+  }
+
+  /* El primer administrador que entra tras la actualización queda como principal */
+  var reclamando = false;
+  function reclamarPrincipal(){
+    if(reclamando || !S.isAdmin || !S.perfil || S.perfil.anonimo || !navigator.onLine) return;
+    reclamando = true;
+    setDoc(ref(COL.publico,'admins'), {principal:S.perfil.uid,
+      lista:[{uid:S.perfil.uid, usuario:S.perfil.usuario||'', nombre:S.perfil.nombre||'', activo:true, principal:true}]})
+      .then(function(){ auditar('edicion','','Administrador principal: '+S.perfil.nombre,''); toast('Quedaste como administrador principal'); })
+      .catch(function(e){ console.error(e); })
+      .then(function(){ reclamando = false; });
+  }
+  /* El principal mantiene al día la lista pública de administradores */
+  function normAdmin(a){ return {uid:a.uid, usuario:a.usuario||'', nombre:a.nombre||'', activo:!!a.activo, principal:!!a.principal}; }
+  function porUid(a,b){ return a.uid<b.uid?-1:a.uid>b.uid?1:0; }
+  function sincronizarPublicoAdmins(){
+    if(!soyPrincipal() || !S.usuariosCargados) return;
+    var pr = S.adminsPub.principal;
+    var lista = S.usuarios.filter(function(u){ return u.rol==='admin' && !u.reemplazadoPor && !u.eliminado; })
+      .map(function(u){ return normAdmin({uid:u.uid, usuario:u.usuario, nombre:u.nombre, activo:u.activo, principal:u.uid===pr}); }).sort(porUid);
+    var actual = (S.adminsPub.lista||[]).map(normAdmin).sort(porUid);
+    if(JSON.stringify(lista)!==JSON.stringify(actual))
+      escribir(setDoc(ref(COL.publico,'admins'), {principal:pr, lista:lista}));
+  }
+  /* Los inspectores que tenían usuario y PIN pasan a la lista sin contraseña */
+  var migrando = false;
+  function migrarInspectoresAntiguos(){
+    if(migrando || !soyPrincipal() || !S.usuariosCargados || !navigator.onLine) return;
+    var viejos = S.usuarios.filter(function(u){ return u.rol!=='admin' && !u.reemplazadoPor && !u.migradoA; });
+    if(!viejos.length) return;
+    migrando = true;
+    var b = writeBatch(db), mapa = {};
+    var existentes = S.inspectoresPub || {};
+    viejos.forEach(function(u){
+      var id = Object.keys(existentes).filter(function(k){ return sinAcentos(existentes[k].nombre)===sinAcentos(u.nombre); })[0];
+      if(!id){
+        id = 'u_'+(u.usuario||u.uid);
+        mapa[id] = {nombre:u.nombre, activo:!!u.activo, creado:u.creado||Date.now(), creadoPor:'Migración'};
+      }
+      b.update(ref(COL.usuarios, u.uid), {activo:false, migradoA:id});
+      if(u.usuario) b.set(ref(COL.alias, u.usuario), {uid:u.uid, email:u.email||correoDe(u.usuario,u.version), activo:false});
+    });
+    if(Object.keys(mapa).length) b.set(ref(COL.publico,'inspectores'), {mapa:mapa}, {merge:true});
+    b.commit().then(function(){
+      auditar('edicion','','Inspectores pasados al acceso sin contraseña: '+viejos.map(function(u){ return u.nombre; }).join(', '),'');
+      toast(viejos.length+' inspector(es) pasados a la lista sin contraseña');
+    }).catch(errFirebase).then(function(){ migrando = false; });
+  }
+
+  /* Alta y baja de inspectores (ambos administradores) */
+  function agregarInspector(nombre){
+    var id = 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,5), m = {};
+    m[id] = {nombre:nombre, activo:true, creado:Date.now(), creadoPor:S.inspector||''};
+    S.inspectoresPub[id] = m[id];
+    escribir(setDoc(ref(COL.publico,'inspectores'), {mapa:m}, {merge:true}));
+    auditar('edicion','','Inspector dado de alta: '+nombre,'');
+    toast('Inspector agregado: '+nombre);
+  }
+  function cambiarInspectorActivo(id, activo){
+    var i = S.inspectoresPub[id]; if(!i) return;
+    var m = {}; m[id] = {activo:activo};
+    i.activo = activo;
+    escribir(setDoc(ref(COL.publico,'inspectores'), {mapa:m}, {merge:true}));
+    auditar('edicion','',(activo?'Inspector reactivado: ':'Inspector desactivado: ')+i.nombre,'');
+    toast(activo?'Inspector reactivado':'Inspector desactivado');
+  }
+
+  /* Entrada de inspector: sin contraseña, con una sesión anónima de Firebase
+     ligada a su nombre (sesiones/{uid}). */
+  function esperar(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  function entrarInspector(id){
+    var i = S.inspectoresPub[id];
+    if(S.loginBusy) return;
+    if(!i || !i.activo){ toast('Ese nombre ya no está activo'); return; }
+    S.loginBusy = true; S.loginError = ''; render();
+    var u = auth.currentUser, paso;
+    if(u && u.isAnonymous) paso = Promise.resolve(u);
+    else if(!navigator.onLine) paso = Promise.reject({code: u ? 'app/sin-senal-admin' : 'app/sin-senal-nuevo'});
+    else paso = (u ? signOut(auth) : Promise.resolve()).then(function(){ return signInAnonymously(auth); })
+                  .then(function(c){ return c.user; });
+    paso.then(function(user){
+      var perfil = {uid:user.uid, inspectorId:id, usuario:id, nombre:i.nombre, rol:'inspector', activo:true, anonimo:true};
+      var w = setDoc(ref(COL.sesiones, user.uid), {inspectorId:id, nombre:i.nombre, ts:Date.now()});
+      var listo = navigator.onLine ? Promise.race([w, esperar(8000)]) : (w.catch(function(e){ console.error(e); }), Promise.resolve());
+      return listo.then(function(){
+        lset('inspectorSesion', perfil);
+        S.loginBusy = false;
+        activarSesion(perfil, true);
+      });
+    }).catch(function(e){
+      console.error(e);
+      var c = (e && e.code) || '';
+      S.loginBusy = false;
+      S.loginError = c==='app/sin-senal-admin' ? 'Sin conexión. En este equipo estaba un administrador; para entrar como inspector se necesita señal.'
+        : c==='app/sin-senal-nuevo' ? 'Sin conexión. La primera vez en este equipo se necesita señal.'
+        : (c==='auth/operation-not-allowed' || c==='auth/admin-restricted-operation') ? 'El acceso sin contraseña no está habilitado en Firebase. Avisa al administrador.'
+        : c==='permission-denied' ? 'Ese nombre ya no está activo.'
+        : 'No se pudo entrar. Revisa la señal e inténtalo de nuevo.';
+      render();
+    });
+  }
+
   /* ============ SESIÓN ============ */
   var inactTimer=null;
   function limpiarPantallas(){
@@ -754,7 +922,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
      entrar con el PIN aunque no haya señal. */
   function bloquear(porInactividad){
     detenerEscuchas();
-    S.inspector=null; S.isAdmin=false; S.perfil=null; S.usuarios=[]; S.auditoria=[];
+    S.inspector=null; S.isAdmin=false; S.perfil=null; S.usuarios=[]; S.auditoria=[]; S.usuariosCargados=false;
     lset('sesionAbierta', null);
     limpiarPantallas();
     S.perfiles = perfilesLocales();
@@ -764,15 +932,20 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   }
   /* Cierre de sesión completo (botón "Cerrar sesión" o cuenta desactivada) */
   function cerrarSesion(porInactividad){
+    var anonimo = !!(auth.currentUser && auth.currentUser.isAnonymous);
     bloquear(porInactividad);
-    signOut(auth).catch(function(){});
+    lset('inspectorSesion', null);
+    /* La sesión anónima se conserva para que otro inspector pueda entrar sin señal */
+    if(!anonimo) signOut(auth).catch(function(){});
   }
   function reiniciarInactividad(){
     if(inactTimer) clearTimeout(inactTimer);
     if(!S.inspector) return;
+    var mins = minutosBloqueo();
+    if(!mins) return;
     inactTimer = setTimeout(function(){
       if(S.inspector) bloquear(true);
-    }, MINUTOS_INACTIVIDAD*60*1000);
+    }, mins*60*1000);
   }
   ['click','keydown','touchstart','focusin'].forEach(function(ev){
     document.addEventListener(ev, reiniciarInactividad, {passive:true});
@@ -783,9 +956,11 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 
   function activarSesion(perfil, bienvenida){
     S.perfil = perfil; S.inspector = perfil.nombre; S.isAdmin = perfil.rol==='admin';
+    S.reintentoPermiso = false;
     lset('sesionAbierta', perfil.uid);
     limpiarPantallas();
     iniciarEscuchas();
+    if(S.isAdmin && S.adminsPubVacio) reclamarPrincipal();
     if(bienvenida) mostrarBienvenida(perfil.nombre);
     render();
   }
@@ -798,13 +973,14 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     if(c==='app/inactivo') return 'Esta cuenta está desactivada. Consulta al administrador.';
     if(c==='auth/too-many-requests') return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
     if(c==='auth/network-request-failed' || c==='unavailable') return 'Sin conexión. Revisa la señal e inténtalo de nuevo.';
-    if(c.indexOf('auth/')===0 || c==='app/no-usuario') return 'Usuario o PIN incorrecto';
+    if(c==='app/no-admin') return 'Los inspectores ya no usan contraseña: regresa y toca tu nombre en la lista.';
+    if(c.indexOf('auth/')===0 || c==='app/no-usuario') return 'Usuario o contraseña incorrectos';
     return 'No se pudo iniciar sesión';
   }
   function iniciarSesion(usuario, pin){
     usuario = normUsuario(usuario);
     if(!usuarioValido(usuario)){ falloLogin('Escribe tu usuario (3 a 20 letras o números, sin espacios)'); return; }
-    if(!pinValido(pin)){ falloLogin('El PIN debe tener exactamente '+PIN_LEN+' dígitos'); return; }
+    if(!passValida(pin)){ falloLogin('La contraseña lleva al menos '+PASS_MIN+' caracteres'); return; }
     S.loginBusy=true; S.loginError=''; render();
     var local = perfilLocal(usuario);
     if(!navigator.onLine){ intentarSinSenal(usuario, pin, local); return; }
@@ -819,6 +995,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     }).then(function(cred){
       return cargarPerfil(cred.user.uid).then(function(p){
         if(!p || !p.activo) return signOut(auth).then(function(){ throw {code:'app/inactivo'}; });
+        if(p.rol!=='admin') return signOut(auth).then(function(){ throw {code:'app/no-admin'}; });
         return guardarPerfilConPin(p, pin).then(function(){ activarSesion(p, true); });
       });
     }).catch(function(e){
@@ -830,11 +1007,11 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   /* Sin señal solo puede volver a entrar quien dejó su cuenta abierta en este equipo */
   function intentarSinSenal(usuario, pin, local){
     var u = auth.currentUser;
-    if(!local || !u || u.uid!==local.uid || !local.pinHash){
+    if(!local || !u || u.uid!==local.uid || !local.pinHash || local.rol!=='admin'){
       falloLogin('Sin conexión. Sin señal solo puede entrar quien fue el último en usar este equipo.'); return;
     }
     hashPin(pin, local.salt).then(function(h){
-      if(h!==local.pinHash){ falloLogin('PIN incorrecto'); return; }
+      if(h!==local.pinHash){ falloLogin('Contraseña incorrecta'); return; }
       cargarPerfil(u.uid).then(function(p){
         if(p && !p.activo){ quitarPerfil(usuario); falloLogin(mensajeAuth({code:'app/inactivo'})); return; }
         activarSesion(p || {uid:u.uid, usuario:local.usuario, nombre:local.nombre, rol:local.rol, activo:true}, true);
@@ -848,13 +1025,17 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     S.catalogs      = migrarGrados({});
     S.variacionesCat= copia(DEFAULT_VARIACIONES);
     S.perfiles      = perfilesLocales();
+    escucharPublico();
     render();
     var arrancado = false;
     onAuthStateChanged(auth, function(user){
       if(!arrancado){
         arrancado = true; S.cargando = false;
         var abierta = get('sesionAbierta', null);
-        if(user && abierta===user.uid){
+        if(user && abierta===user.uid && user.isAnonymous){
+          var ip = get('inspectorSesion', null), pub = ip ? S.inspectoresPub[ip.inspectorId] : null;
+          if(ip && ip.uid===user.uid && (!pub || pub.activo)) activarSesion(ip, false); else render();
+        } else if(user && abierta===user.uid){
           var l = perfilesLocales().filter(function(x){ return x.uid===user.uid; })[0];
           cargarPerfil(user.uid).then(function(p){
             if(p && p.activo) activarSesion(p, false); else cerrarSesion(false);
@@ -972,40 +1153,56 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   }
   function renderGate(){
     var warn = storageOK ? '' :
-      '<div class="ra-warn">El navegador está bloqueando el guardado local, algo típico del modo privado. Este equipo no podrá recordar los perfiles.</div>';
+      '<div class="ra-warn">El navegador está bloqueando el guardado local, algo típico del modo privado. Este equipo no podrá recordar la sesión.</div>';
     var sinSenal = S.online ? '' :
-      '<div class="ra-note">Sin conexión. Solo puede entrar quien fue el último en usar este equipo; los demás podrán entrar al volver la señal.</div>';
+      '<div class="ra-note">Sin conexión. Los inspectores que ya entraron antes en este equipo pueden seguir entrando; lo capturado se sube al volver la señal.</div>';
     var err = S.loginError ? '<div class="ra-err">'+escHtml(S.loginError)+'</div>' : '';
     var btnEntrar = '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-login-submit" style="margin-bottom:0;"'+(S.loginBusy?' disabled':'')+'>'+(S.loginBusy?'Entrando…':'Entrar')+'</button>';
-    var pinInput = '<input class="ra-input ra-pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="'+PIN_LEN+'" id="login-pin-input" autocomplete="off"'+(S.loginBusy?' disabled':'')+'>';
+    var pinInput = '<input class="ra-input" type="password" id="login-pin-input" placeholder="Contraseña" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false"'+(S.loginBusy?' disabled':'')+'>';
     var inner;
     if(S.cargando){
       inner = '<div class="ra-gate-card"><div class="ra-h1">Conectando…</div><div class="ra-h2" style="margin-bottom:0;">Preparando la app.</div></div>';
     } else if(S.loginStep==='pin' && S.loginPickedUser){
-      var p = perfilLocal(S.loginPickedUser) || {nombre:S.loginPickedUser};
+      var p = perfilLocal(S.loginPickedUser);
+      var nombre = (p && p.nombre) || S.loginPickedNombre || S.loginPickedUser;
       inner = '<div class="ra-gate-card">' +
           '<div class="ra-topbar"><button class="ra-back" id="btn-login-back">‹ Atrás</button></div>' +
-          '<div class="ra-h1">'+escHtml(p.nombre)+'</div>' +
-          '<div class="ra-h2">Ingresa tu PIN de '+PIN_LEN+' dígitos.</div>' + sinSenal + pinInput + err + btnEntrar +
+          '<div class="ra-h1">'+escHtml(nombre)+'<span class="ra-pill">ADMIN</span></div>' +
+          '<div class="ra-h2">Ingresa tu contraseña de administrador.</div>' + sinSenal + pinInput + err + btnEntrar +
         '</div>';
-    } else if(S.loginStep==='nuevo' || !S.perfiles.length){
+    } else if(S.loginStep==='nuevo'){
       inner = '<div class="ra-gate-card">' +
-          (S.perfiles.length ? '<div class="ra-topbar"><button class="ra-back" id="btn-login-back">‹ Atrás</button></div>' : '') +
-          '<div class="ra-h1">Entrar con mi usuario</div>' +
-          '<div class="ra-h2">La primera vez en este equipo escribe tu usuario y tu PIN. Después solo tendrás que tocar tu nombre.</div>' + warn + sinSenal +
+          '<div class="ra-topbar"><button class="ra-back" id="btn-login-back">‹ Atrás</button></div>' +
+          '<div class="ra-h1">Entrar como administrador</div>' +
+          '<div class="ra-h2">Escribe tu usuario y tu contraseña. Los inspectores no necesitan esto: solo tocan su nombre.</div>' + warn + sinSenal +
           '<label class="ra-label" for="login-usuario">USUARIO</label>' +
-          '<input class="ra-input" id="login-usuario" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Ej. jperez" value="'+escAttr(S.loginUsuario)+'"'+(S.loginBusy?' disabled':'')+'>' +
-          '<label class="ra-label" for="login-pin-input">PIN</label>' + pinInput + err + btnEntrar +
+          '<input class="ra-input" id="login-usuario" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Ej. jperez" value="'+escAttr(S.loginUsuario)+'"'+(S.loginBusy?' disabled':'')+'>' +
+          '<label class="ra-label" for="login-pin-input">CONTRASEÑA</label>' + pinInput + err + btnEntrar +
         '</div>';
     } else {
-      var lista = S.perfiles.map(function(u){
-        return '<button class="ra-btn ra-btn-outline ra-btn-block" data-pick-user="'+escAttr(u.usuario)+'">'+escHtml(u.nombre)+'</button>';
+      var ins = inspectoresActivos();
+      var q = sinAcentos(S.gateBusqueda).trim();
+      var lista = ins.map(function(i){
+        var oculto = q && sinAcentos(i.nombre).indexOf(q)<0;
+        return '<button class="ra-btn ra-btn-outline ra-btn-block" data-pick-insp="'+escAttr(i.id)+'" data-nombre="'+escAttr(sinAcentos(i.nombre))+'"'+
+          (oculto?' style="display:none;"':'')+(S.loginBusy?' disabled':'')+'>'+escHtml(i.nombre)+'</button>';
+      }).join('');
+      var buscador = ins.length > 8
+        ? '<input class="ra-input" id="gate-buscar" placeholder="Buscar mi nombre" autocomplete="off" value="'+escAttr(S.gateBusqueda)+'">' : '';
+      var admins = adminsVisibles().map(function(a){
+        return '<button class="ra-btn ra-btn-outline ra-btn-block ra-btn-sm" data-pick-user="'+escAttr(a.usuario)+'" data-pick-nombre="'+escAttr(a.nombre)+'">'+escHtml(a.nombre)+'</button>';
       }).join('');
       inner = '<div class="ra-gate-card">' +
           '<div class="ra-h1">Selecciona tu nombre</div>' +
-          '<div class="ra-h2">Solo el personal autorizado puede capturar inspecciones.</div>' + warn + lista +
+          '<div class="ra-h2">'+(S.loginBusy?'Entrando…':'Toca tu nombre para entrar.')+'</div>' + warn + sinSenal + err + buscador +
+          (lista || '<div class="ra-note">Todavía no hay inspectores registrados. El administrador los da de alta en Ajustes.</div>') +
+          (lista ? '<div class="ra-note" id="gate-sin-coincidencias" style="display:none;">Ningún nombre coincide.</div>' : '') +
         '</div>' +
-        '<button class="ra-link" id="btn-login-nuevo" style="display:block;width:100%;text-align:center;color:#fff;margin-top:18px;">¿No apareces? Entra con tu usuario</button>';
+        '<div class="ra-gate-card" style="margin-top:14px;">' +
+          '<div class="ra-label">ADMINISTRADORES</div>' + admins +
+          '<button class="ra-link" id="btn-login-nuevo" style="display:block;width:100%;text-align:center;margin-top:'+(admins?'6':'0')+'px;">'+
+            (admins ? '¿No apareces? Entra con tu usuario' : 'Entrar como administrador')+'</button>' +
+        '</div>';
     }
     return '<div class="ra-gate"><div class="ra-gate-inner">' +
         '<div class="ra-gate-brand">' +
@@ -1063,7 +1260,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<label class="ra-label">ID DE ROLLO</label>' + campo +
         (ok && S.tracking[id] ? rolloExistenteCard(S.tracking[id], previos) :
           (previos ? '<div class="ra-note" style="margin-top:14px;">Este rollo ya tiene '+previos+' inspección(es) registrada(s).</div>' : '')) +
-        (master ? masterPreview(master) : (ok ? datosRolloFields() : '')) +
+        (ok ? datosIdSeccion(master) : '') +
         '<button class="ra-btn '+(ok && S.tracking[id]?'ra-btn-outline':'ra-btn-conforme')+' ra-btn-block" id="btn-continue-id" style="margin-top:18px;margin-bottom:0;"'+(ok?'':' disabled')+'>' +
           (ok && S.tracking[id] ? 'Registrar nueva inspección' : 'Continuar') + '</button>' +
       '</div>';
@@ -1153,6 +1350,31 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       (abierto && filtrados.length>60 ? '<div class="ra-meta" style="margin:-6px 0 12px;">Mostrando 60 de '+filtrados.length+' — sigue escribiendo para acotar.</div>' : '');
   }
 
+  /* Espesor y ancho son obligatorios: se piden en la misma pantalla del ID,
+     salvo que el rollo ya los tenga guardados. */
+  function datosIdSeccion(master){
+    var out = master ? masterPreview(master) : '';
+    var pideEsp = !(master && master.espesor), pideAn = !(master && master.ancho);
+    if(pideEsp || pideAn){
+      var campo = function(id, key, etq){
+        return '<div><label class="ra-label" for="'+id+'">'+etq+' (MM) <span style="color:var(--scrap);">*</span></label>' +
+          '<input class="ra-input'+(S.medidaErr && !S.rolloData[key]?' ra-input-err':'')+'" inputmode="decimal" id="'+id+'" placeholder="mm" value="'+escAttr(S.rolloData[key]||'')+'" autocomplete="off"></div>';
+      };
+      out += '<div class="ra-grid" style="margin-top:16px;">' +
+          (pideEsp ? campo('field-espesor','espesor','ESPESOR') : '') +
+          (pideAn ? campo('field-ancho','ancho','ANCHO') : '') +
+        '</div>' +
+        '<div class="ra-meta" style="margin:-4px 0 0;">* Obligatorios</div>';
+    }
+    if(!master) out += datosRolloFields();
+    return out;
+  }
+  function medidasCompletas(){
+    var m = S.rollosMaster[rolloId()] || {};
+    var esp = m.espesor || S.rolloData.espesor, an = m.ancho || S.rolloData.ancho;
+    return parseFloat(esp) > 0 && parseFloat(an) > 0;
+  }
+
   function datosRolloFields(){
     var e = (S.catalogs.enrolladores||[]).map(function(x){ return '<option value="'+escAttr(x)+'"'+(S.rolloData.enrollador===x?' selected':'')+'>'+escHtml(x)+'</option>'; }).join('');
     var sgf = S.rolloData.grado ? familiaDeGrado(S.rolloData.grado) : '';
@@ -1167,8 +1389,6 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
           (desc ? '<div class="ra-meta" style="margin:-6px 0 12px;">'+escHtml(desc)+'</div>' : '') +
           '<label class="ra-label">ENROLLADOR</label><select class="ra-input" id="field-enrollador"><option value="">—</option>'+e+'</select>' +
           '<div class="ra-grid">' +
-            '<div><label class="ra-label">ESPESOR (MM)</label><input class="ra-input" inputmode="decimal" id="field-espesor" placeholder="mm" value="'+escAttr(S.rolloData.espesor||'')+'"></div>' +
-            '<div><label class="ra-label">ANCHO (MM)</label><input class="ra-input" inputmode="decimal" id="field-ancho" placeholder="mm" value="'+escAttr(S.rolloData.ancho||'')+'"></div>' +
             '<div><label class="ra-label">PESO (KG)</label><input class="ra-input" inputmode="decimal" id="field-peso" placeholder="kg" value="'+escAttr(S.rolloData.peso||'')+'"></div>' +
             '<div><label class="ra-label">FECHA PROD.</label><input class="ra-input" type="date" id="field-fecha" value="'+escAttr(S.rolloData.fecha||'')+'"></div>' +
           '</div>' +
@@ -1707,7 +1927,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
                   : '<div class="ra-empty"><div class="big">▤</div>Aún no hay rollos capturados.</div>');
     return resumenHoyCard() +
       '<div class="ra-stats">'+stat(all.length,'TOTAL')+stat(c,'ACEPTADO')+stat(d,'DEFECTO')+'</div>' +
-      '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-export">Exportar a Excel</button>' +
+      (S.isAdmin ? '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-export">Exportar a Excel</button>' : '') +
       '<div class="ra-card" style="padding:14px;">' +
         '<input class="ra-input" id="input-filtro" placeholder="Buscar por rollo, defecto, grado o inspector" value="'+escAttr(S.filtro)+'" autocomplete="off">' +
         '<div class="ra-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;">'+filtros+'</div>' +
@@ -1751,11 +1971,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     var out='';
     out += '<div class="ra-card">' +
         '<div class="ra-h1">Sesión</div>' +
-        '<div class="ra-h2">'+escHtml(usuarioActual())+(S.isAdmin?'<span class="ra-pill">ADMIN</span>':'')+
-          (S.perfil&&S.perfil.usuario?'<br>Usuario: '+escHtml(S.perfil.usuario):'')+'</div>' +
-        '<button class="ra-link" id="btn-change-pin" style="margin-right:22px;">Cambiar mi PIN</button>' +
+        '<div class="ra-h2">'+escHtml(usuarioActual())+(S.isAdmin?'<span class="ra-pill">'+(soyPrincipal()?'ADMIN PRINCIPAL':'ADMIN')+'</span>':'')+
+          (S.isAdmin&&S.perfil&&S.perfil.usuario?'<br>Usuario: '+escHtml(S.perfil.usuario):'')+'</div>' +
+        (S.isAdmin?'<button class="ra-link" id="btn-change-pin" style="margin-right:22px;">Cambiar mi contraseña</button>':'') +
         '<button class="ra-link danger" id="btn-logout">Cerrar sesión</button>' +
-        '<div class="ra-meta" style="margin-top:10px;">La pantalla se bloquea sola tras '+MINUTOS_INACTIVIDAD+' minutos sin actividad; para volver basta tu PIN, aunque no haya señal. «Cerrar sesión» la cierra por completo.</div>' +
+        '<div class="ra-meta" style="margin-top:10px;">' + (minutosBloqueo()
+          ? 'La pantalla se bloquea sola tras '+etqBloqueo(minutosBloqueo())+' sin actividad; para volver '+(S.isAdmin?'basta tu contraseña, aunque no haya señal.':'toca tu nombre.')
+          : 'El bloqueo automático por inactividad está desactivado.') + '</div>' +
       '</div>';
     if(S.showChangePin) out += changePinCard();
     out += datosAnterioresCard();
@@ -1764,7 +1986,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div class="ra-h1">Datos y respaldo</div>' +
         '<div class="ra-h2">La información se guarda en Firebase y se comparte en tiempo real con todos los equipos. Si se cae la señal puedes seguir capturando: todo se sube solo al reconectarse. ' +
           (S.online ? 'Estado: <b>conectado</b>.' : 'Estado: <b>sin conexión</b>.') + '</div>' +
-        '<button class="ra-btn ra-btn-outline ra-btn-block"'+(S.isAdmin?'':' style="margin-bottom:0;"')+' id="btn-backup">Descargar respaldo</button>' +
+        (S.isAdmin ? '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-backup">Descargar respaldo</button>'
+                   : '<div class="ra-meta">Solo los administradores pueden descargar la información.</div>') +
         (S.isAdmin ? '<label class="ra-btn ra-btn-outline ra-btn-block" style="cursor:pointer;margin-bottom:0;">Importar respaldo JSON a Firebase<input type="file" accept="application/json,.json" id="input-restore" style="display:none;"></label>' +
           '<div class="ra-meta" style="margin-top:10px;">Acepta los respaldos que generaba la versión anterior. Importar dos veces el mismo archivo no duplica registros.</div>' : '') +
       '</div>';
@@ -1772,11 +1995,11 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     if(!S.isAdmin){
       out += '<div class="ra-card">' +
           '<div class="ra-h1">Panel de administrador</div>' +
-          '<div class="ra-h2" style="margin-bottom:0;">Inspectores, catálogos, zonas y el reporte de movimientos solo los ven las cuentas con rol de administrador.</div>' +
+          '<div class="ra-h2" style="margin-bottom:0;">Inspectores, catálogos, zonas, descargas y el reporte de movimientos solo los ven los administradores.</div>' +
         '</div>';
       return out;
     }
-    return out + reporteCard() + usersCard() + perfilesEquipoCard() + gradosCard() + defectosCard() + zonasCard() + mediosCard() +
+    return out + reporteCard() + adminsCard() + inspectoresCard() + bloqueoCard() + gradosCard() + defectosCard() + zonasCard() + mediosCard() +
            simpleCatalogCard('enrolladores','Enrolladores') + demoCard();
   }
 
@@ -1895,14 +2118,15 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   }
 
   function changePinCard(){
+    function campo(id, etq, ac){ return '<label class="ra-label" for="'+id+'">'+etq+'</label><input class="ra-input" type="password" id="'+id+'" autocomplete="'+ac+'" autocapitalize="none" autocorrect="off" spellcheck="false">'; }
     return '<div class="ra-card">' +
-        '<div class="ra-h1">Cambiar mi PIN</div>' +
-        '<div class="ra-h2">Necesitas conexión para cambiarlo.</div>' +
-        '<label class="ra-label">PIN ACTUAL</label><input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="'+PIN_LEN+'" id="cp-current" autocomplete="off">' +
-        '<label class="ra-label">PIN NUEVO ('+PIN_LEN+' DÍGITOS)</label><input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="'+PIN_LEN+'" id="cp-new" autocomplete="off">' +
-        '<label class="ra-label">CONFIRMA EL PIN NUEVO</label><input class="ra-input ra-pin-input" type="password" inputmode="numeric" maxlength="'+PIN_LEN+'" id="cp-new2" autocomplete="off">' +
+        '<div class="ra-h1">Cambiar mi contraseña</div>' +
+        '<div class="ra-h2">Necesitas conexión para cambiarla. Lleva al menos '+PASS_MIN+' caracteres.</div>' +
+        campo('cp-current','CONTRASEÑA ACTUAL','current-password') +
+        campo('cp-new','CONTRASEÑA NUEVA','new-password') +
+        campo('cp-new2','CONFIRMA LA CONTRASEÑA NUEVA','new-password') +
         (S.changePinError?'<div class="ra-err">'+escHtml(S.changePinError)+'</div>':'') +
-        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-change-pin-submit"'+(S.changePinBusy?' disabled':'')+'>'+(S.changePinBusy?'Guardando…':'Guardar nuevo PIN')+'</button>' +
+        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-change-pin-submit"'+(S.changePinBusy?' disabled':'')+'>'+(S.changePinBusy?'Guardando…':'Guardar nueva contraseña')+'</button>' +
         '<button class="ra-link" id="btn-cancel-change-pin">Cancelar</button>' +
       '</div>';
   }
@@ -1913,55 +2137,93 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       .sort(function(a,b){ return (b.activo?1:0)-(a.activo?1:0) || String(a.nombre).localeCompare(String(b.nombre)); });
   }
 
-  function usersCard(){
-    var rows = cuentasVigentes().map(function(u){
-      var count = S.registros.filter(function(r){ return r.inspector===u.nombre; }).length;
-      var yo = S.perfil && u.uid===S.perfil.uid;
+  /* Administradores: el principal nombra (opcional) a un segundo administrador con
+     contraseña propia; solo el principal puede bloquearlo, restablecerlo o quitarlo. */
+  function segundosAdmins(){
+    var pr = S.adminsPub && S.adminsPub.principal;
+    return S.usuarios.filter(function(u){ return u.rol==='admin' && !u.reemplazadoPor && !u.eliminado && u.uid!==pr; })
+      .sort(function(a,b){ return String(a.nombre).localeCompare(String(b.nombre)); });
+  }
+  function adminsCard(){
+    var pr = S.adminsPub && S.adminsPub.principal;
+    var principal = ((S.adminsPub && S.adminsPub.lista) || []).filter(function(a){ return a.principal; })[0];
+    if(!soyPrincipal()){
+      return '<div class="ra-card">' +
+          '<div class="ra-h1">Administradores</div>' +
+          '<div class="ra-h2" style="margin-bottom:0;">' + (pr
+            ? 'Administrador principal: <b>'+escHtml(principal?principal.nombre:'—')+'</b>. Tú eres segundo administrador: tienes acceso a la misma información y a las descargas, pero solo el administrador principal puede nombrar, bloquear o quitar al segundo administrador.'
+            : 'Todavía no hay un administrador principal asignado.') + '</div>' +
+        '</div>';
+    }
+    var rows = segundosAdmins().map(function(u){
       var reset = S.resetUid===u.uid;
-      return '<div class="ra-item"'+(u.activo?'':' style="opacity:.62;"')+'>' +
-          '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(u.nombre)+(u.rol==='admin'?'<span class="ra-pill">ADMIN</span>':'')+'</span>' +
-            (u.activo?'':'<span class="ra-badge scrap">INACTIVO</span>')+'</div>' +
-          '<div class="ra-meta">Usuario: <b>'+escHtml(u.usuario)+'</b> · '+count+' inspecciones capturadas'+(yo?' · tu cuenta':'')+'</div>' +
+      return '<div class="ra-item"'+(u.activo?'':' style="opacity:.7;"')+'>' +
+          '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(u.nombre)+'<span class="ra-pill">ADMIN</span></span>' +
+            (u.activo?'':'<span class="ra-badge scrap">BLOQUEADO</span>')+'</div>' +
+          '<div class="ra-meta">Usuario: <b>'+escHtml(u.usuario)+'</b></div>' +
           (reset
-            ? '<div class="ra-meta" style="margin-top:9px;">PIN nuevo para '+escHtml(u.nombre)+' ('+PIN_LEN+' dígitos):</div>' +
-              '<div class="ra-inline-form" style="margin-top:6px;margin-bottom:0;"><input class="ra-input ra-pin-input" type="tel" inputmode="numeric" maxlength="'+PIN_LEN+'" id="reset-pin-input" placeholder="PIN" style="margin-bottom:0;" autocomplete="off">' +
+            ? '<div class="ra-meta" style="margin-top:9px;">Contraseña nueva para '+escHtml(u.nombre)+' (mínimo '+PASS_MIN+' caracteres):</div>' +
+              '<div class="ra-inline-form" style="margin-top:6px;margin-bottom:0;"><input class="ra-input" type="password" id="reset-pin-input" placeholder="Contraseña nueva" style="margin-bottom:0;" autocomplete="new-password">' +
               '<button class="ra-small-btn" data-save-reset="'+escAttr(u.uid)+'"'+(S.userBusy?' disabled':'')+'>'+(S.userBusy?'…':'Guardar')+'</button></div>' +
               '<button class="ra-link" id="btn-cancel-reset">Cancelar</button>'
             : '<div class="ra-actions">' +
-                (u.activo && !yo ? '<button class="ra-link" data-reset-usuario="'+escAttr(u.uid)+'">Restablecer PIN</button>' : '') +
-                (yo ? '' : (u.activo
-                  ? '<button class="ra-link danger" data-desactivar="'+escAttr(u.uid)+'">Desactivar</button>'
-                  : '<button class="ra-link" data-reactivar="'+escAttr(u.uid)+'">Reactivar</button>')) +
+                (u.activo
+                  ? '<button class="ra-link danger" data-desactivar="'+escAttr(u.uid)+'">Bloquear</button>'
+                  : '<button class="ra-link" data-reactivar="'+escAttr(u.uid)+'">Desbloquear</button>') +
+                '<button class="ra-link" data-reset-usuario="'+escAttr(u.uid)+'">Restablecer contraseña</button>' +
+                '<button class="ra-link danger" data-quitar-admin="'+escAttr(u.uid)+'">Quitar</button>' +
               '</div>') +
         '</div>';
     }).join('');
+    var form = rows ? '' :
+        '<div class="ra-label" style="margin-top:6px;">SEGUNDO ADMINISTRADOR (OPCIONAL)</div>' +
+        '<input class="ra-input" id="new-admin-nombre" placeholder="Nombre completo (ej. Juan Pérez)" autocomplete="off">' +
+        '<input class="ra-input" type="password" id="new-admin-pass" placeholder="Contraseña (mínimo '+PASS_MIN+' caracteres)" autocomplete="new-password">' +
+        '<input class="ra-input" type="password" id="new-admin-pass2" placeholder="Confirma la contraseña" autocomplete="new-password">' +
+        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-add-admin" style="margin-bottom:0;"'+(S.userBusy?' disabled':'')+'>'+(S.userBusy?'Creando cuenta…':'Nombrar segundo administrador')+'</button>' +
+        '<div class="ra-meta" style="margin-top:10px;">Requiere conexión. Entrará tocando su nombre en la sección Administradores de la pantalla de inicio.</div>';
     return '<div class="ra-card">' +
-        '<div class="ra-h1">Usuarios</div>' +
-        '<div class="ra-h2">Quitar a alguien lo desactiva: no puede entrar desde ningún equipo, desaparece de las pantallas de inicio y su historial se conserva. Puedes reactivarlo cuando quieras.</div>' +
-        (rows || '<div class="ra-h2">Todavía no hay usuarios.</div>') +
-        '<div class="ra-label" style="margin-top:16px;">DAR DE ALTA</div>' +
-        '<input class="ra-input" id="new-usuario-nombre" placeholder="Nombre completo (ej. Juan Pérez)" autocomplete="off">' +
-        '<input class="ra-input" id="new-usuario-usuario" placeholder="Usuario (ej. jperez)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">' +
-        '<div class="ra-inline-form"><input class="ra-input ra-pin-input" type="tel" inputmode="numeric" maxlength="'+PIN_LEN+'" id="new-usuario-pin" placeholder="PIN" style="margin-bottom:0;" autocomplete="off">' +
-          '<select class="ra-input" id="new-usuario-rol" style="margin-bottom:0;max-width:150px;"><option value="inspector">Inspector</option><option value="admin">Administrador</option></select></div>' +
-        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-add-usuario" style="margin-bottom:0;"'+(S.userBusy?' disabled':'')+'>'+(S.userBusy?'Creando cuenta…':'Dar de alta')+'</button>' +
-        '<div class="ra-meta" style="margin-top:10px;">El usuario lleva de 3 a 20 letras minúsculas o números, sin espacios ni puntos. El PIN lleva exactamente '+PIN_LEN+' dígitos. Dar de alta requiere conexión.</div>' +
+        '<div class="ra-h1">Administradores</div>' +
+        '<div class="ra-h2">Eres el administrador principal. Si quieres, nombra a un segundo administrador con su propia contraseña: verá la misma información y también podrá descargarla, pero solo tú puedes bloquearlo o quitarlo.</div>' +
+        rows + form +
       '</div>';
   }
 
-  function perfilesEquipoCard(){
-    var locales = perfilesLocales();
-    var filas = cuentasVigentes().filter(function(u){ return u.activo; }).map(function(u){
-      var on = locales.some(function(p){ return p.usuario===u.usuario; });
-      return '<div class="ra-defrow'+(on?' on':'')+'" data-toggle-perfil="'+escAttr(u.uid)+'">' +
-          '<span class="ra-check'+(on?' on':'')+'">'+(on?'✓':'')+'</span>' +
-          '<span class="ra-choice-text">'+escHtml(u.nombre)+' <span style="color:var(--ink-soft);font-size:12px;">'+escHtml(u.usuario)+'</span></span>' +
+  /* Inspectores: entran tocando su nombre, sin contraseña. Ambos administradores los registran. */
+  function inspectoresCard(){
+    var m = S.inspectoresPub || {};
+    var lista = Object.keys(m).map(function(id){ return Object.assign({id:id}, m[id]); })
+      .sort(function(a,b){ return (b.activo?1:0)-(a.activo?1:0) || String(a.nombre).localeCompare(String(b.nombre)); });
+    var rows = lista.map(function(i){
+      var count = S.registros.filter(function(r){ return r.inspector===i.nombre; }).length;
+      return '<div class="ra-item"'+(i.activo?'':' style="opacity:.62;"')+'>' +
+          '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(i.nombre)+'</span>' +
+            (i.activo?'':'<span class="ra-badge scrap">INACTIVO</span>')+'</div>' +
+          '<div class="ra-meta">'+count+' inspección(es) capturada(s)</div>' +
+          '<div class="ra-actions">' + (i.activo
+            ? '<button class="ra-link danger" data-insp-off="'+escAttr(i.id)+'">Desactivar</button>'
+            : '<button class="ra-link" data-insp-on="'+escAttr(i.id)+'">Reactivar</button>') + '</div>' +
         '</div>';
     }).join('');
     return '<div class="ra-card">' +
-        '<div class="ra-h1">Perfiles en este equipo</div>' +
-        '<div class="ra-h2">Marca quién debe aparecer como botón en la pantalla de inicio de este equipo. También se agregan solos cuando alguien entra aquí con su usuario por primera vez. La lista se guarda solo en este equipo.</div>' +
-        (filas || '<div class="ra-note">No hay usuarios activos.</div>') +
+        '<div class="ra-h1">Inspectores</div>' +
+        '<div class="ra-h2">Entran tocando su nombre en la pantalla de inicio, sin contraseña. Desactivar a alguien lo quita de la lista en todos los equipos; su historial se conserva.</div>' +
+        (rows || '<div class="ra-note">Todavía no hay inspectores registrados.</div>') +
+        '<div class="ra-label" style="margin-top:16px;">REGISTRAR INSPECTOR</div>' +
+        '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input" id="new-insp-nombre" placeholder="Nombre completo (ej. Juan Pérez)" style="margin-bottom:0;" autocomplete="off">' +
+          '<button class="ra-small-btn" id="btn-add-insp">Agregar</button></div>' +
+      '</div>';
+  }
+
+  function bloqueoCard(){
+    var m = minutosBloqueo();
+    var chips = OPCIONES_BLOQUEO.map(function(o){
+      return '<button class="ra-btn ra-btn-sm '+(o===m?'ra-btn-primary':'ra-btn-outline')+'" data-bloqueo="'+o+'" style="font-size:12px;margin-bottom:0;">'+etqBloqueo(o)+'</button>';
+    }).join('');
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Bloqueo por inactividad</div>' +
+        '<div class="ra-h2">Tiempo sin actividad tras el cual la pantalla regresa al inicio. Aplica en todos los equipos.</div>' +
+        '<div class="ra-grid" style="grid-template-columns:repeat(4,1fr);gap:6px;">'+chips+'</div>' +
       '</div>';
   }
 
@@ -2427,7 +2689,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         auditar('edicion','','Importación de respaldo: '+d.registros.length+' registros, '+Object.keys(tracking).length+' rollos'+(conCatalogos?' y catálogos':''),'');
         var nombres = (d.usuarios||[]).map(function(u){ return u.nombre; }).filter(Boolean);
         alert('Importación terminada: '+ops.length+' documentos escritos.' +
-          (nombres.length ? '\n\nLas cuentas no se importan (los PIN no viajan en el respaldo). Da de alta en «Usuarios» a quien siga activo:\n· '+nombres.join('\n· ') : ''));
+          (nombres.length ? '\n\nLas cuentas no se importan (las contraseñas no viajan en el respaldo). Registra en «Inspectores» a quien siga activo:\n· '+nombres.join('\n· ') : ''));
       }).catch(function(err){
         console.error(err);
         alert('La importación se detuvo: '+(err && err.message ? err.message : err)+'\nPuedes volver a importar el mismo archivo; lo ya subido no se duplica.');
@@ -2449,9 +2711,9 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     return '<div class="ra-card" style="border-color:var(--defecto);">' +
         '<div class="ra-h1">Datos de la versión anterior</div>' +
         '<div class="ra-h2">Este equipo todavía guarda '+d.registros.length+' inspección(es) y '+Object.keys(d.tracking).length+' rollo(s) de cuando la app guardaba todo localmente. ' +
-          (S.isAdmin ? 'Súbelos a Firebase para que todos los vean.' : 'Descárgalos y envíalos al administrador, o pídele que entre en este equipo para subirlos.') + '</div>' +
-        (S.isAdmin ? '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-subir-anteriores">Subir estos datos a Firebase</button>' : '') +
-        '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-bajar-anteriores" style="margin-bottom:0;">Descargar como respaldo JSON</button>' +
+          (S.isAdmin ? 'Súbelos a Firebase para que todos los vean.' : 'Pide a un administrador que entre en este equipo para subirlos.') + '</div>' +
+        (S.isAdmin ? '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-subir-anteriores">Subir estos datos a Firebase</button>' +
+          '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-bajar-anteriores" style="margin-bottom:0;">Descargar como respaldo JSON</button>' : '') +
       '</div>';
   }
 
@@ -2479,15 +2741,29 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     var c=(e&&e.code)||'';
     if(c==='app/existe') return 'Ese usuario ya existe';
     if(c==='auth/network-request-failed') return 'Sin conexión: dar de alta requiere señal';
-    if(c==='auth/weak-password') return 'El PIN no es válido para Firebase';
+    if(c==='auth/weak-password') return 'Firebase rechazó la contraseña: usa al menos '+PASS_MIN+' caracteres';
     if(c==='auth/too-many-requests') return 'Demasiadas altas seguidas. Espera unos minutos.';
     if(c==='permission-denied') return 'Sin permiso para dar de alta usuarios';
     return 'No se pudo crear la cuenta'+(c?' ('+c+')':'');
   }
+  /* Usuario interno a partir del nombre (juanperez); si ya existe se agrega un número */
+  function usuarioDesdeNombre(nombre){
+    var base = normUsuario(nombre).replace(/[^a-z0-9_-]/g,'').slice(0,16);
+    if(base.length<3) base = (base+'admin').slice(0,16);
+    return base;
+  }
+  function usuarioLibre(base, n){
+    var u = n ? base+n : base;
+    return getDoc(ref(COL.alias, u)).then(function(s){
+      if(!s.exists()) return u;
+      if(n>=30) throw {code:'app/existe'};
+      return usuarioLibre(base, n ? n+1 : 2);
+    });
+  }
   function darDeAlta(nombre, usuario, pin, rol){
     S.userBusy=true; render();
-    getDoc(ref(COL.alias, usuario)).then(function(s){
-      if(s.exists()) throw {code:'app/existe'};
+    usuarioLibre(usuario, 0).then(function(u){
+      usuario = u;
       return crearCuentaAuth(usuario, pin, 0);
     }).then(function(c){
       var b = writeBatch(db);
@@ -2497,8 +2773,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       return b.commit();
     }).then(function(){
       S.userBusy=false;
-      auditar('edicion','','Usuario dado de alta: '+nombre+' ('+usuario+', '+rol+')','');
-      toast('Cuenta creada: '+usuario);
+      auditar('edicion','','Segundo administrador nombrado: '+nombre+' ('+usuario+')','');
+      toast('Segundo administrador: '+nombre+' · usuario '+usuario);
       render();
     }).catch(function(e){ console.error(e); S.userBusy=false; render(); toast(mensajeAlta(e)); });
   }
@@ -2514,8 +2790,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       return b.commit();
     }).then(function(){
       S.userBusy=false; S.resetUid=null;
-      auditar('edicion','','PIN restablecido: '+anterior.nombre+' ('+anterior.usuario+')','');
-      toast('PIN restablecido para '+anterior.nombre);
+      auditar('edicion','','Contraseña restablecida: '+anterior.nombre+' ('+anterior.usuario+')','');
+      toast('Contraseña restablecida para '+anterior.nombre);
       render();
     }).catch(function(e){ console.error(e); S.userBusy=false; render(); toast(mensajeAlta(e)); });
   }
@@ -2525,8 +2801,17 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     b.set(ref(COL.alias, u.usuario), {uid:u.uid, email:u.email||correoDe(u.usuario, u.version), activo:activo});
     escribir(b.commit());
     if(!activo) quitarPerfil(u.usuario);
-    auditar('edicion','',(activo?'Usuario reactivado: ':'Usuario desactivado: ')+u.nombre+' ('+u.usuario+')','');
-    toast(activo?'Usuario reactivado':'Usuario desactivado');
+    auditar('edicion','',(activo?'Administrador desbloqueado: ':'Administrador bloqueado: ')+u.nombre+' ('+u.usuario+')','');
+    toast(activo?'Administrador desbloqueado':'Administrador bloqueado');
+  }
+  function quitarAdmin(u){
+    var b = writeBatch(db);
+    b.update(ref(COL.usuarios, u.uid), {activo:false, eliminado:true});
+    b.set(ref(COL.alias, u.usuario), {uid:u.uid, email:u.email||correoDe(u.usuario, u.version), activo:false});
+    escribir(b.commit());
+    quitarPerfil(u.usuario);
+    auditar('edicion','','Administrador quitado: '+u.nombre+' ('+u.usuario+')','');
+    toast('Administrador quitado');
   }
 
   /* ============ EVENTOS ============ */
@@ -2559,9 +2844,23 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     });
 
     /* acceso */
+    each('[data-pick-insp]',function(b){
+      b.addEventListener('click',function(){ entrarInspector(b.getAttribute('data-pick-insp')); });
+    });
+    var gateBuscar=root.querySelector('#gate-buscar');
+    if(gateBuscar) gateBuscar.addEventListener('input',function(){
+      S.gateBusqueda=gateBuscar.value;
+      var q=sinAcentos(S.gateBusqueda).trim(), visibles=0;
+      each('[data-pick-insp]',function(x){
+        var ver=!q || x.getAttribute('data-nombre').indexOf(q)>=0;
+        x.style.display=ver?'':'none'; if(ver) visibles++;
+      });
+      var nada=root.querySelector('#gate-sin-coincidencias'); if(nada) nada.style.display=visibles?'none':'';
+    });
     each('[data-pick-user]',function(b){
       b.addEventListener('click',function(){
-        S.loginPickedUser=b.getAttribute('data-pick-user'); S.loginStep='pin'; S.loginError='';
+        S.loginPickedUser=b.getAttribute('data-pick-user'); S.loginPickedNombre=b.getAttribute('data-pick-nombre')||'';
+        S.loginStep='pin'; S.loginError='';
         render(); setTimeout(function(){ var i=root.querySelector('#login-pin-input'); if(i) i.focus(); },50);
       });
     });
@@ -2580,7 +2879,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     function doLogin(){
       if(S.loginBusy) return;
       var i=root.querySelector('#login-pin-input');
-      var pin=i?i.value.trim():'';
+      var pin=i?i.value:'';
       var usuario = S.loginStep==='pin' ? S.loginPickedUser : S.loginUsuario;
       iniciarSesion(usuario, pin);
     }
@@ -2588,10 +2887,6 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     var loginPin=root.querySelector('#login-pin-input');
     if(loginPin){
       loginPin.addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
-      loginPin.addEventListener('input',function(){
-        loginPin.value = loginPin.value.replace(/\D/g,'').slice(0,PIN_LEN);
-        if(loginPin.value.length===PIN_LEN && (S.loginStep==='pin' || S.loginUsuario.trim())) doLogin();
-      });
     }
 
     /* ID */
@@ -2651,7 +2946,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     on('#btn-scan','click',openScanner);
     on('#btn-continue-id','click',function(){
       if(!idValido()){ toast('El ID debe llevar exactamente '+ID_MID_LEN+' dígitos'); sacudir('.ra-idbox'); return; }
-      collectManualFields(); S.step='resultado'; render();
+      collectManualFields();
+      if(!medidasCompletas()){
+        S.medidaErr=true; render(); toast('Captura el espesor y el ancho: son obligatorios');
+        var f=root.querySelector('#field-espesor'); if(f && !f.value) f.focus(); else { f=root.querySelector('#field-ancho'); if(f) f.focus(); }
+        return;
+      }
+      S.medidaErr=false; S.step='resultado'; render();
     });
 
     each('[data-resultado]',function(b){
@@ -2746,11 +3047,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         render();
       });
     });
-    ['#field-espesor','#field-ancho','#field-peso'].forEach(function(sel){
-      var n=root.querySelector(sel);
+    [['#field-espesor','espesor'],['#field-ancho','ancho'],['#field-peso','peso']].forEach(function(par){
+      var sel=par[0], n=root.querySelector(sel);
       if(!n) return;
       n.addEventListener('input',function(){
         var limpio=soloNumero(n.value);
+        S.rolloData[par[1]]=limpio;
+        if(limpio) n.classList.remove('ra-input-err');
         if(limpio!==n.value){
           var pos=n.selectionStart-(n.value.length-limpio.length);
           n.value=limpio;
@@ -2840,8 +3143,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     });
 
     /* historial */
-    on('#btn-export','click',exportExcel);
-    on('#btn-export-auditoria','click',exportAuditoria);
+    on('#btn-export','click',function(){ if(S.isAdmin) exportExcel(); });
+    on('#btn-export-auditoria','click',function(){ if(S.isAdmin) exportAuditoria(); });
     each('[data-rep-filtro]',function(b){ b.addEventListener('click',function(){ S.reporteFiltro=b.getAttribute('data-rep-filtro'); render(); }); });
     var filtro=root.querySelector('#input-filtro');
     if(filtro) filtro.addEventListener('input',function(){
@@ -2894,7 +3197,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 
     /* ajustes */
     on('#btn-logout','click',function(){ cerrarSesion(false); });
-    on('#btn-backup','click',downloadBackup);
+    on('#btn-backup','click',function(){ if(S.isAdmin) downloadBackup(); });
     on('#btn-subir-anteriores','click',function(){ importarDatos(datosAnteriores()); });
     on('#btn-bajar-anteriores','click',function(){
       var d=datosAnteriores(); if(d){ descargarJSON(d,'datos_equipo_version_anterior_'+fechaHoy()+'.json'); toast('Respaldo descargado'); }
@@ -2906,13 +3209,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     on('#btn-cancel-change-pin','click',function(){ S.showChangePin=false; render(); });
     on('#btn-change-pin-submit','click',function(){
       if(S.changePinBusy) return;
-      var cur=root.querySelector('#cp-current').value.trim();
-      var nw=root.querySelector('#cp-new').value.trim();
-      var nw2=root.querySelector('#cp-new2').value.trim();
-      if(!pinValido(nw)){ S.changePinError='El PIN nuevo debe tener exactamente '+PIN_LEN+' dígitos'; render(); return; }
-      if(nw!==nw2){ S.changePinError='La confirmación no coincide con el PIN nuevo'; render(); return; }
-      if(nw===cur){ S.changePinError='El PIN nuevo debe ser distinto del actual'; render(); return; }
-      if(!navigator.onLine){ S.changePinError='Necesitas conexión para cambiar el PIN'; render(); return; }
+      var cur=root.querySelector('#cp-current').value;
+      var nw=root.querySelector('#cp-new').value;
+      var nw2=root.querySelector('#cp-new2').value;
+      if(!passValida(nw)){ S.changePinError='La contraseña nueva lleva al menos '+PASS_MIN+' caracteres'; render(); return; }
+      if(nw!==nw2){ S.changePinError='La confirmación no coincide con la contraseña nueva'; render(); return; }
+      if(nw===cur){ S.changePinError='La contraseña nueva debe ser distinta de la actual'; render(); return; }
+      if(!navigator.onLine){ S.changePinError='Necesitas conexión para cambiar la contraseña'; render(); return; }
       var u=auth.currentUser;
       if(!u){ S.changePinError='Vuelve a iniciar sesión e inténtalo de nuevo'; render(); return; }
       S.changePinBusy=true; S.changePinError=''; render();
@@ -2922,32 +3225,67 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         return guardarPerfilConPin(S.perfil, nw);
       }).then(function(){
         S.changePinBusy=false; S.showChangePin=false; S.changePinError='';
-        auditar('edicion','','Cambio de PIN propio','');
-        toast('PIN actualizado'); render();
+        auditar('edicion','','Cambio de contraseña propia','');
+        toast('Contraseña actualizada'); render();
       }).catch(function(e){
         var c=(e&&e.code)||'';
         S.changePinBusy=false;
-        S.changePinError = (c==='auth/invalid-credential'||c==='auth/wrong-password') ? 'PIN actual incorrecto'
+        S.changePinError = (c==='auth/invalid-credential'||c==='auth/wrong-password') ? 'Contraseña actual incorrecta'
           : c==='auth/too-many-requests' ? 'Demasiados intentos. Espera unos minutos.'
           : c==='auth/network-request-failed' ? 'Sin conexión. Inténtalo con señal.'
-          : 'No se pudo cambiar el PIN';
+          : c==='auth/weak-password' ? 'Firebase rechazó la contraseña: usa al menos '+PASS_MIN+' caracteres.'
+          : 'No se pudo cambiar la contraseña';
         render();
       });
     });
 
     function buscarCuenta(uid){ return S.usuarios.filter(function(u){ return u.uid===uid; })[0]; }
-    on('#btn-add-usuario','click',function(){
-      if(S.userBusy) return;
-      var nombre=root.querySelector('#new-usuario-nombre').value.trim().replace(/\s+/g,' ');
-      var usuario=normUsuario(root.querySelector('#new-usuario-usuario').value);
-      var pin=root.querySelector('#new-usuario-pin').value.trim();
-      var rol=root.querySelector('#new-usuario-rol').value==='admin'?'admin':'inspector';
+    on('#btn-add-admin','click',function(){
+      if(S.userBusy || !soyPrincipal()) return;
+      var nombre=root.querySelector('#new-admin-nombre').value.trim().replace(/\s+/g,' ');
+      var pass=root.querySelector('#new-admin-pass').value;
+      var pass2=root.querySelector('#new-admin-pass2').value;
       if(nombre.length<3){ toast('Escribe el nombre completo'); return; }
-      if(!usuarioValido(usuario)){ toast('Usuario: de 3 a 20 letras minúsculas, números, - o _'); return; }
-      if(!pinValido(pin)){ toast('El PIN debe tener exactamente '+PIN_LEN+' dígitos'); return; }
-      if(cuentasVigentes().some(function(u){ return u.nombre.toLowerCase()===nombre.toLowerCase(); })){ toast('Ya existe alguien con ese nombre'); return; }
-      if(!navigator.onLine){ toast('Sin conexión: dar de alta requiere señal'); return; }
-      darDeAlta(nombre, usuario, pin, rol);
+      if(!passValida(pass)){ toast('La contraseña lleva al menos '+PASS_MIN+' caracteres'); return; }
+      if(pass!==pass2){ toast('Las contraseñas no coinciden'); return; }
+      if(segundosAdmins().length){ toast('Ya hay un segundo administrador'); return; }
+      if(!navigator.onLine){ toast('Sin conexión: nombrar administrador requiere señal'); return; }
+      darDeAlta(nombre, usuarioDesdeNombre(nombre), pass, 'admin');
+    });
+    on('#btn-add-insp','click',function(){
+      var n=root.querySelector('#new-insp-nombre');
+      var nombre=n.value.trim().replace(/\s+/g,' ');
+      if(nombre.length<3){ toast('Escribe el nombre completo'); return; }
+      var dup=Object.keys(S.inspectoresPub||{}).some(function(k){ return sinAcentos(S.inspectoresPub[k].nombre)===sinAcentos(nombre); });
+      if(dup){ toast('Ya existe un inspector con ese nombre (revisa los inactivos)'); return; }
+      agregarInspector(nombre); render();
+    });
+    each('[data-insp-off]',function(b){
+      b.addEventListener('click',function(){
+        var id=b.getAttribute('data-insp-off'), i=S.inspectoresPub[id];
+        if(!i || !confirm('¿Desactivar a '+i.nombre+'? Desaparece de la lista de inicio en todos los equipos. Su historial se conserva.')) return;
+        cambiarInspectorActivo(id,false); render();
+      });
+    });
+    each('[data-insp-on]',function(b){
+      b.addEventListener('click',function(){ cambiarInspectorActivo(b.getAttribute('data-insp-on'),true); render(); });
+    });
+    each('[data-bloqueo]',function(b){
+      b.addEventListener('click',function(){
+        var m=parseInt(b.getAttribute('data-bloqueo'),10);
+        if(!S.isAdmin || isNaN(m)) return;
+        S.catalogs.minutosBloqueo=m; set('catalogs', S.catalogs);
+        auditar('edicion','','Bloqueo por inactividad: '+etqBloqueo(m),'');
+        toast('Bloqueo por inactividad: '+etqBloqueo(m)); render();
+      });
+    });
+    each('[data-quitar-admin]',function(b){
+      b.addEventListener('click',function(){
+        var u=buscarCuenta(b.getAttribute('data-quitar-admin'));
+        if(!u || !soyPrincipal()) return;
+        if(!confirm('¿Quitar a '+u.nombre+' como administrador? Ya no podrá entrar y podrás nombrar a otro.')) return;
+        quitarAdmin(u); render();
+      });
     });
     each('[data-reset-usuario]',function(b){
       b.addEventListener('click',function(){
@@ -2960,11 +3298,11 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       b.addEventListener('click',function(){
         if(S.userBusy) return;
         var u=buscarCuenta(b.getAttribute('data-save-reset'));
-        var pin=root.querySelector('#reset-pin-input').value.trim();
+        var pin=root.querySelector('#reset-pin-input').value;
         if(!u) return;
-        if(!pinValido(pin)){ toast('El PIN debe tener exactamente '+PIN_LEN+' dígitos'); return; }
+        if(!passValida(pin)){ toast('La contraseña lleva al menos '+PASS_MIN+' caracteres'); return; }
         if(!navigator.onLine){ toast('Sin conexión: restablecer requiere señal'); return; }
-        if(!confirm('Se asignará un PIN nuevo a '+u.nombre+'. Su PIN anterior dejará de funcionar en todos los equipos. ¿Continuar?')) return;
+        if(!confirm('Se asignará una contraseña nueva a '+u.nombre+'. La anterior dejará de funcionar en todos los equipos. ¿Continuar?')) return;
         restablecerPin(u, pin);
       });
     });
@@ -2972,7 +3310,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       b.addEventListener('click',function(){
         var u=buscarCuenta(b.getAttribute('data-desactivar'));
         if(!u) return;
-        if(!confirm('¿Desactivar a '+u.nombre+'? No podrá entrar desde ningún equipo. Sus registros se conservan y puedes reactivarlo después.')) return;
+        if(!confirm('¿Bloquear a '+u.nombre+'? No podrá entrar desde ningún equipo hasta que lo desbloquees.')) return;
         cambiarActivo(u, false); render();
       });
     });
@@ -3224,12 +3562,15 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     };
     batch.set(ref(COL.registros,regId), reg);
     S.registros.unshift(reg);
-    if(!master.grado && (S.rolloData.grado||S.rolloData.enrollador||S.rolloData.espesor)){
-      var m={id:id,grado:S.rolloData.grado||'',familiaSGF:S.rolloData.familiaSGF||'',familiaDesc:S.rolloData.familiaDesc||'',
-        espesor:S.rolloData.espesor||'',ancho:S.rolloData.ancho||'',peso:S.rolloData.peso||'',
-        fecha:S.rolloData.fecha||'',enrollador:S.rolloData.enrollador||''};
-      S.rollosMaster[id]=m;
-      batch.set(ref(COL.master,id), m, {merge:true});
+    /* Datos del rollo: solo se completan los que falten, nunca se sobrescriben */
+    var nuevos={};
+    ['grado','familiaSGF','familiaDesc','espesor','ancho','peso','fecha','enrollador'].forEach(function(k){
+      if(!master[k] && S.rolloData[k]) nuevos[k]=S.rolloData[k];
+    });
+    if(Object.keys(nuevos).length){
+      nuevos.id=id;
+      S.rollosMaster[id]=Object.assign({}, master, nuevos);
+      batch.set(ref(COL.master,id), nuevos, {merge:true});
     }
     iniciarTracking(id, batch);
     escribir(batch.commit());

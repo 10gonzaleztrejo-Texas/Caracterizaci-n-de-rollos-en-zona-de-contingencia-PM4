@@ -11,6 +11,7 @@
   :root{
     --bg:#F1F2F4; --surface:#FFFFFF; --ink:#0E1114; --ink-mid:#3C444E; --ink-soft:#6B7481;
     --line:#DDE0E5; --line-strong:#C3C8D0; --brand:#0E1114;
+    --on-brand:#FFFFFF; --on-brand-rgb:255,255,255; --on-brand-sub:#98A1AC; --accent:#0E1114;
     --conforme:#1F7A4C; --defecto:#B26A12; --scrap:#B32D25; --info:#2C5B7C;
     --radius:4px; --radius-lg:6px;
   }
@@ -23,23 +24,23 @@
   .ra-logo{display:block;height:26px;width:auto;}
   .ra-logo-lg{height:52px;}
 
-  .ra-header{position:sticky;top:0;z-index:20;background:var(--brand);color:#fff;
+  .ra-header{position:sticky;top:0;z-index:20;background:var(--brand);color:var(--on-brand);
     padding:calc(13px + env(safe-area-inset-top,0px)) 16px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-  .ra-header .sub{font-size:10.5px;color:#98A1AC;margin-top:6px;letter-spacing:.1em;}
+  .ra-header .sub{font-size:10.5px;color:var(--on-brand-sub);margin-top:6px;letter-spacing:.1em;}
   .ra-existe{border:1px solid var(--line);border-left:3px solid var(--info);background:#F6F9FB;padding:16px 15px;margin-top:16px;border-radius:var(--radius);}
   .ra-existe-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .ra-existe-zona{font-size:22px;font-weight:700;margin:2px 0 3px;letter-spacing:-.01em;}
   .ra-existe-mov{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;}
-  .ra-home{background:none;border:none;padding:4px 6px 4px 0;margin:-4px 0;color:#fff;cursor:pointer;
+  .ra-home{background:none;border:none;padding:4px 6px 4px 0;margin:-4px 0;color:var(--on-brand);cursor:pointer;
     text-align:left;font-family:inherit;border-radius:2px;transition:opacity .12s ease;}
   .ra-home:active{opacity:.6;}
-  .ra-user{background:none;border:1px solid rgba(255,255,255,.3);border-radius:2px;padding:8px 12px;
-    font-size:12.5px;font-weight:600;color:#fff;cursor:pointer;max-width:40vw;overflow:hidden;
+  .ra-user{background:none;border:1px solid rgba(var(--on-brand-rgb),.3);border-radius:2px;padding:8px 12px;
+    font-size:12.5px;font-weight:600;color:var(--on-brand);cursor:pointer;max-width:40vw;overflow:hidden;
     text-overflow:ellipsis;white-space:nowrap;font-family:inherit;}
   .ra-steps{display:flex;background:var(--brand);padding:0 16px;}
-  .ra-step-dot{height:3px;flex:1;background:rgba(255,255,255,.18);}
-  .ra-step-dot.active{background:#fff;}
-  .ra-step-dot.done{background:rgba(255,255,255,.55);}
+  .ra-step-dot{height:3px;flex:1;background:rgba(var(--on-brand-rgb),.18);}
+  .ra-step-dot.active{background:var(--on-brand);}
+  .ra-step-dot.done{background:rgba(var(--on-brand-rgb),.55);}
 
   .ra-body{padding:18px 16px;max-width:540px;margin:0 auto;animation:raEnter .22s ease;}
   .ra-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:20px 18px;margin-bottom:14px;}
@@ -72,7 +73,7 @@
   .ra-btn:disabled{opacity:.35;cursor:default;}
   .ra-btn-block{width:100%;margin-bottom:9px;}
   .ra-btn-sm{min-height:44px;font-size:13.5px;padding:11px 12px;}
-  .ra-btn-primary{background:var(--brand);}
+  .ra-btn-primary{background:var(--brand);color:var(--on-brand);}
   .ra-btn-conforme{background:var(--conforme);}
   .ra-btn-defecto{background:var(--defecto);}
   .ra-btn-scrap{background:var(--scrap);}
@@ -91,7 +92,7 @@
 
   .ra-topbar{display:flex;align-items:center;margin-bottom:14px;}
   .ra-back{background:none;border:none;font-size:14px;font-weight:600;color:var(--ink-mid);padding:8px 0;cursor:pointer;font-family:inherit;}
-  .ra-pill{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:2px;background:var(--ink);color:#fff;margin-left:8px;letter-spacing:.08em;}
+  .ra-pill{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:2px;background:var(--accent);color:#fff;margin-left:8px;letter-spacing:.08em;}
   .ra-summary-line{display:flex;justify-content:space-between;gap:14px;padding:9px 0;font-size:13.5px;border-bottom:1px solid var(--line);}
   .ra-summary-line:last-child{border-bottom:none;}
   .ra-summary-line span{color:var(--ink-soft);}
@@ -100,7 +101,7 @@
   .ra-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;z-index:20;padding-bottom:env(safe-area-inset-bottom,0);}
   .ra-nav button{flex:1;background:none;border:none;padding:12px 2px 10px;font-size:9.5px;font-weight:700;
     color:var(--ink-soft);cursor:pointer;font-family:inherit;letter-spacing:.05em;border-top:2px solid transparent;margin-top:-1px;}
-  .ra-nav button.active{color:var(--ink);border-top-color:var(--ink);}
+  .ra-nav button.active{color:var(--accent);border-top-color:var(--accent);}
   .ra-nav .ico{display:block;font-size:16px;margin-bottom:4px;font-weight:400;}
 
   .ra-toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
@@ -140,7 +141,7 @@
   .ra-tag button{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;padding:0;line-height:1;}
   .ra-inline-form{display:flex;gap:7px;margin-bottom:8px;}
   .ra-inline-form input{flex:1;min-width:0;}
-  .ra-small-btn{border:none;background:var(--brand);color:#fff;border-radius:var(--radius);padding:0 17px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;flex:none;}
+  .ra-small-btn{border:none;background:var(--brand);color:var(--on-brand);border-radius:var(--radius);padding:0 17px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;flex:none;}
   .ra-link{color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;background:none;border:none;padding:5px 0;font-family:inherit;text-decoration:underline;text-underline-offset:3px;}
   .ra-link.danger{color:var(--scrap);}
 
@@ -183,20 +184,20 @@
   .ra-zchip{background:#fff;border:1px solid var(--line-strong);border-radius:2px;padding:9px 12px;font-size:13px;
     font-weight:600;font-family:inherit;color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:8px;}
   .ra-zchip b{background:#F1F2F4;border-radius:2px;padding:2px 7px;font-size:11.5px;color:var(--ink-soft);}
-  .ra-zchip.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .ra-zchip.on{background:var(--accent);color:#fff;border-color:var(--accent);}
   .ra-zchip.on b{background:rgba(255,255,255,.2);color:#fff;}
   .ra-zchip.alerta{border-color:var(--defecto);color:var(--defecto);}
   .ra-zchip.alerta b{background:#FDF6E9;color:var(--defecto);}
   .ra-zchip.alerta.on{background:var(--defecto);color:#fff;border-color:var(--defecto);}
   .ra-zchip.alerta.on b{background:rgba(255,255,255,.22);color:#fff;}
   .ra-item.detenido{border-left:3px solid var(--defecto);}
-  .ra-item.sel{border-color:var(--ink);background:#F7F8F9;}
+  .ra-item.sel{border-color:var(--accent);background:#F7F8F9;}
   .ra-check{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1.5px solid var(--line-strong);
     border-radius:2px;margin-right:9px;font-size:12px;vertical-align:middle;color:#fff;}
-  .ra-check.on{background:var(--ink);border-color:var(--ink);}
+  .ra-check.on{background:var(--accent);border-color:var(--accent);}
   .ra-defrow{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);
     border-radius:var(--radius);margin-bottom:6px;cursor:pointer;font-size:14px;background:#fff;}
-  .ra-defrow.on{border-color:var(--ink);background:#F7F8F9;}
+  .ra-defrow.on{border-color:var(--accent);background:#F7F8F9;}
   .ra-defrow .code{font-size:11px;color:var(--ink-soft);font-weight:700;background:#F1F2F4;padding:3px 7px;
     border-radius:2px;flex:none;min-width:52px;text-align:center;}
   .ra-defrow:active{background:#F1F2F4;}
@@ -220,14 +221,14 @@
   button:focus-visible,.ra-choice:focus-visible,.ra-input:focus-visible,.ra-idmid:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
 
   /* Bienvenida */
-  .ra-welcome{position:fixed;inset:0;z-index:400;background:var(--brand);color:#fff;display:flex;flex-direction:column;
+  .ra-welcome{position:fixed;inset:0;z-index:400;background:var(--brand);color:var(--on-brand);display:flex;flex-direction:column;
     align-items:center;justify-content:center;gap:26px;animation:raFadeOut .55s ease forwards;animation-delay:1.75s;}
   .ra-welcome .w-logo{opacity:0;animation:raRise .55s cubic-bezier(.2,.7,.3,1) forwards;}
-  .ra-welcome .w-hi{opacity:0;font-size:12.5px;letter-spacing:.22em;color:#98A1AC;text-align:center;
+  .ra-welcome .w-hi{opacity:0;font-size:12.5px;letter-spacing:.22em;color:var(--on-brand-sub);text-align:center;
     animation:raRise .55s cubic-bezier(.2,.7,.3,1) .2s forwards;}
-  .ra-welcome .w-name{display:block;font-size:27px;letter-spacing:-.01em;color:#fff;font-weight:700;margin-top:10px;}
-  .ra-welcome .w-bar{width:130px;height:2px;background:rgba(255,255,255,.18);overflow:hidden;}
-  .ra-welcome .w-bar i{display:block;height:100%;width:0;background:#fff;animation:raBar 1.45s cubic-bezier(.3,.6,.3,1) .25s forwards;}
+  .ra-welcome .w-name{display:block;font-size:27px;letter-spacing:-.01em;color:var(--on-brand);font-weight:700;margin-top:10px;}
+  .ra-welcome .w-bar{width:130px;height:2px;background:rgba(var(--on-brand-rgb),.18);overflow:hidden;}
+  .ra-welcome .w-bar i{display:block;height:100%;width:0;background:var(--on-brand);animation:raBar 1.45s cubic-bezier(.3,.6,.3,1) .25s forwards;}
   @keyframes raRise{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
   @keyframes raFadeOut{to{opacity:0;visibility:hidden;}}
   @keyframes raBar{to{width:100%;}}
@@ -238,8 +239,13 @@
   .ra-gate{min-height:100vh;background:var(--brand);display:flex;flex-direction:column;align-items:center;justify-content:center;
     padding:32px 20px calc(32px + env(safe-area-inset-bottom,0px));}
   .ra-gate-inner{width:100%;max-width:400px;}
-  .ra-gate-brand{text-align:center;margin-bottom:32px;color:#fff;}
-  .ra-gate-brand .app-name{font-size:12px;font-weight:600;letter-spacing:.2em;margin-top:20px;color:#98A1AC;}
+  .ra-gate-brand{text-align:center;margin-bottom:32px;color:var(--on-brand);}
+  .ra-gate-brand .app-name{font-size:12px;font-weight:600;letter-spacing:.2em;margin-top:20px;color:var(--on-brand-sub);}
+  .ra-swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+  .ra-swatch{border:2px solid var(--line);border-radius:var(--radius);background:#fff;padding:8px 4px 7px;cursor:pointer;
+    font-family:inherit;font-size:11px;font-weight:600;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .ra-swatch i{display:block;width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.12);}
+  .ra-swatch.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);}
   .ra-gate-card{background:#fff;border-radius:var(--radius-lg);padding:24px 20px;animation:raEnter .26s ease;}
 
   @media (min-width:700px){
@@ -387,6 +393,24 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   function minutosBloqueo(){
     var m = S.catalogs && S.catalogs.minutosBloqueo;
     return (typeof m === 'number' && m >= 0) ? m : MINUTOS_INACTIVIDAD;
+  }
+  /* Colores de la interfaz (los eligen los administradores; aplica en todos los equipos) */
+  var TEMAS = {
+    negro:  {nombre:'Negro',       brand:'#0E1114', on:'#FFFFFF', rgb:'255,255,255', sub:'#98A1AC', accent:'#0E1114'},
+    rosa:   {nombre:'Rosa pastel', brand:'#F5C2D6', on:'#3B1D2C', rgb:'59,29,44',    sub:'#7A4A60', accent:'#B24C7C'},
+    marino: {nombre:'Azul marino', brand:'#16264A', on:'#FFFFFF', rgb:'255,255,255', sub:'#9FB0CF', accent:'#16264A'},
+    naranja:{nombre:'Naranja',     brand:'#C25410', on:'#FFFFFF', rgb:'255,255,255', sub:'#FBD9C2', accent:'#C25410'},
+    verde:  {nombre:'Verde',       brand:'#1E6B47', on:'#FFFFFF', rgb:'255,255,255', sub:'#A9D3BD', accent:'#1E6B47'}
+  };
+  var ORDEN_TEMAS = ['negro','rosa','marino','naranja','verde'];
+  var temaActual = 'negro';
+  function aplicarTema(clave){
+    var t = TEMAS[clave] || TEMAS.negro;
+    temaActual = TEMAS[clave] ? clave : 'negro';
+    var st = document.documentElement.style;
+    st.setProperty('--brand', t.brand); st.setProperty('--on-brand', t.on); st.setProperty('--on-brand-rgb', t.rgb);
+    st.setProperty('--on-brand-sub', t.sub); st.setProperty('--accent', t.accent);
+    var m = document.querySelector('meta[name=theme-color]'); if(m) m.setAttribute('content', t.brand);
   }
   function etqBloqueo(m){ return m===0 ? 'Nunca' : m<60 ? m+' min' : (m/60)+(m===60?' hora':' horas'); }
   var DEFAULT_ZONAS = [ZONA_ORIGEN,'Cooling Bay','Playa','Nave 1','Laminación'];
@@ -676,7 +700,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         marcarCambios();
       }, errEscucha));
       unsubs.push(onSnapshot(query(collection(db, COL.auditoria), orderBy('ts','desc')), function(qs){
-        S.auditoria = qs.docs.map(function(d){ return d.data(); });
+        S.auditoria = qs.docs.map(function(d){ return Object.assign({}, d.data(), {_id:d.id}); });
         marcarCambios();
       }, errEscucha));
     } else { S.usuarios = []; S.auditoria = []; }
@@ -703,7 +727,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     editReg:null, editErr:'',
     trackVista:'lista', trackRollo:null, trackFiltro:'', trackZona:'Todas', trackErr:'',
     trackSeleccion:[], trackModoSel:false, trackMedio:'', trackFinal:false,
-    reporteFiltro:'Todos',
+    reporteFiltro:'Todos', repSel:null,
     rollosMaster:{}, catalogs:null, variacionesCat:null, registros:[], tracking:{}, auditoria:[]
   };
 
@@ -787,6 +811,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   function escucharPublico(){
     S.inspectoresPub = get('pubInspectores', {}) || {};
     S.adminsPub = get('pubAdmins', null);
+    aplicarTema(get('tema', 'negro'));
+    onSnapshot(ref(COL.publico,'tema'), function(s){
+      var k = s.exists() ? s.data().tema : 'negro';
+      if(!s.exists() && s.metadata.fromCache) return;
+      lset('tema', k);
+      if(k !== temaActual){ aplicarTema(k); marcarCambios(); }
+    }, function(e){ console.error(e); });
     onSnapshot(ref(COL.publico,'inspectores'), {includeMetadataChanges:true}, function(s){
       S.inspectoresPub = s.exists() ? (s.data().mapa || {}) : {};
       lset('pubInspectores', S.inspectoresPub);
@@ -924,7 +955,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     S.editReg=null; S.trackVista='lista'; S.trackRollo=null;
     S.trackModoSel=false; S.trackSeleccion=[];
     S.loginStep='pick'; S.loginPickedUser=null; S.loginError=''; S.loginBusy=false;
-    S.showChangePin=false; S.resetUid=null;
+    S.showChangePin=false; S.resetUid=null; S.repSel=null;
   }
   /* Bloqueo (inactividad): la cuenta sigue abierta en Firebase para poder volver a
      entrar con el PIN aunque no haya señal. */
@@ -2007,8 +2038,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '</div>';
       return out;
     }
-    return out + reporteCard() + adminsCard() + inspectoresCard() + bloqueoCard() + gradosCard() + defectosCard() + zonasCard() + mediosCard() +
-           simpleCatalogCard('enrolladores','Enrolladores') + demoCard();
+    return out + reporteCard() + adminsCard() + inspectoresCard() + temaCard() + bloqueoCard() + gradosCard() + defectosCard() + zonasCard() + mediosCard() +
+           simpleCatalogCard('enrolladores','Enrolladores') + (soyPrincipal() ? demoCard() : '');
   }
 
   function reporteCard(){
@@ -2018,10 +2049,12 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       return '<button class="ra-btn ra-btn-sm '+(S.reporteFiltro===t?'ra-btn-primary':'ra-btn-outline')+'" data-rep-filtro="'+t+'" style="font-size:12px;">'+etiqueta[t]+'</button>';
     }).join('');
     var lista = S.auditoria.filter(function(a){ return S.reporteFiltro==='Todos' || a.tipo===S.reporteFiltro; }).slice(0,60);
+    var selMode = soyPrincipal() && S.repSel;
     var items = lista.length ? lista.map(function(a){
       var color = a.tipo==='eliminacion'?'var(--scrap)':a.tipo==='edicion'?'var(--defecto)':a.tipo==='movimiento'?'var(--info)':'var(--conforme)';
-      return '<div class="ra-item" style="border-left:3px solid '+color+';">' +
-          '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(a.rolloId||'—')+'</span>' +
+      var on = selMode && S.repSel.indexOf(a._id)>=0;
+      return '<div class="ra-item'+(on?' sel':'')+'" style="border-left:3px solid '+color+';'+(selMode?'cursor:pointer;':'')+'"'+(selMode?' data-rep-sel="'+escAttr(a._id)+'"':'')+'>' +
+          '<div class="ra-item-top"><span class="ra-item-id">'+(selMode?'<span class="ra-check'+(on?' on':'')+'" style="display:inline-flex;vertical-align:middle;margin-right:8px;">'+(on?'✓':'')+'</span>':'')+escHtml(a.rolloId||'—')+'</span>' +
           '<span class="ra-meta">'+escHtml(a.fecha)+' '+escHtml(a.hora)+(a.turno?' · T'+escHtml(a.turno):'')+'</span></div>' +
           '<div class="ra-meta"><b style="color:'+color+';">'+escHtml(etiqueta[a.tipo]||a.tipo)+'</b> · '+escHtml(a.usuario)+'</div>' +
           (a.detalle?'<div class="ra-meta">'+escHtml(a.detalle)+'</div>':'') +
@@ -2033,8 +2066,32 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div class="ra-h2">Historial completo de altas, modificaciones, traslados y eliminaciones. Se muestran los 60 más recientes; el Excel incluye todos.</div>' +
         '<div class="ra-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;">'+chips+'</div>' +
         '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-export-auditoria">Exportar reporte a Excel</button>' +
+        (soyPrincipal() && S.auditoria.length ? (selMode
+          ? '<div class="ra-card" style="padding:12px 14px;border-color:var(--scrap);margin-bottom:12px;">' +
+              '<div class="ra-meta" style="margin-bottom:8px;">'+S.repSel.length+' seleccionado(s). Toca cada movimiento para marcarlo.</div>' +
+              '<div style="display:flex;gap:16px;flex-wrap:wrap;">' +
+                '<button class="ra-link" id="btn-rep-todos-vis">Marcar los '+lista.length+' visibles</button>' +
+                '<button class="ra-link danger" id="btn-rep-borrar-sel"'+(S.repSel.length?'':' disabled style="opacity:.4;"')+'>Eliminar seleccionados</button>' +
+                '<button class="ra-link" id="btn-rep-cancelar">Cancelar</button>' +
+              '</div></div>'
+          : '<div style="display:flex;gap:18px;flex-wrap:wrap;margin:0 0 12px;">' +
+              '<button class="ra-link" id="btn-rep-seleccionar">Seleccionar para eliminar</button>' +
+              '<button class="ra-link danger" id="btn-rep-borrar-todo">Borrar todo el reporte ('+S.auditoria.length+')</button>' +
+            '</div>') : '') +
         items +
       '</div>';
+  }
+
+  /* Borrado del reporte de movimientos (solo el administrador principal) */
+  function borrarAuditoria(ids, todo){
+    if(!soyPrincipal() || !ids.length) return;
+    var ops = ids.map(function(id){ return {tipo:'delete', ref:ref(COL.auditoria, id)}; });
+    S.auditoria = S.auditoria.filter(function(a){ return ids.indexOf(a._id)<0; });
+    S.repSel = null; render();
+    commitEnLotes(ops).then(function(){
+      if(todo) auditar('eliminacion','','Reporte de movimientos borrado ('+ids.length+' registros)','');
+      toast(todo ? 'Reporte de movimientos borrado' : ids.length+' movimiento(s) eliminado(s)');
+    }).catch(errFirebase);
   }
 
   function gradosCard(){
@@ -2212,6 +2269,18 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div class="ra-label" style="margin-top:16px;">REGISTRAR INSPECTOR</div>' +
         '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input" id="new-insp-nombre" placeholder="Nombre completo (ej. Juan Pérez)" style="margin-bottom:0;" autocomplete="off">' +
           '<button class="ra-small-btn" id="btn-add-insp">Agregar</button></div>' +
+      '</div>';
+  }
+
+  function temaCard(){
+    var sw = ORDEN_TEMAS.map(function(k){
+      var t = TEMAS[k];
+      return '<button class="ra-swatch'+(k===temaActual?' on':'')+'" data-tema="'+k+'" aria-label="'+t.nombre+'"><i style="background:'+t.brand+';"></i>'+t.nombre+'</button>';
+    }).join('');
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Color de la aplicación</div>' +
+        '<div class="ra-h2">Cambia el color de la interfaz en todos los equipos, incluida la pantalla de inicio.</div>' +
+        '<div class="ra-swatches">'+sw+'</div>' +
       '</div>';
   }
 
@@ -3151,6 +3220,41 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     on('#btn-export','click',function(){ if(S.isAdmin) exportExcel(); });
     on('#btn-export-auditoria','click',function(){ if(S.isAdmin) exportAuditoria(); });
     each('[data-rep-filtro]',function(b){ b.addEventListener('click',function(){ S.reporteFiltro=b.getAttribute('data-rep-filtro'); render(); }); });
+    on('#btn-rep-seleccionar','click',function(){ S.repSel=[]; render(); });
+    on('#btn-rep-cancelar','click',function(){ S.repSel=null; render(); });
+    each('[data-rep-sel]',function(b){
+      b.addEventListener('click',function(){
+        var id=b.getAttribute('data-rep-sel'), i=S.repSel.indexOf(id);
+        if(i>=0) S.repSel.splice(i,1); else S.repSel.push(id);
+        render();
+      });
+    });
+    on('#btn-rep-todos-vis','click',function(){
+      S.auditoria.filter(function(a){ return S.reporteFiltro==='Todos' || a.tipo===S.reporteFiltro; }).slice(0,60)
+        .forEach(function(a){ if(S.repSel.indexOf(a._id)<0) S.repSel.push(a._id); });
+      render();
+    });
+    on('#btn-rep-borrar-sel','click',function(){
+      if(!S.repSel || !S.repSel.length) return;
+      if(!confirm('¿Eliminar '+S.repSel.length+' movimiento(s) del reporte? No se puede deshacer.')) return;
+      borrarAuditoria(S.repSel.slice(), false);
+    });
+    on('#btn-rep-borrar-todo','click',function(){
+      var n=S.auditoria.length;
+      if(!confirm('¿Borrar TODO el reporte de movimientos ('+n+' registros) en todos los equipos? No se puede deshacer. Si lo necesitas, exporta antes el reporte a Excel.')) return;
+      if(!navigator.onLine){ toast('Necesitas conexión para borrar el reporte'); return; }
+      borrarAuditoria(S.auditoria.map(function(a){ return a._id; }), true);
+    });
+    each('[data-tema]',function(b){
+      b.addEventListener('click',function(){
+        var k=b.getAttribute('data-tema');
+        if(!S.isAdmin || !TEMAS[k] || k===temaActual) return;
+        aplicarTema(k); lset('tema', k);
+        escribir(setDoc(ref(COL.publico,'tema'), {tema:k, por:S.inspector||'', ts:Date.now()}));
+        auditar('edicion','','Color de la aplicación: '+TEMAS[k].nombre,'');
+        toast('Color: '+TEMAS[k].nombre); render();
+      });
+    });
     var filtro=root.querySelector('#input-filtro');
     if(filtro) filtro.addEventListener('input',function(){
       S.filtro=filtro.value;

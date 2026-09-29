@@ -128,6 +128,7 @@
   .ra-badge.defecto{background:var(--scrap);}
   .ra-badge.scrap{background:var(--scrap);}
   .ra-badge.zona{background:var(--info);}
+  .ra-badge.sync{background:#6E4B10;}
   .ra-meta{font-size:12.5px;color:var(--ink-soft);line-height:1.55;}
   .ra-actions{display:flex;gap:16px;margin-top:9px;flex-wrap:wrap;}
 
@@ -295,6 +296,47 @@
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
   .ra-offline{background:#6E4B10;color:#fff;font-size:12px;font-weight:600;text-align:center;padding:7px 14px;line-height:1.4;}
   .ra-offline.sync{background:var(--info);}
+
+  /* ============ MODO OSCURO ============
+     Es independiente del color de marca (que sigue viéndose igual en el
+     encabezado y la pantalla de inicio, ya calculado para verse bien). Solo
+     cambia las superficies y el texto del resto de la app. Como los demás
+     cambios de apariencia, no se registra en el reporte de movimientos. */
+  html[data-oscuro="1"]{
+    color-scheme:dark;
+    --bg:#16181B; --surface:#202327; --ink:#F1F2F4; --ink-mid:#C6CBD2; --ink-soft:#8B9199;
+    --line:#33373C; --line-strong:#484E56;
+  }
+  html[data-oscuro="1"] body{background:var(--bg);}
+  html[data-oscuro="1"] .ra-input,
+  html[data-oscuro="1"] .ra-idbox,
+  html[data-oscuro="1"] .ra-btn-outline,
+  html[data-oscuro="1"] .ra-choice,
+  html[data-oscuro="1"] .ra-nav,
+  html[data-oscuro="1"] .ra-item,
+  html[data-oscuro="1"] .ra-stat,
+  html[data-oscuro="1"] .ra-tl-dot,
+  html[data-oscuro="1"] .ra-zchip,
+  html[data-oscuro="1"] .ra-defrow,
+  html[data-oscuro="1"] .ra-combo-list,
+  html[data-oscuro="1"] .ra-color-row input[type=color],
+  html[data-oscuro="1"] .ra-estilo,
+  html[data-oscuro="1"] .ra-swatch,
+  html[data-oscuro="1"] .ra-gate-card{background:var(--surface);}
+  html[data-oscuro="1"] .ra-idfix,
+  html[data-oscuro="1"] .ra-btn-outline:active,
+  html[data-oscuro="1"] .ra-choice:active,
+  html[data-oscuro="1"] .ra-choice .code,
+  html[data-oscuro="1"] .ra-tag,
+  html[data-oscuro="1"] .ra-zchip b,
+  html[data-oscuro="1"] .ra-defrow .code,
+  html[data-oscuro="1"] .ra-defrow:active,
+  html[data-oscuro="1"] .ra-combo-clear,
+  html[data-oscuro="1"] .ra-combo-opt:active,
+  html[data-oscuro="1"] .ra-note,
+  html[data-oscuro="1"] .ra-subtle-bg{background:var(--line) !important;}
+  html[data-oscuro="1"] .ra-video-modal .torch-btn.on{background:#fff;}
+  html[data-oscuro="1"] img,html[data-oscuro="1"] .ra-logo{filter:brightness(.94);}
 </style>
 </head>
 <body>
@@ -426,9 +468,15 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   /* Defectos habilitados de inicio. El resto queda disponible en Ajustes. */
   var DEFAULT_DEFECTOS_ACTIVOS = ['1154','82','593','80/180','73','747','573','81'];
   var HORAS_DETENIDO = 24;      /* aviso de rollo sin movimiento */
-  var MINUTOS_INACTIVIDAD = 15; /* bloqueo por inactividad (valor inicial; el admin lo cambia en Ajustes) */
+  var MINUTOS_INACTIVIDAD = 15; /* bloqueo por inactividad de administradores (valor inicial; se cambia en Ajustes) */
+  var MINUTOS_INACTIVIDAD_INSPECTOR = 5; /* los inspectores comparten equipo, así que se bloquean más rápido */
   var OPCIONES_BLOQUEO = [3,5,10,15,30,60,120,0]; /* 0 = nunca */
-  function minutosBloqueo(){
+  function minutosBloqueo(paraInspector){
+    var esInspector = paraInspector===undefined ? !S.isAdmin : paraInspector;
+    if(esInspector){
+      var mi = S.catalogs && S.catalogs.minutosBloqueoInspector;
+      return (typeof mi === 'number' && mi >= 0) ? mi : MINUTOS_INACTIVIDAD_INSPECTOR;
+    }
     var m = S.catalogs && S.catalogs.minutosBloqueo;
     return (typeof m === 'number' && m >= 0) ? m : MINUTOS_INACTIVIDAD;
   }
@@ -531,6 +579,15 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     return {nombre:'Personalizado', brand:rgbHex(c), on:rgbHex(texto), rgb:texto.join(','), sub:rgbHex(sub), accent:rgbHex(acc)};
   }
   var temaActual = 'negro', temaColor = '';
+  /* Modo oscuro: es una preferencia de ESTE equipo (útil para turno nocturno),
+     no se sincroniza entre dispositivos ni se registra en el reporte. */
+  var modoOscuro = false;
+  function aplicarOscuro(on){
+    modoOscuro = !!on;
+    lset('oscuro', modoOscuro);
+    if(modoOscuro) document.documentElement.setAttribute('data-oscuro','1');
+    else document.documentElement.removeAttribute('data-oscuro');
+  }
   function normTema(v){
     if(typeof v === 'string') v = {tema:v};
     v = v || {};
@@ -835,7 +892,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       marcarCambios();
     }, errEscucha));
     unsubs.push(onSnapshot(query(collection(db, COL.registros), orderBy('ts','desc')), {includeMetadataChanges:true}, function(qs){
-      S.registros = qs.docs.map(function(d){ var x = d.data(); x.id = d.id; return x; });
+      S.registros = qs.docs.map(function(d){ var x = d.data(); x.id = d.id; x._pend = d.metadata.hasPendingWrites; return x; });
       S.pendRegs = qs.metadata.hasPendingWrites;
       marcarCambios();
     }, errEscucha));
@@ -881,6 +938,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     resultado:null, familia:null, defecto:null, variacion:null, ubicacion:null, severidad:null,
     fotos:[], comentario:'', fotoCache:{},
     filtro:'', filtroResultado:'Todos', filtroFecha:'Todas', filtroTurno:'Todos', filtroDesde:'', filtroHasta:'',
+    filtroInspector:'Todos', filtroEspMin:'', filtroEspMax:'', filtroAnMin:'', filtroAnMax:'',
     editReg:null, editErr:'',
     trackVista:'lista', trackRollo:null, trackFiltro:'', trackZona:'Todas', trackErr:'',
     trackSeleccion:[], trackModoSel:false, trackMedio:'', trackFinal:false,
@@ -970,6 +1028,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     S.inspectoresPub = get('pubInspectores', {}) || {};
     S.adminsPub = get('pubAdmins', null);
     aplicarTema(get('tema', 'negro'));
+    aplicarOscuro(get('oscuro', false));
     onSnapshot(ref(COL.publico,'tema'), function(s){
       if(!s.exists() && s.metadata.fromCache) return;
       var v = normTema(s.exists() ? s.data() : 'negro');
@@ -1180,21 +1239,39 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     /* La sesión anónima se conserva para que otro inspector pueda entrar sin señal */
     if(!anonimo) signOut(auth).catch(function(){});
   }
-  function reiniciarInactividad(){
+  /* El temporizador (setTimeout) no corre mientras el teléfono está bloqueado o el
+     navegador en segundo plano, así que por sí solo NO basta para cerrar la sesión:
+     si el equipo estuvo dormido 20 minutos con un límite de 3, el timer nunca llegó
+     a dispararse y al volver seguía "esperando". Por eso, además del temporizador
+     (que sirve mientras la pantalla sigue encendida), guardamos la hora real de la
+     última actividad y, cada vez que la app vuelve a primer plano, comparamos el
+     reloj: si ya pasó el límite, se bloquea de inmediato en vez de reiniciar el conteo. */
+  var ULTIMA_ACTIVIDAD_KEY = 'ultimaActividad';
+  function marcarActividad(){ lset(ULTIMA_ACTIVIDAD_KEY, Date.now()); }
+  function programarInactividad(){
     if(inactTimer) clearTimeout(inactTimer);
     if(!S.inspector) return;
     var mins = minutosBloqueo();
     if(!mins) return;
-    inactTimer = setTimeout(function(){
-      if(S.inspector) bloquear(true);
-    }, mins*60*1000);
+    inactTimer = setTimeout(function(){ revisarInactividad(); }, mins*60*1000);
   }
+  function revisarInactividad(){
+    if(!S.inspector) return;
+    var mins = minutosBloqueo();
+    if(!mins){ if(inactTimer) clearTimeout(inactTimer); return; }
+    var ultima = get(ULTIMA_ACTIVIDAD_KEY, null);
+    if(ultima!=null && (Date.now()-ultima) >= mins*60*1000){ bloquear(true); return; }
+    programarInactividad();
+  }
+  function reiniciarInactividad(){ marcarActividad(); revisarInactividad(); }
   ['click','keydown','touchstart','focusin'].forEach(function(ev){
     document.addEventListener(ev, reiniciarInactividad, {passive:true});
   });
   document.addEventListener('visibilitychange', function(){
-    if(!document.hidden) reiniciarInactividad();
+    if(!document.hidden) revisarInactividad();
   });
+  window.addEventListener('focus', revisarInactividad);
+  window.addEventListener('pageshow', revisarInactividad);
 
   function activarSesion(perfil, bienvenida){
     S.perfil = perfil; S.inspector = perfil.nombre; S.isAdmin = perfil.rol==='admin';
@@ -1334,6 +1411,10 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     if(S.isAdmin) S.auditoria.unshift(a);
     escribir(setDoc(ref(COL.auditoria, a.id), a));
   }
+  /* Trazabilidad de accesos: quién consultó o descargó qué reporte y cuándo.
+     Se guarda aparte del reporte de movimientos (no son cambios operativos) y
+     no se muestra mezclado ahí; tiene su propia tarjeta, plegable, en Ajustes. */
+  function registrarAcceso(detalle){ auditar('acceso', '', detalle, ''); }
 
   function stepOrder(){
     var steps=['id','resultado'];
@@ -1365,7 +1446,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     root.innerHTML = renderHeader() + '<div class="ra-body">' + body + '</div>' + renderNav();
     bindEvents();
     cargarFotosPendientes();
-    reiniciarInactividad();
+    revisarInactividad();
   }
 
   function renderHeader(){
@@ -1617,6 +1698,28 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     var esp = m.espesor || S.rolloData.espesor, an = m.ancho || S.rolloData.ancho;
     return parseFloat(esp) > 0 && parseFloat(an) > 0;
   }
+  /* Rango razonable de espesor/ancho (opcional, lo define el admin en Ajustes).
+     Es solo una advertencia -- nunca bloquea el guardado -- para atrapar errores
+     de dedo (por ejemplo 5.0 en vez de 0.50) antes de que lleguen al reporte. */
+  function limiteRango(clave){
+    var mn = S.catalogs[clave+'Min'], mx = S.catalogs[clave+'Max'];
+    return { min: (typeof mn==='number' && mn>0) ? mn : null, max: (typeof mx==='number' && mx>0) ? mx : null };
+  }
+  function fueraDeRango(espesor, ancho){
+    var re = limiteRango('rangoEspesor'), ra = limiteRango('rangoAncho');
+    var esp = parseFloat(espesor), an = parseFloat(ancho);
+    var out = [];
+    if(re.min!=null && esp<re.min) out.push('Espesor menor a '+re.min+' mm');
+    if(re.max!=null && esp>re.max) out.push('Espesor mayor a '+re.max+' mm');
+    if(ra.min!=null && an<ra.min) out.push('Ancho menor a '+ra.min+' mm');
+    if(ra.max!=null && an>ra.max) out.push('Ancho mayor a '+ra.max+' mm');
+    return out;
+  }
+  function medidasEnRango(){
+    var m = S.rollosMaster[rolloId()] || {};
+    var esp = m.espesor || S.rolloData.espesor, an = m.ancho || S.rolloData.ancho;
+    return fueraDeRango(esp, an).length===0;
+  }
 
   function datosRolloFields(){
     var e = (S.catalogs.enrolladores||[]).map(function(x){ return '<option value="'+escAttr(x)+'"'+(S.rolloData.enrollador===x?' selected':'')+'>'+escHtml(x)+'</option>'; }).join('');
@@ -1628,7 +1731,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
           '<label class="ra-label">GRADO DE ACERO (GRADO DE PLANCHÓN)</label>' +
           comboGrados() +
           '<label class="ra-label">FAMILIA SGF</label>' +
-          '<input class="ra-input" id="field-familia-sgf" value="'+escAttr(sgf)+'" placeholder="Se llena sola al elegir el grado" readonly style="background:#F4F5F7;font-weight:700;">' +
+          '<input class="ra-input ra-subtle-bg" id="field-familia-sgf" value="'+escAttr(sgf)+'" placeholder="Se llena sola al elegir el grado" readonly style="background:#F4F5F7;font-weight:700;">' +
           (desc ? '<div class="ra-meta" style="margin:-6px 0 12px;">'+escHtml(desc)+'</div>' : '') +
           '<label class="ra-label">ENROLLADOR</label><select class="ra-input" id="field-enrollador"><option value="">—</option>'+e+'</select>' +
           '<div class="ra-grid">' +
@@ -1738,7 +1841,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     if(S.variacion) lines.push(['Variación',S.variacion]);
     if(S.ubicacion) lines.push(['Ubicación',S.ubicacion]);
     if(S.severidad) lines.push(['Severidad',S.severidad]);
-    return '<div style="background:#F4F5F7;padding:6px 14px;margin-top:6px;">' +
+    return '<div class="ra-subtle-bg" style="background:#F4F5F7;padding:6px 14px;margin-top:6px;">' +
       lines.map(function(l){ return '<div class="ra-summary-line"><span>'+l[0]+'</span><b>'+escHtml(String(l[1]))+'</b></div>'; }).join('') + '</div>';
   }
 
@@ -2096,11 +2199,23 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     }
     return true;
   }
+  function inspectoresConHistorial(){
+    var vistos={}, out=[];
+    S.registros.forEach(function(r){ if(r.inspector && !vistos[r.inspector]){ vistos[r.inspector]=true; out.push(r.inspector); } });
+    return out.sort(function(a,b){ return a.localeCompare(b); });
+  }
   function filteredRegistros(){
     var q=S.filtro.trim().toLowerCase();
+    var eMin=parseFloat(S.filtroEspMin), eMax=parseFloat(S.filtroEspMax);
+    var aMin=parseFloat(S.filtroAnMin), aMax=parseFloat(S.filtroAnMax);
     return S.registros.filter(function(r){
       if(S.filtroResultado!=='Todos' && r.resultado!==S.filtroResultado) return false;
       if(S.filtroTurno!=='Todos' && (r.turno||'')!==S.filtroTurno) return false;
+      if(S.filtroInspector && S.filtroInspector!=='Todos' && r.inspector!==S.filtroInspector) return false;
+      if(!isNaN(eMin) && !(parseFloat(r.espesor)>=eMin)) return false;
+      if(!isNaN(eMax) && !(parseFloat(r.espesor)<=eMax)) return false;
+      if(!isNaN(aMin) && !(parseFloat(r.ancho)>=aMin)) return false;
+      if(!isNaN(aMax) && !(parseFloat(r.ancho)<=aMax)) return false;
       if(!pasaFiltroFecha(r)) return false;
       if(!q) return true;
       return [r.rolloId,r.defecto,r.defectoCode,r.familia,r.inspector,r.ubicacion,r.comentario,r.grado,r.familiaSGF]
@@ -2164,7 +2279,28 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
           '<div><label class="ra-label">DESDE</label><input class="ra-input" type="date" id="filtro-desde" value="'+escAttr(S.filtroDesde)+'" style="margin-bottom:0;"></div>' +
           '<div><label class="ra-label">HASTA</label><input class="ra-input" type="date" id="filtro-hasta" value="'+escAttr(S.filtroHasta)+'" style="margin-bottom:0;"></div>' +
         '</div>' : '';
-    var hayFiltro = S.filtroResultado!=='Todos' || S.filtroFecha!=='Todas' || S.filtroTurno!=='Todos' || S.filtro.trim();
+    var filtrosAdmin = '';
+    if(S.isAdmin){
+      var insps = inspectoresConHistorial();
+      var opcInsp = '<option value="Todos">Todos</option>' + insps.map(function(n){
+        return '<option value="'+escAttr(n)+'"'+(S.filtroInspector===n?' selected':'')+'>'+escHtml(n)+'</option>';
+      }).join('');
+      filtrosAdmin =
+        '<label class="ra-label" style="margin-top:14px;">INSPECTOR</label>' +
+        '<select class="ra-input" id="filtro-inspector" style="margin-bottom:0;">'+opcInsp+'</select>' +
+        '<label class="ra-label" style="margin-top:14px;">ESPESOR (MM)</label>' +
+        '<div class="ra-grid">' +
+          '<input class="ra-input" inputmode="decimal" id="filtro-esp-min" placeholder="Mín" value="'+escAttr(S.filtroEspMin)+'" style="margin-bottom:0;">' +
+          '<input class="ra-input" inputmode="decimal" id="filtro-esp-max" placeholder="Máx" value="'+escAttr(S.filtroEspMax)+'" style="margin-bottom:0;">' +
+        '</div>' +
+        '<label class="ra-label" style="margin-top:14px;">ANCHO (MM)</label>' +
+        '<div class="ra-grid">' +
+          '<input class="ra-input" inputmode="decimal" id="filtro-an-min" placeholder="Mín" value="'+escAttr(S.filtroAnMin)+'" style="margin-bottom:0;">' +
+          '<input class="ra-input" inputmode="decimal" id="filtro-an-max" placeholder="Máx" value="'+escAttr(S.filtroAnMax)+'" style="margin-bottom:0;">' +
+        '</div>';
+    }
+    var hayFiltro = S.filtroResultado!=='Todos' || S.filtroFecha!=='Todas' || S.filtroTurno!=='Todos' || S.filtro.trim() ||
+      (S.filtroInspector && S.filtroInspector!=='Todos') || S.filtroEspMin || S.filtroEspMax || S.filtroAnMin || S.filtroAnMax;
     var items = regs.length ? regs.map(historyItem).join('') :
       (all.length ? '<div class="ra-empty">Ningún rollo coincide con los filtros.</div>'
                   : '<div class="ra-empty"><div class="big">▤</div>Aún no hay rollos capturados.</div>');
@@ -2176,6 +2312,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div class="ra-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;">'+filtros+'</div>' +
         '<label class="ra-label" style="margin-top:14px;">FECHA</label><div class="ra-zchips">'+fechas+'</div>' + rango +
         '<label class="ra-label" style="margin-top:14px;">TURNO</label><div class="ra-zchips">'+turnos+'</div>' +
+        filtrosAdmin +
         (hayFiltro ? '<div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
           '<span class="ra-meta">'+regs.length+' resultado(s)</span>' +
           '<button class="ra-link" id="btn-limpiar-filtros">Limpiar filtros</button></div>' : '') +
@@ -2194,7 +2331,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     }).join('');
     var ed = (r.ediciones||[]).length;
     return '<div class="ra-item">' +
-        '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(r.rolloId)+'</span><span class="ra-badge '+cls+'">'+escHtml(etqRes(r.resultado).toUpperCase())+'</span></div>' +
+        '<div class="ra-item-top"><span class="ra-item-id">'+escHtml(r.rolloId)+'</span><span style="display:flex;gap:6px;align-items:center;"><span class="ra-badge '+cls+'">'+escHtml(etqRes(r.resultado).toUpperCase())+'</span>'+(r._pend?'<span class="ra-badge sync" title="Aún no se sube a la nube">PENDIENTE</span>':'')+'</span></div>' +
         '<div class="ra-meta">'+(escHtml(meta)||'Sin defecto')+'</div>' +
         (acero?'<div class="ra-meta">'+escHtml(acero)+'</div>':'') +
         '<div class="ra-meta">'+escHtml(r.fecha||'')+' '+escHtml(r.hora||'')+(r.turno?' · Turno '+escHtml(r.turno):'')+' · '+escHtml(r.inspector||'')+(zona?' · '+escHtml(zona):'')+'</div>' +
@@ -2242,8 +2379,79 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '</div>';
       return out;
     }
-    return out + reporteCard() + adminsCard() + inspectoresCard() + temaCard() + bloqueoCard() + gradosCard() + defectosCard() + zonasCard() + mediosCard() +
+    return out + estadisticasCard() + reporteCard() + adminsCard() + inspectoresCard() + temaCard() + bloqueoCard() + rangoMedidaCard() + gradosCard() + defectosCard() + zonasCard() + mediosCard() +
            simpleCatalogCard('enrolladores','Enrolladores') + (soyPrincipal() ? demoCard() : '');
+  }
+
+  function rangoMedidaCard(){
+    var re = limiteRango('rangoEspesor'), ra = limiteRango('rangoAncho');
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Rango esperado de medida</div>' +
+        '<div class="ra-h2">Si un inspector captura un espesor o ancho fuera de este rango, se le pide confirmar antes de guardar (para atrapar errores de captura, como 5.0 en vez de 0.50). Déjalo vacío para no validar.</div>' +
+        '<div class="ra-label">ESPESOR (MM)</div>' +
+        '<div class="ra-grid">' +
+          '<div><label class="ra-label">MÍNIMO</label><input class="ra-input" inputmode="decimal" id="rango-espesor-min" placeholder="Sin límite" value="'+(re.min!=null?re.min:'')+'" style="margin-bottom:0;"></div>' +
+          '<div><label class="ra-label">MÁXIMO</label><input class="ra-input" inputmode="decimal" id="rango-espesor-max" placeholder="Sin límite" value="'+(re.max!=null?re.max:'')+'" style="margin-bottom:0;"></div>' +
+        '</div>' +
+        '<div class="ra-label" style="margin-top:12px;">ANCHO (MM)</div>' +
+        '<div class="ra-grid">' +
+          '<div><label class="ra-label">MÍNIMO</label><input class="ra-input" inputmode="decimal" id="rango-ancho-min" placeholder="Sin límite" value="'+(ra.min!=null?ra.min:'')+'" style="margin-bottom:0;"></div>' +
+          '<div><label class="ra-label">MÁXIMO</label><input class="ra-input" inputmode="decimal" id="rango-ancho-max" placeholder="Sin límite" value="'+(ra.max!=null?ra.max:'')+'" style="margin-bottom:0;"></div>' +
+        '</div>' +
+        '<button class="ra-small-btn" id="btn-guardar-rango" style="margin-top:12px;">Guardar rangos</button>' +
+      '</div>';
+  }
+
+  function estadisticasCard(){
+    var head = '<button class="ra-fold-head" id="btn-estadisticas" aria-expanded="'+(S.estadisticas?'true':'false')+'">' +
+        '<span><span class="t">Estadísticas</span><span class="m">Tendencias e inspectores</span></span>' +
+        '<span class="ra-fold-prev"><span class="chev">▾</span></span>' +
+      '</button>';
+    if(!S.estadisticas) return '<div class="ra-card ra-fold">'+head+'</div>';
+    var periodo = S.statsPeriodo || '7';
+    var dias = periodo==='30' ? 30 : periodo==='todo' ? null : 7;
+    var corte = dias!=null ? (Date.now() - dias*86400000) : null;
+    var regs = S.registros.filter(function(r){ return corte==null || r.ts>=corte; });
+    var total = regs.length;
+    var conf = regs.filter(function(r){ return r.resultado==='Conforme'; }).length;
+    var def = regs.filter(function(r){ return r.resultado==='Defecto'; }).length;
+    var scr = regs.filter(function(r){ return r.resultado==='Scrap'; }).length;
+    var fr = regs.filter(function(r){ return r.fueraRango; }).length;
+    function pct(n){ return total ? Math.round(n/total*100) : 0; }
+    var porInspector = {};
+    regs.forEach(function(r){
+      var k = r.inspector || '—';
+      porInspector[k] = porInspector[k] || {total:0, hallazgo:0};
+      porInspector[k].total++;
+      if(r.resultado==='Defecto' || r.resultado==='Scrap') porInspector[k].hallazgo++;
+    });
+    var ranking = Object.keys(porInspector).map(function(n){
+      var d=porInspector[n]; return {nombre:n, total:d.total, tasa: d.total ? Math.round(d.hallazgo/d.total*100) : 0};
+    }).sort(function(a,b){ return b.total-a.total; }).slice(0,8);
+    var rankHtml = ranking.length ? ranking.map(function(x){
+      return '<div class="ra-summary-line"><span>'+escHtml(x.nombre)+'</span><b>'+x.total+
+        ' <span style="color:var(--ink-soft);font-weight:400;">('+x.tasa+'% con hallazgo)</span></b></div>';
+    }).join('') : '<div class="ra-meta">Sin datos en este periodo.</div>';
+    var defectos={};
+    regs.forEach(function(r){ if(r.defecto){ var k=r.defectoCode+' '+r.defecto; defectos[k]=(defectos[k]||0)+1; } });
+    var topDef = Object.keys(defectos).sort(function(a,b){ return defectos[b]-defectos[a]; }).slice(0,5);
+    var topHtml = topDef.length ? topDef.map(function(k){
+      return '<div class="ra-summary-line"><span>'+escHtml(k)+'</span><b>'+defectos[k]+'</b></div>';
+    }).join('') : '<div class="ra-meta">Sin defectos en este periodo.</div>';
+    var chipsPeriodo = [['7','7 días'],['30','30 días'],['todo','Todo']].map(function(p){
+      return '<button class="ra-btn ra-btn-sm '+(periodo===p[0]?'ra-btn-primary':'ra-btn-outline')+'" data-stats-periodo="'+p[0]+'" style="font-size:12px;margin-bottom:0;">'+p[1]+'</button>';
+    }).join('');
+    var hayRango = S.catalogs.rangoEspesorMin || S.catalogs.rangoEspesorMax || S.catalogs.rangoAnchoMin || S.catalogs.rangoAnchoMax;
+    function stat(n,l){ return '<div class="ra-stat"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
+    return '<div class="ra-card ra-fold open">' + head +
+        '<div class="ra-fold-body">' +
+          '<div class="ra-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;margin-top:14px;">'+chipsPeriodo+'</div>' +
+          '<div class="ra-stats" style="margin-top:14px;">'+stat(total,'TOTAL')+stat(pct(conf)+'%','ACEPTADO')+stat(pct(def+scr)+'%','CON HALLAZGO')+'</div>' +
+          (hayRango ? '<div class="ra-meta" style="margin-top:8px;">'+fr+' de '+total+' rollos ('+pct(fr)+'%) tuvieron una medida fuera del rango esperado.</div>' : '') +
+          '<div class="ra-label" style="margin-top:14px;">POR INSPECTOR</div>' + rankHtml +
+          '<div class="ra-label" style="margin-top:14px;">DEFECTOS MÁS FRECUENTES</div>' + topHtml +
+        '</div>' +
+      '</div>';
   }
 
   function reporteCard(){
@@ -2252,7 +2460,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     var chips = tipos.map(function(t){
       return '<button class="ra-btn ra-btn-sm '+(S.reporteFiltro===t?'ra-btn-primary':'ra-btn-outline')+'" data-rep-filtro="'+t+'" style="font-size:12px;">'+etiqueta[t]+'</button>';
     }).join('');
-    var lista = S.auditoria.filter(function(a){ return S.reporteFiltro==='Todos' || a.tipo===S.reporteFiltro; }).slice(0,60);
+    var movs = S.auditoria.filter(function(a){ return a.tipo!=='acceso'; });
+    var lista = movs.filter(function(a){ return S.reporteFiltro==='Todos' || a.tipo===S.reporteFiltro; }).slice(0,60);
     var selMode = soyPrincipal() && S.repSel;
     var items = lista.length ? lista.map(function(a){
       var color = a.tipo==='eliminacion'?'var(--scrap)':a.tipo==='edicion'?'var(--defecto)':a.tipo==='movimiento'?'var(--info)':'var(--conforme)';
@@ -2270,7 +2479,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div class="ra-h2">Historial completo de altas, modificaciones, traslados y eliminaciones. Se muestran los 60 más recientes; el Excel incluye todos.</div>' +
         '<div class="ra-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;">'+chips+'</div>' +
         '<button class="ra-btn ra-btn-outline ra-btn-block" id="btn-export-auditoria">Exportar reporte a Excel</button>' +
-        (soyPrincipal() && S.auditoria.length ? (selMode
+        (soyPrincipal() && movs.length ? (selMode
           ? '<div class="ra-card" style="padding:12px 14px;border-color:var(--scrap);margin-bottom:12px;">' +
               '<div class="ra-meta" style="margin-bottom:8px;">'+S.repSel.length+' seleccionado(s). Toca cada movimiento para marcarlo.</div>' +
               '<div style="display:flex;gap:16px;flex-wrap:wrap;">' +
@@ -2280,9 +2489,28 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
               '</div></div>'
           : '<div style="display:flex;gap:18px;flex-wrap:wrap;margin:0 0 12px;">' +
               '<button class="ra-link" id="btn-rep-seleccionar">Seleccionar para eliminar</button>' +
-              '<button class="ra-link danger" id="btn-rep-borrar-todo">Borrar todo el reporte ('+S.auditoria.length+')</button>' +
+              '<button class="ra-link danger" id="btn-rep-borrar-todo">Borrar todo el reporte ('+movs.length+')</button>' +
             '</div>') : '') +
         items +
+      '</div>' + accesosCard();
+  }
+
+  function accesosCard(){
+    var head = '<button class="ra-fold-head" id="btn-accesos" aria-expanded="'+(S.accesos?'true':'false')+'">' +
+        '<span><span class="t">Accesos a reportes</span><span class="m">Quién consultó o descargó qué</span></span>' +
+        '<span class="ra-fold-prev"><span class="chev">▾</span></span>' +
+      '</button>';
+    if(!S.accesos) return '<div class="ra-card ra-fold">'+head+'</div>';
+    var lista = S.auditoria.filter(function(a){ return a.tipo==='acceso'; }).slice(0,40);
+    var items = lista.length ? lista.map(function(a){
+      return '<div class="ra-summary-line"><span>'+escHtml(a.fecha)+' '+escHtml(a.hora)+' · '+escHtml(a.usuario)+'</span></div>' +
+        '<div class="ra-meta" style="margin:-4px 0 8px;">'+escHtml(a.detalle)+'</div>';
+    }).join('') : '<div class="ra-meta">Sin descargas registradas todavía.</div>';
+    return '<div class="ra-card ra-fold open">' + head +
+        '<div class="ra-fold-body">' +
+          '<div class="ra-meta" style="margin-top:14px;">No forma parte del reporte de movimientos; solo queda como bitácora de quién bajó qué información.</div>' +
+          items +
+        '</div>' +
       '</div>';
   }
 
@@ -2513,19 +2741,30 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
           '<div class="ra-label">ESTILOS DE TEMPORADA</div>' +
           '<div class="ra-estilos">'+est+'</div>' +
           '<div class="ra-meta" style="margin-top:9px;">Los estilos de temporada decoran el encabezado y la pantalla de inicio. Para quitarlo, elige cualquier color.</div>' +
+          '<div class="ra-label" style="margin-top:16px;">MODO OSCURO</div>' +
+          '<button class="ra-btn ra-btn-sm '+(modoOscuro?'ra-btn-primary':'ra-btn-outline')+'" id="btn-modo-oscuro" style="font-size:12.5px;">'+(modoOscuro?'Activado':'Desactivado')+'</button>' +
+          '<div class="ra-meta" style="margin-top:7px;">Solo cambia este equipo (no se sincroniza ni afecta a los demás); útil para el turno nocturno.</div>' +
         '</div>' +
       '</div>';
   }
 
   function bloqueoCard(){
-    var m = minutosBloqueo();
+    var m = minutosBloqueo(false);
+    var mi = minutosBloqueo(true);
     var chips = OPCIONES_BLOQUEO.map(function(o){
       return '<button class="ra-btn ra-btn-sm '+(o===m?'ra-btn-primary':'ra-btn-outline')+'" data-bloqueo="'+o+'" style="font-size:12px;margin-bottom:0;">'+etqBloqueo(o)+'</button>';
     }).join('');
+    var chipsInsp = OPCIONES_BLOQUEO.map(function(o){
+      return '<button class="ra-btn ra-btn-sm '+(o===mi?'ra-btn-primary':'ra-btn-outline')+'" data-bloqueo-insp="'+o+'" style="font-size:12px;margin-bottom:0;">'+etqBloqueo(o)+'</button>';
+    }).join('');
     return '<div class="ra-card">' +
         '<div class="ra-h1">Bloqueo por inactividad</div>' +
-        '<div class="ra-h2">Tiempo sin actividad tras el cual la pantalla regresa al inicio. Aplica en todos los equipos.</div>' +
+        '<div class="ra-h2">Tiempo sin actividad tras el cual la pantalla regresa al inicio. Se detecta también si el equipo se bloqueó o se apagó, aunque haya pasado tiempo sin que la app estuviera abierta.</div>' +
+        '<div class="ra-label">ADMINISTRADORES</div>' +
         '<div class="ra-grid" style="grid-template-columns:repeat(4,1fr);gap:6px;">'+chips+'</div>' +
+        '<div class="ra-label" style="margin-top:12px;">INSPECTORES (equipo compartido)</div>' +
+        '<div class="ra-grid" style="grid-template-columns:repeat(4,1fr);gap:6px;">'+chipsInsp+'</div>' +
+        '<div class="ra-meta" style="margin-top:9px;">Se recomienda un tiempo corto para inspectores porque suelen compartir la tableta entre varias personas.</div>' +
       '</div>';
   }
 
@@ -2767,6 +3006,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 
   function exportExcel(){
     if(!S.registros.length){ toast('No hay registros que exportar'); return; }
+    registrarAcceso('Exportó el historial de rollos a Excel');
     var conFoto = [];
     S.registros.forEach(function(r){
       fotosDe(r).forEach(function(f, i){ conFoto.push({reg:r, foto:f, idx:i}); });
@@ -2890,11 +3130,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   }
 
   function exportAuditoria(){
-    if(!S.auditoria.length){ toast('No hay movimientos que exportar'); return; }
+    var mov = S.auditoria.filter(function(a){ return a.tipo!=='acceso'; });
+    if(!mov.length){ toast('No hay movimientos que exportar'); return; }
     toast('Preparando reporte…');
+    registrarAcceso('Descargó el reporte de movimientos');
     loadSheetJS().then(function(){
       var XLSX=window.XLSX;
-      var rows=S.auditoria.map(function(a){
+      var rows=mov.map(function(a){
         return {'Fecha':a.fecha,'Hora':a.hora,'Turno':a.turno||'','Usuario':a.usuario,'Tipo':a.tipo,'ID Rollo':a.rolloId,'Detalle':a.detalle,'Motivo':a.motivo};
       });
       var ws=XLSX.utils.json_to_sheet(rows);
@@ -2917,6 +3159,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   }
   function downloadBackup(){
     toast('Preparando respaldo…');
+    registrarAcceso('Descargó un respaldo completo de los datos');
     var regs = copia(S.registros);
     var ids = [];
     regs.forEach(function(r){ (r.fotoIds||[]).forEach(function(id){ ids.push(id); }); });
@@ -3259,6 +3502,10 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         var f=root.querySelector('#field-espesor'); if(f && !f.value) f.focus(); else { f=root.querySelector('#field-ancho'); if(f) f.focus(); }
         return;
       }
+      if(!medidasEnRango()){
+        var m2=S.rollosMaster[rolloId()]||{}, motivos=fueraDeRango(m2.espesor||S.rolloData.espesor, m2.ancho||S.rolloData.ancho);
+        if(!confirm('Revisa la medida, se ve fuera de lo normal:\n· '+motivos.join('\n· ')+'\n\n¿Guardar de todas formas?')) return;
+      }
       S.medidaErr=false; S.step='resultado'; render();
     });
 
@@ -3463,7 +3710,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       });
     });
     on('#btn-rep-todos-vis','click',function(){
-      S.auditoria.filter(function(a){ return S.reporteFiltro==='Todos' || a.tipo===S.reporteFiltro; }).slice(0,60)
+      S.auditoria.filter(function(a){ return a.tipo!=='acceso' && (S.reporteFiltro==='Todos' || a.tipo===S.reporteFiltro); }).slice(0,60)
         .forEach(function(a){ if(S.repSel.indexOf(a._id)<0) S.repSel.push(a._id); });
       render();
     });
@@ -3473,12 +3720,19 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       borrarAuditoria(S.repSel.slice(), false);
     });
     on('#btn-rep-borrar-todo','click',function(){
-      var n=S.auditoria.length;
+      var movs = S.auditoria.filter(function(a){ return a.tipo!=='acceso'; });
+      var n=movs.length;
       if(!confirm('¿Borrar TODO el reporte de movimientos ('+n+' registros) en todos los equipos? No se puede deshacer. Si lo necesitas, exporta antes el reporte a Excel.')) return;
       if(!navigator.onLine){ toast('Necesitas conexión para borrar el reporte'); return; }
-      borrarAuditoria(S.auditoria.map(function(a){ return a._id; }), true);
+      borrarAuditoria(movs.map(function(a){ return a._id; }), true);
     });
     on('#btn-apariencia','click',function(){ S.apariencia=!S.apariencia; render(); });
+    on('#btn-modo-oscuro','click',function(){ aplicarOscuro(!modoOscuro); render(); });
+    on('#btn-estadisticas','click',function(){ S.estadisticas=!S.estadisticas; render(); });
+    on('#btn-accesos','click',function(){ S.accesos=!S.accesos; render(); });
+    each('[data-stats-periodo]',function(b){
+      b.addEventListener('click',function(){ S.statsPeriodo=b.getAttribute('data-stats-periodo'); render(); });
+    });
     function elegirTema(v){
       v = normTema(v);
       if(!S.isAdmin || mismoTema(v)) return;
@@ -3516,9 +3770,16 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     if(fDesde) fDesde.addEventListener('change',function(){ S.filtroDesde=fDesde.value; render(); });
     var fHasta=root.querySelector('#filtro-hasta');
     if(fHasta) fHasta.addEventListener('change',function(){ S.filtroHasta=fHasta.value; render(); });
+    var fInsp=root.querySelector('#filtro-inspector');
+    if(fInsp) fInsp.addEventListener('change',function(){ S.filtroInspector=fInsp.value; render(); });
+    [['#filtro-esp-min','filtroEspMin'],['#filtro-esp-max','filtroEspMax'],['#filtro-an-min','filtroAnMin'],['#filtro-an-max','filtroAnMax']].forEach(function(par){
+      var e=root.querySelector(par[0]);
+      if(e) e.addEventListener('change',function(){ S[par[1]]=e.value; render(); });
+    });
     on('#btn-limpiar-filtros','click',function(){
       S.filtroResultado='Todos'; S.filtroFecha='Todas'; S.filtroTurno='Todos';
       S.filtroDesde=''; S.filtroHasta=''; S.filtro='';
+      S.filtroInspector='Todos'; S.filtroEspMin=''; S.filtroEspMax=''; S.filtroAnMin=''; S.filtroAnMax='';
       render();
     });
     each('[data-foto-reg]',function(img){
@@ -3638,8 +3899,27 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         var m=parseInt(b.getAttribute('data-bloqueo'),10);
         if(!S.isAdmin || isNaN(m)) return;
         S.catalogs.minutosBloqueo=m; set('catalogs', S.catalogs);
-        auditar('edicion','','Bloqueo por inactividad: '+etqBloqueo(m),'');
+        auditar('edicion','','Bloqueo por inactividad (administradores): '+etqBloqueo(m),'');
         toast('Bloqueo por inactividad: '+etqBloqueo(m)); render();
+      });
+    });
+    on('#btn-guardar-rango','click',function(){
+      if(!S.isAdmin) return;
+      function val(sel){ var e=root.querySelector(sel); var v=e?parseFloat(e.value):NaN; return (isNaN(v)||v<=0)?null:v; }
+      S.catalogs.rangoEspesorMin = val('#rango-espesor-min');
+      S.catalogs.rangoEspesorMax = val('#rango-espesor-max');
+      S.catalogs.rangoAnchoMin = val('#rango-ancho-min');
+      S.catalogs.rangoAnchoMax = val('#rango-ancho-max');
+      set('catalogs', S.catalogs);
+      toast('Rangos guardados'); render();
+    });
+    each('[data-bloqueo-insp]',function(b){
+      b.addEventListener('click',function(){
+        var m=parseInt(b.getAttribute('data-bloqueo-insp'),10);
+        if(!S.isAdmin || isNaN(m)) return;
+        S.catalogs.minutosBloqueoInspector=m; set('catalogs', S.catalogs);
+        auditar('edicion','','Bloqueo por inactividad (inspectores): '+etqBloqueo(m),'');
+        toast('Bloqueo por inactividad de inspectores: '+etqBloqueo(m)); render();
       });
     });
     each('[data-quitar-admin]',function(b){
@@ -3921,7 +4201,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       peso:master.peso||S.rolloData.peso||'',
       fechaProduccion:master.fecha||S.rolloData.fecha||'',
       enrollador:master.enrollador||S.rolloData.enrollador||'',
-      fotoIds:fotoIds, comentario:S.comentario||'', ediciones:[]
+      fotoIds:fotoIds, comentario:S.comentario||'', ediciones:[],
+      fueraRango: fueraDeRango(master.espesor||S.rolloData.espesor||'', master.ancho||S.rolloData.ancho||'').length>0
     };
     batch.set(ref(COL.registros,regId), reg);
     S.registros.unshift(reg);

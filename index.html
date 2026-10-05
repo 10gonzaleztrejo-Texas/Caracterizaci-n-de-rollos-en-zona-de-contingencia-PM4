@@ -290,6 +290,63 @@
   #ra-deco-cab .ra-p-fuego{animation-name:raFuego;}
   @keyframes raCaeCab{0%{transform:translate3d(0,-14px,0) rotate(0deg);}100%{transform:translate3d(var(--x),84px,0) rotate(var(--r));}}
   @keyframes raSubeCab{0%{transform:translate3d(0,84px,0);}100%{transform:translate3d(var(--x),-24px,0);}}
+  /* Fondo del lienzo: al deslizar más allá del final (rebote de iOS) se ve el color del tema, no un hueco claro */
+  html.ra-gate-html, html.ra-gate-html body{background-color:var(--gate-bg,var(--brand));}
+  .ra-gate{min-height:100vh;min-height:100dvh;}
+  /* Halloween: telaraña de esquina y araña colgando */
+  .ra-telarana{width:150px;height:150px;opacity:.6;}
+  .ra-arana{position:absolute;top:env(safe-area-inset-top,0px);left:112px;width:36px;height:150px;overflow:hidden;}
+  .ra-arana svg{display:block;width:36px;height:150px;}
+  .ra-arana .ara{animation:raArana 4.6s ease-in-out infinite alternate;}
+  @keyframes raArana{from{transform:translateY(-34px);}to{transform:translateY(0);}}
+  .ra-arana .pata{animation:raPatas 1.6s ease-in-out infinite alternate;transform-origin:18px 118px;}
+  @keyframes raPatas{from{transform:rotate(-4deg);}to{transform:rotate(4deg);}}
+  /* Fin de año: cuenta regresiva */
+  .ra-cuenta{margin:18px auto 0;text-align:center;color:#FFF7DD;}
+  .ra-cuenta .c-t{font-size:11px;font-weight:700;letter-spacing:.22em;color:var(--on-brand-sub);}
+  .ra-cuenta .c-n{display:flex;justify-content:center;gap:8px;margin-top:9px;}
+  .ra-cuenta .c-n span{min-width:58px;padding:8px 6px 6px;border:1px solid rgba(233,196,106,.45);border-radius:6px;background:rgba(255,255,255,.06);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 18px rgba(233,196,106,.12);}
+  .ra-cuenta .c-n b{display:block;font-size:26px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums;color:#FFF1BF;}
+  .ra-cuenta .c-n i{display:block;font-style:normal;font-size:9.5px;letter-spacing:.16em;margin-top:5px;color:rgba(255,241,191,.7);}
+  .ra-cuenta.fin .c-t{font-size:15px;color:#FFF1BF;animation:raLatido 1.4s ease-in-out infinite;}
+  .ra-cuenta-bar{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 14px;background:linear-gradient(90deg,#2A2140,#15101F 50%,#2A2140);
+    color:#FFF1BF;font-size:12px;letter-spacing:.06em;border-bottom:1px solid rgba(233,196,106,.35);}
+  .ra-cuenta-bar b{font-variant-numeric:tabular-nums;font-size:13px;letter-spacing:.04em;}
+  .ra-cuenta-bar svg{width:14px;height:14px;flex:none;}
+  /* Logotipo a color (solo estilo Ternium) */
+  .ra-logo .lg-c{display:none;}
+  /* ===== Estilo Ternium (colores institucionales) ===== */
+  html[data-estilo="ternium"]{--gate-bg:#0F141C;}
+  html[data-estilo="ternium"] .ra-logo .lg-c{display:inline;}
+  html[data-estilo="ternium"] .ra-logo .lg-m,html[data-estilo="ternium"] .ra-logo text{fill:#FFFFFF;}
+  html[data-estilo="ternium"] .ra-logo .lg-b{stroke:#FFFFFF;}
+  html[data-estilo="ternium"] .ra-header{box-shadow:0 1px 0 rgba(15,20,28,.06),0 6px 18px rgba(15,20,28,.07);}
+  html[data-estilo="ternium"] .ra-header .sub{font-weight:700;letter-spacing:.14em;}
+  html[data-estilo="ternium"] .ra-user{border-color:#E5501E;color:#E5501E;border-radius:999px;padding:8px 14px;}
+  html[data-estilo="ternium"] .ra-step-dot{background:#E7E8EA;}
+  html[data-estilo="ternium"] .ra-step-dot.active,html[data-estilo="ternium"] .ra-step-dot.done{background:linear-gradient(90deg,#E5401E,#F39A33);}
+  html[data-estilo="ternium"] .ra-step-dot.done{opacity:.55;}
+  html[data-estilo="ternium"] .ra-btn-primary,html[data-estilo="ternium"] .ra-small-btn{background:linear-gradient(100deg,#E5401E,#F0862C);color:#FFFFFF;}
+  html[data-estilo="ternium"] .ra-h1,html[data-estilo="ternium"] .ra-fold-head .t{font-family:"Barlow Condensed","Roboto Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:21px;letter-spacing:0;}
+  html[data-estilo="ternium"] .ra-gate,html[data-estilo="ternium"] .ra-welcome{background-color:#0F141C;
+    background-image:radial-gradient(ellipse 130% 38% at 50% 100%,rgba(240,124,40,.55),rgba(229,64,30,.18) 55%,transparent 75%),
+      linear-gradient(180deg,#111722 0%,#1A2130 38%,#2B2730 64%,#6A3A26 86%,#B8582A 100%);}
+  html[data-estilo="ternium"] .ra-gate-brand,html[data-estilo="ternium"] .ra-welcome,html[data-estilo="ternium"] .ra-welcome .w-name{color:#FFFFFF;}
+  html[data-estilo="ternium"] .ra-gate-brand .app-name{font-family:"Barlow Condensed","Roboto Condensed","Arial Narrow",sans-serif;font-size:15px;letter-spacing:.26em;color:#F5A04A;}
+  html[data-estilo="ternium"] .ra-welcome .w-bar{background:rgba(255,255,255,.18);}
+  html[data-estilo="ternium"] .ra-welcome .w-bar i{background:linear-gradient(90deg,#E5401E,#F39A33);}
+  html[data-estilo="ternium"] #ra-deco .ra-p-sube{border-radius:50%;}
+  .ra-planta{position:absolute;left:0;right:0;bottom:0;height:190px;}
+  .ra-planta svg{display:block;width:100%;height:100%;}
+  .ra-planta .luz{animation:raBrilla 3.4s ease-in-out infinite;}
+  .ra-planta .humo{animation:raHumo 9s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%;}
+  @keyframes raHumo{0%{opacity:0;transform:translateY(8px) scale(.7);}30%{opacity:.35;}100%{opacity:0;transform:translateY(-34px) scale(1.5);}}
+  .ra-swatch i.tn,.ra-fold-prev i.tn{background:linear-gradient(135deg,#F39A33 0 48%,#FFFFFF 48% 54%,#E5401E 54%) !important;}
+  /* Secciones plegables de Ajustes */
+  .ra-fold:not(.open) > .ra-fold-body{display:none;}
+  .ra-fold > .ra-fold-body > .ra-h2:first-child{margin-top:14px;}
+  .ra-fold-head .cnt{font-size:11px;font-weight:700;color:var(--ink-soft);background:var(--bg);border-radius:999px;padding:3px 8px;}
   .ra-gate-brand{text-align:center;margin-bottom:32px;color:var(--on-brand);}
   .ra-gate-brand .app-name{font-size:12px;font-weight:600;letter-spacing:.2em;margin-top:20px;color:var(--on-brand-sub);}
   .ra-fold{padding:0;}
@@ -527,6 +584,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   /* Apariencia de la interfaz (la eligen los administradores; aplica en todos los equipos):
      colores fijos, un color personalizado (hex) o un estilo de temporada con decoración. */
   var TEMAS = {
+    ternium:{nombre:'Ternium',     brand:'#FFFFFF', on:'#4D4E50', rgb:'77,78,80',   sub:'#E5501E', accent:'#E5501E'},
     negro:  {nombre:'Negro',       brand:'#0E1114', on:'#FFFFFF', rgb:'255,255,255', sub:'#98A1AC', accent:'#0E1114'},
     rosa:   {nombre:'Rosa pastel', brand:'#F5C2D6', on:'#3B1D2C', rgb:'59,29,44',    sub:'#7A4A60', accent:'#B24C7C'},
     marino: {nombre:'Azul marino', brand:'#16264A', on:'#FFFFFF', rgb:'255,255,255', sub:'#9FB0CF', accent:'#16264A'},
@@ -547,24 +605,24 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     nochebuena: {nombre:'Nochebuena',    brand:'#0B1A3A', on:'#FFFFFF', rgb:'255,255,255', sub:'#F4DFA0', accent:'#9A7420', saludo:'FELIZ NOCHEBUENA'},
     findeanio:  {nombre:'Fin de año',    brand:'#15101F', on:'#FFFFFF', rgb:'255,255,255', sub:'#E9C46A', accent:'#8A6D12', saludo:'¡ÚLTIMO DÍA DEL AÑO!'}
   };
-  var ORDEN_TEMAS = ['negro','rosa','marino','naranja','verde'];
+  var ORDEN_TEMAS = ['ternium','negro','rosa','marino','naranja','verde'];
   /* Orden del calendario (para Ajustes) */
-  var ORDEN_TEMPORADA = ['anionuevo','reyes','sanvalentin','primavera','nino','madres','padre','mexicano','otono','halloween','muertos','navidad','nochebuena','findeanio'];
+  var ORDEN_TEMPORADA = ['anionuevo','reyes','sanvalentin','primavera','nino','madres','padre','mexicano','otono','halloween','muertos','nochebuena','navidad','findeanio'];
   /* Calendario de temporadas automáticas: [mes, día inicio, mes, día fin] (fechas locales del equipo) */
   var TEMPORADAS = [
-    {k:'anionuevo',  r:[[1,1,1,2]],             f:'1 y 2 de enero'},
-    {k:'reyes',      r:[[1,5,1,6]],             f:'5 y 6 de enero'},
-    {k:'sanvalentin',r:[[2,13,2,14]],           f:'13 y 14 de febrero'},
-    {k:'primavera',  r:[[3,20,3,31]],           f:'20 al 31 de marzo'},
+    {k:'anionuevo',  r:[[1,1,1,1]],             f:'1 de enero'},
+    {k:'reyes',      r:[[1,6,1,6]],             f:'6 de enero'},
+    {k:'sanvalentin',r:[[2,14,2,14]],           f:'14 de febrero'},
+    {k:'primavera',  r:[[3,21,3,21]],           f:'21 de marzo'},
     {k:'nino',       r:[[4,30,4,30]],           f:'30 de abril'},
     {k:'madres',     r:[[5,10,5,10]],           f:'10 de mayo'},
     {k:'padre',      padre:true,                f:'Tercer domingo de junio'},
-    {k:'mexicano',   r:[[9,13,9,16]],           f:'13 al 16 de septiembre'},
-    {k:'otono',      r:[[9,22,9,30],[11,3,11,25]], f:'22 al 30 sep y 3 al 25 nov'},
-    {k:'halloween',  r:[[10,1,10,31]],          f:'Todo octubre'},
+    {k:'mexicano',   r:[[9,15,9,16]],           f:'15 y 16 de septiembre'},
+    {k:'otono',      r:[[9,22,9,23]],           f:'22 y 23 de septiembre'},
+    {k:'halloween',  r:[[10,31,10,31]],         f:'31 de octubre'},
     {k:'muertos',    r:[[11,1,11,2]],           f:'1 y 2 de noviembre'},
-    {k:'navidad',    r:[[12,1,12,23],[12,25,12,30]], f:'1 al 23 y 25 al 30 dic'},
     {k:'nochebuena', r:[[12,24,12,24]],         f:'24 de diciembre'},
+    {k:'navidad',    r:[[12,25,12,25]],         f:'25 de diciembre'},
     {k:'findeanio',  r:[[12,31,12,31]],         f:'31 de diciembre'}
   ];
   function diaDelPadre(anio){
@@ -712,7 +770,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     halloween: {
       patron: svgTile(90, 64, '<g fill="#F2A65A" fill-opacity=".16"><path transform="translate(24 20)" d="'+FORMA_MURCIELAGO+'"/><path transform="translate(68 46) scale(.6)" d="'+FORMA_MURCIELAGO+'"/><circle cx="62" cy="14" r="1.2"/><circle cx="14" cy="52" r="1"/></g>'),
       franja: 'linear-gradient(90deg,#C24E0A,#F2A65A 50%,#C24E0A)',
-      extra: function(){ return '<div class="ra-luna"></div>' + telarana(); },
+      extra: function(){ return '<div class="ra-luna"></div>' + telarana() + arana(); },
       part: [{tipo:'sube', n:12, min:28, max:46, dmin:14, dmax:24, aspecto:.45, forma:'<svg viewBox="-14 -7 28 12"><path fill="COLOR" d="'+FORMA_MURCIELAGO+'"/></svg>', colores:['#F2A65A','#0A0610','#E8620C']},
              {tipo:'brilla', n:14, min:2, max:4, dmin:2.5, dmax:5, colores:['#F2A65A','#FFE0A3']}]
     },
@@ -787,23 +845,83 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     findeanio: {
       patron: svgTile(80, 60, '<g fill="#E9C46A" fill-opacity=".22"><path transform="translate(18 16) scale(.8)" d="'+FORMA_BRILLO+'"/><path transform="translate(58 42) scale(.45)" d="'+FORMA_BRILLO+'"/><circle cx="46" cy="12" r="1.1"/><circle cx="12" cy="46" r="1"/></g>'),
       franja: 'linear-gradient(90deg,#8A6D12,#FFF1BF 50%,#8A6D12)',
+      arriba: 86,
       extra: function(){ return reloj(); },
       part: [{tipo:'fuego', n:7, min:70, max:130, dmin:2.6, dmax:4.2, colores:['#E9C46A','#FF6F91','#7FDBFF','#FFFFFF','#B388FF']},
              {tipo:'confeti', n:18, min:5, max:9, dmin:8, dmax:13, colores:['#E9C46A','#FFFFFF','#C0C6D0']}]
     }
   };
+  /* Estilo institucional Ternium: encabezado blanco con logotipo a color; la pantalla de inicio
+     es un atardecer sobre la planta con chispas que suben. No lleva partículas en el encabezado. */
+  DECO.ternium = {
+    patron: 'none',
+    franja: 'linear-gradient(90deg,#E5401E,#F39A33)',
+    sinCabecera: true,
+    fuente: true,
+    extra: function(){ return planta(); },
+    part: [{tipo:'sube', n:22, min:2, max:4.5, dmin:9, dmax:17, colores:['#F7A23A','#FFD08A','#E8461E','#FFB35C']},
+           {tipo:'brilla', n:12, min:1.5, max:2.8, dmin:3, dmax:6, colores:['#FFFFFF','#FFE2B8']}]
+  };
   /* Año Nuevo: además del confeti, fuegos artificiales */
   DECO.anionuevo.part = [DECO.anionuevo.part, {tipo:'fuego', n:5, min:70, max:120, dmin:2.8, dmax:4.4, colores:['#E5C76B','#FFFFFF','#7FDBFF','#FF8A80']}];
   DECO.mexicano.arriba = 46; DECO.navidad.arriba = 46;
+  /* Telaraña en la esquina superior izquierda: radios y anillos con caída natural */
   function telarana(){
-    var l = '';
-    for(var i=0;i<6;i++){ var a = i*15*Math.PI/180; l += '<path d="M0 0L'+(Math.cos(a)*120).toFixed(1)+' '+(Math.sin(a)*120).toFixed(1)+'"/>'; }
-    [30,55,80,105].forEach(function(r){
-      var d = 'M'+r+' 0'; for(var i=1;i<=6;i++){ var a = i*15*Math.PI/180, rr = r*.92; d += 'Q'+(Math.cos(a-.13)*rr).toFixed(1)+' '+(Math.sin(a-.13)*rr).toFixed(1)+' '+(Math.cos(a)*r).toFixed(1)+' '+(Math.sin(a)*r).toFixed(1); }
+    function pt(gr, r){ var a = gr*Math.PI/180; return (Math.cos(a)*r).toFixed(1)+' '+(Math.sin(a)*r).toFixed(1); }
+    var ang = [4,18,32,46,60,74,88], l = '';
+    ang.forEach(function(g){ l += '<path d="M0 0L'+pt(g,160)+'"/>'; });
+    [22,44,68,94,122].forEach(function(r, ri){
+      var d = '';
+      ang.forEach(function(g, i){
+        var rr = r*(1 + (((i*5 + ri*3) % 5) - 2)*.025);
+        if(!i){ d = 'M'+pt(g, rr); return; }
+        d += 'Q'+pt((ang[i-1]+g)/2, rr*.86)+' '+pt(g, rr);
+      });
       l += '<path d="'+d+'"/>';
     });
-    return '<svg class="ra-telarana" viewBox="0 0 120 120"><g fill="none" stroke="#F6E7D0" stroke-width=".9" stroke-opacity=".7">'+l+'</g>' +
-      '<line x1="58" y1="44" x2="58" y2="78" stroke="#F6E7D0" stroke-opacity=".6"/><ellipse cx="58" cy="82" rx="4" ry="5" fill="#0A0610"/></svg>';
+    return '<svg class="ra-telarana" viewBox="0 0 150 150"><g fill="none" stroke="#F6E7D0" stroke-width=".8" stroke-opacity=".75" stroke-linecap="round">'+l+'</g>' +
+      '<g fill="#F6E7D0" fill-opacity=".55"><circle cx="'+pt(32,68).split(' ')[0]+'" cy="'+pt(32,68).split(' ')[1]+'" r="1"/><circle cx="'+pt(60,94).split(' ')[0]+'" cy="'+pt(60,94).split(' ')[1]+'" r=".9"/></g></svg>';
+  }
+  /* Arañita que baja y sube de su hilo */
+  function arana(){
+    var pataI = '<path d="M14 113Q6 106 3 112M13.5 116Q4 114 2 121M13.5 119Q4 122 3 129M14 122Q7 127 6 134"/>';
+    var pataD = '<path d="M22 113Q30 106 33 112M22.5 116Q32 114 34 121M22.5 119Q32 122 33 129M22 122Q29 127 30 134"/>';
+    var patas = pataI + pataD;
+    return '<div class="ra-arana"><svg viewBox="0 0 36 150"><g class="ara">' +
+        '<line x1="18" y1="-60" x2="18" y2="110" stroke="#F6E7D0" stroke-opacity=".7" stroke-width=".8"/>' +
+        '<g class="pata" fill="none" stroke-linecap="round">' +
+          '<g stroke="#F6E7D0" stroke-opacity=".35" stroke-width="2.8">'+patas+'</g>' +
+          '<g stroke="#0B0710" stroke-width="1.5">'+patas+'</g>' +
+        '</g>' +
+        '<ellipse cx="18" cy="116" rx="6.4" ry="7.4" fill="#0B0710" stroke="#F2A65A" stroke-opacity=".45" stroke-width=".8"/>' +
+        '<circle cx="18" cy="125.5" r="4.1" fill="#0B0710" stroke="#F2A65A" stroke-opacity=".45" stroke-width=".8"/>' +
+        '<ellipse cx="15.8" cy="113" rx="1.5" ry="2.4" fill="#FFFFFF" fill-opacity=".16"/>' +
+        '<circle cx="16.4" cy="125.8" r="1.15" fill="#FFB347"/><circle cx="19.6" cy="125.8" r="1.15" fill="#FFB347"/>' +
+      '</g></svg></div>';
+  }
+  /* Silueta de la planta al atardecer (estilo Ternium) */
+  function planta(){
+    var c = '#0D1118', luces = '';
+    [[118,118],[132,118],[146,118],[186,128],[200,128],[214,128],[228,128],[300,112],[314,112],[328,112],[342,112],[356,112],[22,134],[38,134]].forEach(function(p, i){
+      luces += '<rect class="luz" x="'+p[0]+'" y="'+p[1]+'" width="5" height="3" fill="#F5A04A" style="animation-delay:-'+(i*0.7%3.4).toFixed(1)+'s"/>';
+    });
+    var escalera = '';
+    for(var y=150; y>48; y-=13) escalera += '<path d="M66 '+y+'L100 '+(y-7)+'" stroke="'+c+'" stroke-width="2.2"/>';
+    return '<div class="ra-planta"><svg viewBox="0 0 400 190" preserveAspectRatio="xMidYMax slice">' +
+      '<path d="M0 140L34 122 70 132 112 110 150 126 196 106 238 124 282 108 330 126 372 112 400 120V190H0Z" fill="#3B2B2C" fill-opacity=".55"/>' +
+      '<g fill="'+c+'">' +
+        '<rect x="0" y="128" width="62" height="62"/>' +
+        '<rect x="72" y="44" width="24" height="146"/><rect x="64" y="38" width="40" height="6"/><rect x="66" y="31" width="2" height="7"/><rect x="100" y="31" width="2" height="7"/><rect x="66" y="31" width="36" height="1.6"/>' +
+        '<rect x="110" y="112" width="58" height="78"/><path d="M110 112L139 98 168 112Z"/>' +
+        '<path d="M176 122h70v68h-70z M176 122l11-10v10l11-10v10l11-10v10l11-10v10l11-10v10l11-10v10z"/>' +
+        '<rect x="254" y="54" width="9" height="136"/><rect x="270" y="72" width="8" height="118"/>' +
+        '<rect x="292" y="106" width="80" height="84"/><rect x="372" y="132" width="28" height="58"/>' +
+        '<path d="M96 92L150 112 148 116 96 98Z"/>' +
+        '<rect x="0" y="176" width="400" height="14"/>' +
+      '</g>' + escalera + luces +
+      '<g fill="#C9B8B0"><ellipse class="humo" cx="258" cy="46" rx="7" ry="5" fill-opacity=".5"/><ellipse class="humo" cx="274" cy="64" rx="6" ry="4.5" fill-opacity=".45" style="animation-delay:-4.5s"/></g>' +
+      '<circle cx="258" cy="50" r="1.6" fill="#FF4D3A" class="luz"/>' +
+    '</svg></div>';
   }
   function reloj(){
     var marcas = '';
@@ -897,10 +1015,46 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     st.setProperty('--deco-top', (d && d.arriba ? d.arriba : 0) + 'px');
     if(d) document.documentElement.setAttribute('data-estilo', v.tema); else document.documentElement.removeAttribute('data-estilo');
     var m = document.querySelector('meta[name=theme-color]'); if(m) m.setAttribute('content', t.brand);
-    if(document.body) document.body.classList.toggle('ra-con-deco', !!d);
+    if(document.body) document.body.classList.toggle('ra-con-deco', !!d && !d.sinCabecera);
+    if(d && d.fuente) cargarFuenteTernium();
     pintarDeco(d);
     pintarDecoCabecera(d);
   }
+  /* Tipografía condensada del estilo Ternium (se descarga solo la primera vez que se usa; sin red se usa una del sistema) */
+  function cargarFuenteTernium(){
+    if(document.getElementById('ra-fuente-tn')) return;
+    var l = document.createElement('link'); l.id = 'ra-fuente-tn'; l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap';
+    document.head.appendChild(l);
+  }
+  /* Fin de año: cuenta regresiva hasta la medianoche del 1 de enero (hora local del equipo) */
+  function dos(n){ return (n<10?'0':'') + n; }
+  function cuentaHTML(modo){
+    var ahora = new Date(), anio = ahora.getFullYear();
+    if(ahora.getMonth()===0 && ahora.getDate()===1){
+      return modo==='barra' ? '<b>¡FELIZ AÑO NUEVO '+anio+'!</b>' : '<div class="c-t">¡FELIZ AÑO NUEVO '+anio+'!</div>';
+    }
+    var ms = new Date(anio+1, 0, 1) - ahora, seg = Math.max(0, Math.floor(ms/1000));
+    var d = Math.floor(seg/86400), h = Math.floor(seg%86400/3600), m = Math.floor(seg%3600/60), x = seg%60;
+    if(modo==='barra'){
+      var chispa = '<svg viewBox="-9 -9 18 18"><path fill="#E9C46A" d="'+FORMA_BRILLO+'"/></svg>';
+      return chispa + '<span>Faltan <b>'+(d ? d+(d===1?' día ':' días ') : '')+dos(h)+':'+dos(m)+':'+dos(x)+'</b> para el '+(anio+1)+'</span>' + chispa;
+    }
+    var cajas = (d ? '<span><b>'+d+'</b><i>'+(d===1?'DÍA':'DÍAS')+'</i></span>' : '') +
+      '<span><b>'+dos(h)+'</b><i>HORAS</i></span><span><b>'+dos(m)+'</b><i>MIN</i></span><span><b>'+dos(x)+'</b><i>SEG</i></span>';
+    return '<div class="c-t">FALTAN PARA EL '+(anio+1)+'</div><div class="c-n">'+cajas+'</div>';
+  }
+  setInterval(function(){
+    var els = document.querySelectorAll('[data-cuenta]');
+    if(!els.length) return;
+    var ahora = new Date();
+    if(ahora.getMonth()===0 && ahora.getDate()===1 && ahora.getHours()===0 && ahora.getMinutes()===0 && ahora.getSeconds()<2) revisarTemporada();
+    for(var i=0; i<els.length; i++){
+      var modo = els[i].getAttribute('data-cuenta');
+      els[i].innerHTML = cuentaHTML(modo);
+      els[i].classList.toggle('fin', ahora.getMonth()===0 && ahora.getDate()===1);
+    }
+  }, 1000);
   /* Capa de decoración (solo visible en la pantalla de inicio; no bloquea toques) */
   function pintarDeco(d){
     var capa = document.getElementById('ra-deco');
@@ -933,7 +1087,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   function pintarDecoCabecera(d){
     var capa = document.getElementById('ra-deco-cab');
     if(!capa){ capa = document.createElement('div'); capa.id = 'ra-deco-cab'; capa.setAttribute('aria-hidden','true'); document.body.appendChild(capa); }
-    if(!d){ capa.innerHTML = ''; return; }
+    if(!d || d.sinCabecera){ capa.innerHTML = ''; return; }
     var h = '';
     [].concat(d.part).forEach(function(p){ h += particulas(p, p.tipo==='brilla' ? .3 : .22, true); });
     capa.innerHTML = h;
@@ -999,11 +1153,16 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     {grado:'440FNB', sgf:'30', familia:'Grados comerciales Medios'}
   ];
 
+  var logoN = 0;
   function logoSVG(cls){
+    var g = 'ra-lg'+(++logoN);
+    /* .lg-c: relleno a color (solo se muestra en el estilo Ternium; el resto de estilos usa el logotipo de línea) */
     return '<svg class="ra-logo ' + (cls||'') + '" viewBox="440 216 1176 340" role="img" aria-label="Ternium">' +
-      '<rect x="459" y="235" width="1131" height="298" fill="none" stroke="currentColor" stroke-width="15"/>' +
-      '<line x1="815" y1="235" x2="815" y2="533" stroke="currentColor" stroke-width="15"/>' +
-      '<path d="M462 449 L622 271 L806 470 L806 500 L688 375 Z" fill="currentColor"/>' +
+      '<defs><linearGradient id="'+g+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7A233"/><stop offset="1" stop-color="#E8461E"/></linearGradient></defs>' +
+      '<g class="lg-c"><rect x="459" y="235" width="356" height="298" fill="url(#'+g+')"/><rect x="815" y="235" width="775" height="298" fill="#5F6062"/></g>' +
+      '<rect class="lg-b" x="459" y="235" width="1131" height="298" fill="none" stroke="currentColor" stroke-width="15"/>' +
+      '<line class="lg-b" x1="815" y1="235" x2="815" y2="533" stroke="currentColor" stroke-width="15"/>' +
+      '<path class="lg-m" d="M462 449 L622 271 L806 470 L806 500 L688 375 Z" fill="currentColor"/>' +
       '<text x="855" y="465" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="197" letter-spacing="1" fill="currentColor">Ternium</text>' +
     '</svg>';
   }
@@ -1764,6 +1923,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   function render(){
     S.dirty = false;
     document.body.classList.toggle('ra-en-gate', !S.inspector);
+    document.documentElement.classList.toggle('ra-gate-html', !S.inspector);
     if(!S.inspector){ root.innerHTML = renderGate(); bindEvents(); return; }
     var body;
     if(S.tab==='captura') body = renderCaptura();
@@ -1784,7 +1944,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<button class="ra-home" id="btn-home" aria-label="Ir al inicio">' + logoSVG() + '<div class="sub">' + sub + '</div></button>' +
         '<button class="ra-user" id="btn-user">' + escHtml(usuarioActual()) + '</button>' +
       '</div>' +
-      (S.tab==='captura' && !S.editReg ? '<div class="ra-steps">'+dots+'</div>' : '') + bannerConexion();
+      (S.tab==='captura' && !S.editReg ? '<div class="ra-steps">'+dots+'</div>' : '') +
+      (temaActual==='findeanio' ? '<div class="ra-cuenta-bar" data-cuenta="barra">'+cuentaHTML('barra')+'</div>' : '') + bannerConexion();
   }
 
   function renderNav(){
@@ -1859,6 +2020,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div class="ra-gate-brand">' +
           '<div style="display:flex;justify-content:center;">' + logoSVG('ra-logo-lg') + '</div>' +
           '<div class="app-name">INSPECCIÓN DE ROLLOS</div>' +
+          (temaActual==='findeanio' ? '<div class="ra-cuenta" data-cuenta="grande">'+cuentaHTML('grande')+'</div>' : '') +
         '</div>' + inner +
       '</div></div>';
   }
@@ -2798,9 +2960,9 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
           : 'El bloqueo automático por inactividad está desactivado.') + '</div>' +
       '</div>';
     if(S.showChangePin) out += changePinCard();
-    out += datosAnterioresCard();
+    out += S.isAdmin ? plegar('anterior', 'Pendiente de revisar', datosAnterioresCard()) : datosAnterioresCard();
 
-    out += '<div class="ra-card">' +
+    var cardDatos = '<div class="ra-card">' +
         '<div class="ra-h1">Datos y respaldo</div>' +
         '<div class="ra-h2">La información se guarda en Firebase y se comparte en tiempo real con todos los equipos. Si se cae la señal puedes seguir capturando: todo se sube solo al reconectarse. ' +
           (S.online ? 'Estado: <b>conectado</b>.' : 'Estado: <b>sin conexión</b>.') + '</div>' +
@@ -2809,6 +2971,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         (S.isAdmin ? '<label class="ra-btn ra-btn-outline ra-btn-block" style="cursor:pointer;margin-bottom:0;">Importar respaldo JSON a Firebase<input type="file" accept="application/json,.json" id="input-restore" style="display:none;"></label>' +
           '<div class="ra-meta" style="margin-top:10px;">Acepta los respaldos que generaba la versión anterior. Importar dos veces el mismo archivo no duplica registros.</div>' : '') +
       '</div>';
+    out += S.isAdmin ? plegar('datos', (S.online ? 'Conectado' : 'Sin conexión') + ' · respaldo e importación', cardDatos) : cardDatos;
 
     if(!S.isAdmin){
       out += '<div class="ra-card">' +
@@ -2817,8 +2980,41 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '</div>';
       return out;
     }
-    return out + estadisticasCard() + reporteCard() + adminsCard() + inspectoresCard() + temaCard() + bloqueoCard() + rangoMedidaCard() + gradosCard() + defectosCard() + zonasCard() + mediosCard() +
-           simpleCatalogCard('enrolladores','Enrolladores') + (soyPrincipal() ? demoCard() : '');
+    var cat = S.catalogs || {};
+    var nInsp = Object.keys(S.inspectoresPub || {}).length;
+    var nGrados = (cat.grados || []).length, nZonas = (cat.zonas || []).length, nMedios = (cat.medios || []).length, nEnr = (cat.enrolladores || []).length;
+    var nDef = (cat.defectosActivos || []).length;
+    var re = limiteRango('rangoEspesor'), ra = limiteRango('rangoAncho');
+    var hayRango = re.min!=null || re.max!=null || ra.min!=null || ra.max!=null;
+    return out + '<div class="ra-section-title" style="margin:22px 2px 10px;">PANEL DE ADMINISTRADOR</div>' +
+           estadisticasCard() +
+           plegar('reporte', 'Altas, cambios, traslados y eliminaciones', reporteCard()) + accesosCard() +
+           plegar('admins', 'Segundo administrador y su acceso', adminsCard()) +
+           plegar('inspectores', nInsp + (nInsp===1 ? ' inspector registrado' : ' inspectores registrados'), inspectoresCard()) +
+           temaCard() +
+           plegar('bloqueo', 'Admins: '+etqBloqueo(minutosBloqueo(false))+' · Inspectores: '+etqBloqueo(minutosBloqueo(true)), bloqueoCard()) +
+           plegar('rango', hayRango ? 'Validación activa' : 'Sin validar', rangoMedidaCard()) +
+           plegar('grados', nGrados + ' grados en el catálogo', gradosCard()) +
+           plegar('defectos', nDef ? nDef + ' activos en la captura' : 'Elige cuáles aparecen al capturar', defectosCard()) +
+           plegar('zonas', nZonas + (nZonas===1 ? ' zona' : ' zonas'), zonasCard()) +
+           plegar('medios', nMedios + (nMedios===1 ? ' medio de transporte' : ' medios de transporte'), mediosCard()) +
+           plegar('enrolladores', nEnr + (nEnr===1 ? ' enrollador' : ' enrolladores'), simpleCatalogCard('enrolladores','Enrolladores')) +
+           (soyPrincipal() ? plegar('demo', 'Datos de prueba', demoCard()) : '');
+  }
+  /* Convierte una tarjeta normal de Ajustes en sección desplegable (cerrada de inicio).
+     El título sale del primer .ra-h1 de la tarjeta; el estado abierto/cerrado se recuerda mientras dure la sesión. */
+  function plegar(clave, sub, html){
+    if(!html) return '';
+    var m = /^<div class="ra-card"([^>]*)>\s*<div class="ra-h1">([\s\S]*?)<\/div>/.exec(html);
+    if(!m || html.slice(-6) !== '</div>') return html;
+    S.plegables = S.plegables || {};
+    var abierto = !!S.plegables[clave];
+    var head = '<button class="ra-fold-head" data-plegar="'+clave+'" aria-expanded="'+abierto+'">' +
+        '<span><span class="t">'+m[2]+'</span>'+(sub ? '<span class="m">'+escHtml(sub)+'</span>' : '')+'</span>' +
+        '<span class="ra-fold-prev"><span class="chev">▾</span></span>' +
+      '</button>';
+    return '<div class="ra-card ra-fold'+(abierto?' open':'')+'"'+m[1]+'>' + head + '<div class="ra-fold-body">' +
+      html.slice(m[0].length, -6) + '</div></div>';
   }
 
   function rangoMedidaCard(){
@@ -2930,7 +3126,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
               '<button class="ra-link danger" id="btn-rep-borrar-todo">Borrar todo el reporte ('+movs.length+')</button>' +
             '</div>') : '') +
         items +
-      '</div>' + accesosCard();
+      '</div>';
   }
 
   function accesosCard(){
@@ -3146,7 +3342,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
      Estos cambios no se registran en el reporte de movimientos. */
   function temaCard(){
     var t = datosTema({tema:temaActual, color:temaColor}), d = DECO[temaActual];
-    var prev = '<i style="background-color:'+t.brand+';'+(d?'background-image:'+d.patron+';':'')+'"></i>';
+    var prev = '<i'+(temaActual==='ternium'?' class="tn"':'')+' style="background-color:'+t.brand+';'+(d?'background-image:'+d.patron+';':'')+'"></i>';
     var head = '<button class="ra-fold-head" id="btn-apariencia" aria-expanded="'+(S.apariencia?'true':'false')+'">' +
         '<span><span class="t">Apariencia</span><span class="m">Actual: '+escHtml(nombreTema())+(temaCfg.auto?' · temporadas automáticas':'')+'</span></span>' +
         '<span class="ra-fold-prev">'+prev+'<span class="chev">▾</span></span>' +
@@ -3154,7 +3350,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     if(!S.apariencia) return '<div class="ra-card ra-fold">'+head+'</div>';
     var sw = ORDEN_TEMAS.map(function(k){
       var x = TEMAS[k];
-      return '<button class="ra-swatch'+(k===temaCfg.tema?' on':'')+'" data-tema="'+k+'" aria-label="'+x.nombre+'"><i style="background:'+x.brand+';"></i>'+x.nombre+'</button>';
+      return '<button class="ra-swatch'+(k===temaCfg.tema?' on':'')+'" data-tema="'+k+'" aria-label="'+x.nombre+'"><i'+(k==='ternium'?' class="tn"':'')+' style="background:'+x.brand+';"></i>'+x.nombre+'</button>';
     }).join('');
     var hoyK = temporadaDe(new Date());
     var est = ORDEN_TEMPORADA.map(function(k){
@@ -4223,6 +4419,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       borrarAuditoria(movs.map(function(a){ return a._id; }), true);
     });
     on('#btn-apariencia','click',function(){ S.apariencia=!S.apariencia; render(); });
+    each('[data-plegar]',function(b){
+      b.addEventListener('click',function(){
+        var k=b.getAttribute('data-plegar'), card=b.parentNode;
+        S.plegables=S.plegables||{}; S.plegables[k]=!S.plegables[k];
+        card.classList.toggle('open', S.plegables[k]); b.setAttribute('aria-expanded', S.plegables[k]?'true':'false');
+      });
+    });
     on('#btn-modo-oscuro','click',function(){ aplicarOscuro(!modoOscuro); render(); });
     on('#btn-estadisticas','click',function(){ S.estadisticas=!S.estadisticas; render(); });
     on('#btn-accesos','click',function(){ S.accesos=!S.accesos; render(); });

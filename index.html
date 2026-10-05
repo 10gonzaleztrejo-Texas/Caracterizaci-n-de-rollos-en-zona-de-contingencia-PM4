@@ -13,7 +13,7 @@
     --line:#DDE0E5; --line-strong:#C3C8D0; --brand:#0E1114;
     --on-brand:#FFFFFF; --on-brand-rgb:255,255,255; --on-brand-sub:#98A1AC; --accent:#0E1114;
     --conforme:#1F7A4C; --defecto:#B26A12; --scrap:#B32D25; --info:#2C5B7C;
-    --radius:4px; --radius-lg:6px;
+    --radius:10px; --radius-lg:14px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;background:var(--bg);}
@@ -343,6 +343,93 @@
   .ra-planta .humo{animation:raHumo 9s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%;}
   @keyframes raHumo{0%{opacity:0;transform:translateY(8px) scale(.7);}30%{opacity:.35;}100%{opacity:0;transform:translateY(-34px) scale(1.5);}}
   .ra-swatch i.tn,.ra-fold-prev i.tn{background:linear-gradient(135deg,#F39A33 0 48%,#FFFFFF 48% 54%,#E5401E 54%) !important;}
+  /* ===== Arte de fondo (todas las apariencias): luz que se mueve, retícula de puntos y rollos de acero en espiral ===== */
+  .ra-gate{background-image:var(--patron,none),linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.26));}
+  .ra-header{background-image:var(--patron,none),linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.14));}
+  html[data-estilo="ternium"] .ra-header{background-image:none;}
+  .ra-fx{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+  .ra-fx-glow{position:absolute;inset:-25%;
+    background:radial-gradient(38% 32% at 18% 14%,rgba(var(--on-brand-rgb),.13),transparent 70%),
+      radial-gradient(42% 36% at 86% 82%,rgba(var(--on-brand-rgb),.10),transparent 72%),
+      radial-gradient(30% 26% at 70% 20%,var(--fx-tinte,transparent),transparent 70%);
+    animation:raDeriva 16s ease-in-out infinite alternate;}
+  @keyframes raDeriva{from{transform:translate3d(-4%,-3%,0) scale(1);}to{transform:translate3d(4%,3%,0) scale(1.08);}}
+  .ra-fx-puntos{position:absolute;inset:0;background-image:radial-gradient(rgba(var(--on-brand-rgb),.13) 1px,transparent 1.5px);background-size:22px 22px;
+    -webkit-mask-image:radial-gradient(ellipse 85% 60% at 50% 38%,#000 20%,transparent 75%);mask-image:radial-gradient(ellipse 85% 60% at 50% 38%,#000 20%,transparent 75%);}
+  .ra-fx-rollo{position:absolute;color:rgb(var(--on-brand-rgb));}
+  .ra-fx-rollo svg{display:block;width:100%;height:100%;animation:raGira 140s linear infinite;}
+  .ra-fx-rollo.r1{right:-190px;bottom:-170px;width:540px;height:540px;opacity:.11;}
+  .ra-fx-rollo.r2{left:-130px;top:-120px;width:320px;height:320px;opacity:.08;}
+  .ra-fx-rollo.r2 svg{animation-direction:reverse;animation-duration:100s;}
+  .ra-fx-haz{position:absolute;top:-10%;left:0;width:45%;height:120%;transform:translateX(-120%) skewX(-14deg);
+    background:linear-gradient(90deg,transparent,rgba(var(--on-brand-rgb),.07) 45%,rgba(var(--on-brand-rgb),.11) 50%,rgba(var(--on-brand-rgb),.07) 55%,transparent);
+    animation:raHaz 11s ease-in-out infinite;}
+  @keyframes raHaz{0%{transform:translateX(-120%) skewX(-14deg);}55%,100%{transform:translateX(340%) skewX(-14deg);}}
+  .ra-fx-lamina{position:absolute;left:0;right:0;bottom:0;height:34%;
+    background:repeating-linear-gradient(180deg,rgba(var(--on-brand-rgb),.05) 0 1px,transparent 1px 9px);
+    -webkit-mask-image:linear-gradient(180deg,transparent,#000 70%);mask-image:linear-gradient(180deg,transparent,#000 70%);}
+  .ra-welcome .ra-fx{z-index:0;}
+  .ra-welcome > :not(.ra-fx){position:relative;z-index:1;}
+  @media (prefers-reduced-motion: reduce){ .ra-fx *, .ra-p{animation:none !important;} }
+  /* ===== Pantalla de inicio ===== */
+  .ra-gate-brand{margin-bottom:22px;}
+  .ra-gate-hola{text-align:center;margin:-6px 0 18px;color:var(--on-brand);}
+  .ra-gate-hola .g-s{font-size:22px;font-weight:700;letter-spacing:-.01em;}
+  .ra-gate-hola .g-f{font-size:12.5px;color:var(--on-brand-sub);margin-top:4px;letter-spacing:.04em;}
+  .ra-gate-card{border-radius:16px;box-shadow:0 22px 48px -18px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.12);}
+  .ra-acc{background:#fff;border-radius:16px;overflow:hidden;animation:raEnter .3s ease both;
+    box-shadow:0 22px 48px -18px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.12);}
+  .ra-acc + .ra-acc{margin-top:12px;animation-delay:.06s;}
+  .ra-acc-head{width:100%;display:flex;align-items:center;gap:14px;padding:16px 16px 16px 16px;background:none;border:none;cursor:pointer;
+    font-family:inherit;text-align:left;color:var(--ink);min-height:76px;}
+  .ra-acc-ico{flex:none;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 60%,#000));color:#fff;box-shadow:0 6px 14px -6px var(--accent);}
+  .ra-acc-ico svg{width:24px;height:24px;}
+  .ra-acc-txt{flex:1;min-width:0;}
+  .ra-acc-txt b{display:block;font-size:17px;letter-spacing:-.01em;}
+  .ra-acc-txt i{display:block;font-style:normal;font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
+  .ra-acc-cnt{flex:none;min-width:30px;height:30px;padding:0 9px;border-radius:999px;background:var(--bg);color:var(--ink-mid);font-weight:700;font-size:13px;
+    display:flex;align-items:center;justify-content:center;}
+  .ra-acc-chev{flex:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);
+    transition:transform .25s ease,background .2s ease;}
+  .ra-acc.open .ra-acc-chev{transform:rotate(180deg);background:var(--bg);}
+  .ra-acc-wrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease;}
+  .ra-acc.open .ra-acc-wrap{grid-template-rows:1fr;}
+  .ra-acc-wrap > div{overflow:hidden;}
+  .ra-acc-body{padding:2px 12px 14px;border-top:1px solid var(--line);}
+  .ra-acc-body .ra-input{margin:12px 4px 4px;width:calc(100% - 8px);}
+  .ra-persona{width:100%;display:flex;align-items:center;gap:12px;padding:10px 8px;margin-top:6px;border:none;border-radius:12px;background:none;cursor:pointer;
+    font-family:inherit;text-align:left;color:var(--ink);transition:background .15s ease,transform .1s ease;}
+  .ra-persona:active{transform:scale(.985);background:var(--bg);}
+  @media (hover:hover){ .ra-persona:hover{background:var(--bg);} }
+  .ra-persona .av{flex:none;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;
+    letter-spacing:.02em;box-shadow:inset 0 -2px 0 rgba(0,0,0,.15);}
+  .ra-persona .nm{flex:1;min-width:0;font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ra-persona .nm small{display:block;font-size:11.5px;font-weight:500;color:var(--ink-soft);margin-top:2px;}
+  .ra-persona .go{flex:none;color:var(--ink-soft);font-size:20px;line-height:1;}
+  .ra-persona[disabled]{opacity:.5;}
+  .ra-acc-vacio{padding:14px 8px 4px;font-size:13px;color:var(--ink-soft);}
+  html[data-oscuro="1"] .ra-acc{background:var(--surface);}
+  html[data-estilo="ternium"] .ra-gate-hola{color:#FFFFFF;}
+  html[data-estilo="ternium"] .ra-gate-hola .g-f{color:#F5A04A;}
+  html[data-estilo="ternium"] .ra-acc-ico{background:linear-gradient(135deg,#F39A33,#E5401E);}
+  .ra-gate-inner > .ra-err,.ra-gate-inner > .ra-note,.ra-gate-inner > .ra-warn{background:#fff;border-radius:12px;padding:11px 14px;margin:0 0 12px;
+    box-shadow:0 10px 24px -12px rgba(0,0,0,.5);}
+  /* ===== Dentro de la app: marca de agua del rollo, luz suave arriba y superficies más redondeadas ===== */
+  .ra-header{overflow:hidden;}
+  .ra-header::before{content:"";position:absolute;right:-56px;top:-70px;width:210px;height:210px;pointer-events:none;
+    background-color:rgb(var(--on-brand-rgb));opacity:.10;-webkit-mask:var(--rollo-mask) center/contain no-repeat;mask:var(--rollo-mask) center/contain no-repeat;
+    animation:raGira 90s linear infinite;}
+  .ra-header > *{position:relative;z-index:1;}
+  body:not(.ra-en-gate){background:linear-gradient(180deg,color-mix(in srgb,var(--brand) 9%,var(--bg)) 0,var(--bg) 340px) var(--bg) no-repeat;}
+  body:not(.ra-en-gate)::before{content:"";position:fixed;right:-150px;bottom:-130px;width:430px;height:430px;pointer-events:none;z-index:0;
+    background-color:var(--brand);opacity:.06;-webkit-mask:var(--rollo-mask) center/contain no-repeat;mask:var(--rollo-mask) center/contain no-repeat;}
+  .ra-body{position:relative;z-index:1;}
+  .ra-card{box-shadow:0 1px 2px rgba(16,20,26,.04),0 10px 28px -18px rgba(16,20,26,.35);}
+  .ra-btn-primary,.ra-small-btn{background-image:linear-gradient(180deg,rgba(255,255,255,.12),rgba(0,0,0,.10));box-shadow:0 8px 18px -10px var(--brand);}
+  .ra-nav{box-shadow:0 -8px 24px -18px rgba(16,20,26,.4);}
+  .ra-nav button.active .ico{transform:translateY(-1px) scale(1.08);}
+  html[data-oscuro="1"] body:not(.ra-en-gate){background:var(--bg);}
   /* Secciones plegables de Ajustes */
   .ra-fold:not(.open) > .ra-fold-body{display:none;}
   .ra-fold > .ra-fold-body > .ra-h2:first-child{margin-top:14px;}
@@ -1013,6 +1100,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     st.setProperty('--patron', d ? d.patron : 'none');
     st.setProperty('--franja', d ? d.franja : 'transparent');
     st.setProperty('--deco-top', (d && d.arriba ? d.arriba : 0) + 'px');
+    st.setProperty('--fx-tinte', /^#[0-9a-f]{6}$/i.test(t.sub) ? t.sub + '40' : 'transparent');
     if(d) document.documentElement.setAttribute('data-estilo', v.tema); else document.documentElement.removeAttribute('data-estilo');
     var m = document.querySelector('meta[name=theme-color]'); if(m) m.setAttribute('content', t.brand);
     if(document.body) document.body.classList.toggle('ra-con-deco', !!d && !d.sinCabecera);
@@ -1055,12 +1143,33 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       els[i].classList.toggle('fin', ahora.getMonth()===0 && ahora.getDate()===1);
     }
   }, 1000);
+  /* Arte de fondo común: rollo de acero en espiral (lo que se inspecciona), luz que se mueve y retícula de puntos.
+     Toma los colores del tema activo, así que combina con cualquier color base. */
+  var SVG_ROLLO = (function(){
+    var d = '', vueltas = 15, pasos = vueltas*36, r0 = 21, r1 = 95;
+    for(var i=0; i<=pasos; i++){
+      var a = i/36*Math.PI*2, r = r0 + (r1-r0)*i/pasos;
+      d += (i?'L':'M') + (Math.cos(a)*r).toFixed(1) + ' ' + (Math.sin(a)*r).toFixed(1);
+    }
+    return '<svg viewBox="-100 -100 200 200" fill="none" stroke="currentColor"><path d="'+d+'" stroke-width="1.5"/>' +
+      '<circle r="19" stroke-width="3.5"/><circle r="97" stroke-width="2.5"/>' +
+      '<path d="M-6-97V97M6-97V97" stroke-width="2" stroke-opacity=".7"/></svg>';
+  })();
+  try{
+    document.documentElement.style.setProperty('--rollo-mask',
+      svgUrl(SVG_ROLLO.replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ').replace(/currentColor/g,'#000')));
+  }catch(e){}
+  function fondoArte(conRollos){
+    return '<div class="ra-fx"><div class="ra-fx-glow"></div><div class="ra-fx-puntos"></div>' +
+      (conRollos ? '<div class="ra-fx-rollo r1">'+SVG_ROLLO+'</div><div class="ra-fx-rollo r2">'+SVG_ROLLO+'</div><div class="ra-fx-lamina"></div>' : '') +
+      '<div class="ra-fx-haz"></div></div>';
+  }
   /* Capa de decoración (solo visible en la pantalla de inicio; no bloquea toques) */
   function pintarDeco(d){
     var capa = document.getElementById('ra-deco');
     if(!capa){ capa = document.createElement('div'); capa.id = 'ra-deco'; capa.setAttribute('aria-hidden','true'); document.body.appendChild(capa); }
-    if(!d){ capa.innerHTML = ''; return; }
-    var h = d.extra ? d.extra() : '';
+    if(!d){ capa.innerHTML = fondoArte(true) + particulas({tipo:'brilla', n:16, min:1.5, max:3, dmin:3, dmax:6, colores:['rgba('+getComputedStyle(document.documentElement).getPropertyValue('--on-brand-rgb').trim()+',.9)']}, 1, false); return; }
+    var h = (d.fuente ? '' : fondoArte(false)) + (d.extra ? d.extra() : '');
     [].concat(d.part).forEach(function(p){ h += particulas(p, 1, false); });
     capa.innerHTML = h;
   }
@@ -1447,7 +1556,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var h = new Date().getHours();
     var saludo = h < 12 ? 'BUENOS DÍAS' : h < 19 ? 'BUENAS TARDES' : 'BUENAS NOCHES';
-    var ov = el('<div class="ra-welcome">' +
+    var ov = el('<div class="ra-welcome">' + fondoArte(!DECO[temaActual]) +
         '<div class="w-logo" style="color:var(--on-brand);">' + logoSVG('ra-logo-lg') + '</div>' +
         '<div class="w-hi">' + saludo + '<span class="w-name">' + escHtml(nombre) + '</span>' +
           (TEMAS[temaActual] && TEMAS[temaActual].saludo ? '<span class="w-temp">' + TEMAS[temaActual].saludo + '</span>' : '') + '</div>' +
@@ -1963,6 +2072,25 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     if(S.pendRegs || S.pendTrack) return '<div class="ra-offline sync">Sincronizando con la nube…</div>';
     return '';
   }
+  /* Pantalla de inicio: secciones desplegables (una abierta a la vez) */
+  var ICONO_CASCO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h18"/><path d="M4.5 17a7.5 7.5 0 0 1 15 0"/><path d="M10 9.7V6.5h4v3.2"/><path d="M8 17v-3M16 17v-3"/></svg>';
+  var ICONO_ESCUDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6z"/><rect x="9" y="11" width="6" height="5" rx="1"/><path d="M10.2 11V9.6a1.8 1.8 0 0 1 3.6 0V11"/></svg>';
+  function avatar(nombre){
+    var p = String(nombre||'?').trim().split(/\s+/), ini = (p[0]||'?').charAt(0) + (p.length>1 ? p[1].charAt(0) : '');
+    var h = 0; for(var i=0; i<nombre.length; i++) h = (h*31 + nombre.charCodeAt(i)) % 360;
+    return '<span class="av" style="background:linear-gradient(135deg,hsl('+h+',62%,52%),hsl('+((h+40)%360)+',58%,38%));">'+escHtml(ini.toUpperCase())+'</span>';
+  }
+  function seccionGate(clave, abierta, icono, titulo, sub, n, cuerpo){
+    return '<div class="ra-acc'+(abierta?' open':'')+'" data-acc="'+clave+'">' +
+        '<button class="ra-acc-head" data-acc-btn="'+clave+'" aria-expanded="'+abierta+'">' +
+          '<span class="ra-acc-ico">'+icono+'</span>' +
+          '<span class="ra-acc-txt"><b>'+titulo+'</b><i>'+sub+'</i></span>' +
+          (n ? '<span class="ra-acc-cnt">'+n+'</span>' : '') +
+          '<span class="ra-acc-chev">▾</span>' +
+        '</button>' +
+        '<div class="ra-acc-wrap"><div><div class="ra-acc-body">'+cuerpo+'</div></div></div>' +
+      '</div>';
+  }
   function renderGate(){
     var warn = storageOK ? '' :
       '<div class="ra-warn">El navegador está bloqueando el guardado local, algo típico del modo privado. Este equipo no podrá recordar la sesión.</div>';
@@ -1994,27 +2122,30 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     } else {
       var ins = inspectoresActivos();
       var q = sinAcentos(S.gateBusqueda).trim();
+      var acc = S.gateAcc || '';
       var lista = ins.map(function(i){
         var oculto = q && sinAcentos(i.nombre).indexOf(q)<0;
-        return '<button class="ra-btn ra-btn-outline ra-btn-block" data-pick-insp="'+escAttr(i.id)+'" data-nombre="'+escAttr(sinAcentos(i.nombre))+'"'+
-          (oculto?' style="display:none;"':'')+(S.loginBusy?' disabled':'')+'>'+escHtml(i.nombre)+'</button>';
+        return '<button class="ra-persona" data-pick-insp="'+escAttr(i.id)+'" data-nombre="'+escAttr(sinAcentos(i.nombre))+'"'+
+          (oculto?' style="display:none;"':'')+(S.loginBusy?' disabled':'')+'>'+avatar(i.nombre)+'<span class="nm">'+escHtml(i.nombre)+'</span><span class="go">›</span></button>';
       }).join('');
       var buscador = ins.length > 8
         ? '<input class="ra-input" id="gate-buscar" placeholder="Buscar mi nombre" autocomplete="off" value="'+escAttr(S.gateBusqueda)+'">' : '';
-      var admins = adminsVisibles().map(function(a){
-        return '<button class="ra-btn ra-btn-outline ra-btn-block ra-btn-sm" data-pick-user="'+escAttr(a.usuario)+'" data-pick-nombre="'+escAttr(a.nombre)+'">'+escHtml(a.nombre)+'</button>';
+      var adm = adminsVisibles();
+      var admins = adm.map(function(a){
+        return '<button class="ra-persona" data-pick-user="'+escAttr(a.usuario)+'" data-pick-nombre="'+escAttr(a.nombre)+'">'+avatar(a.nombre)+
+          '<span class="nm">'+escHtml(a.nombre)+'<small>'+(a.principal?'Administrador principal':'Administrador')+' · con contraseña</small></span><span class="go">›</span></button>';
       }).join('');
-      inner = '<div class="ra-gate-card">' +
-          '<div class="ra-h1">Selecciona tu nombre</div>' +
-          '<div class="ra-h2">'+(S.loginBusy?'Entrando…':'Toca tu nombre para entrar.')+'</div>' + warn + sinSenal + err + buscador +
-          (lista || '<div class="ra-note">Todavía no hay inspectores registrados. El administrador los da de alta en Ajustes.</div>') +
-          (lista ? '<div class="ra-note" id="gate-sin-coincidencias" style="display:none;">Ningún nombre coincide.</div>' : '') +
-        '</div>' +
-        '<div class="ra-gate-card" style="margin-top:14px;">' +
-          '<div class="ra-label">ADMINISTRADORES</div>' + admins +
-          '<button class="ra-link" id="btn-login-nuevo" style="display:block;width:100%;text-align:center;margin-top:'+(admins?'6':'0')+'px;">'+
-            (admins ? '¿No apareces? Entra con tu usuario' : 'Entrar como administrador')+'</button>' +
-        '</div>';
+      var hoy = new Date(), hr = hoy.getHours();
+      var DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+      var MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      var hola = '<div class="ra-gate-hola"><div class="g-s">'+(hr<12?'Buenos días':hr<19?'Buenas tardes':'Buenas noches')+'</div>' +
+        '<div class="g-f">'+DIAS[hoy.getDay()].charAt(0).toUpperCase()+DIAS[hoy.getDay()].slice(1)+' '+hoy.getDate()+' de '+MESES[hoy.getMonth()]+' · ¿Quién eres?</div></div>';
+      inner = hola + warn + sinSenal + err +
+        seccionGate('insp', acc==='insp', ICONO_CASCO, 'Inspectores', S.loginBusy ? 'Entrando…' : 'Toca para ver los nombres', ins.length,
+          buscador + (lista || '<div class="ra-acc-vacio">Todavía no hay inspectores registrados. El administrador los da de alta en Ajustes.</div>') +
+          (lista ? '<div class="ra-acc-vacio" id="gate-sin-coincidencias" style="display:none;">Ningún nombre coincide.</div>' : '')) +
+        seccionGate('admin', acc==='admin', ICONO_ESCUDO, 'Administradores', 'Entran con su contraseña', adm.length,
+          admins || '<button class="ra-persona" id="btn-login-nuevo"><span class="av" style="background:var(--accent);">+</span><span class="nm">Entrar como administrador<small>Con usuario y contraseña</small></span><span class="go">›</span></button>');
     }
     return '<div class="ra-gate"><div class="ra-gate-inner">' +
         '<div class="ra-gate-brand">' +
@@ -4079,6 +4210,17 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         S.loginPickedUser=b.getAttribute('data-pick-user'); S.loginPickedNombre=b.getAttribute('data-pick-nombre')||'';
         S.loginStep='pin'; S.loginError='';
         render(); setTimeout(function(){ var i=root.querySelector('#login-pin-input'); if(i) i.focus(); },50);
+      });
+    });
+    each('[data-acc-btn]',function(b){
+      b.addEventListener('click',function(){
+        var k=b.getAttribute('data-acc-btn');
+        S.gateAcc = S.gateAcc===k ? '' : k;
+        each('.ra-acc',function(c){
+          var on=c.getAttribute('data-acc')===S.gateAcc;
+          c.classList.toggle('open', on);
+          var hb=c.querySelector('[data-acc-btn]'); if(hb) hb.setAttribute('aria-expanded', on?'true':'false');
+        });
       });
     });
     on('#btn-login-back','click',function(){ S.loginStep='pick'; S.loginPickedUser=null; S.loginError=''; render(); });

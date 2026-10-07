@@ -4941,7 +4941,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       var n = {}; motores.forEach(function(m){ (m.formatos||[]).forEach(function(f){ n[f]=1; }); });
       var tipos = Object.keys(n).length;
       estado.textContent = 'Apunta al código del rollo';
-      motorTxt.textContent = tipos > 1 ? 'QR, códigos de barras, DataMatrix, PDF417 y más · '+tipos+' tipos'
+      motorTxt.textContent = tipos > 1 ? 'Lee QR, códigos de barras, DataMatrix, PDF417 y más'
                                        : 'Solo QR (no se pudo cargar el lector completo)';
     }
     /* Arranca el nativo y ZXing en paralelo; el que llegue primero empieza a leer */

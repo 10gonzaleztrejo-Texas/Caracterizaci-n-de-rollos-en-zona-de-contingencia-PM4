@@ -590,13 +590,14 @@
 
   .ra-pid{position:fixed;inset:0;z-index:260;background:rgba(10,12,16,.55);display:flex;align-items:flex-end;justify-content:center;}
   .ra-pid-card{background:#fff;color:var(--ink);width:100%;max-width:520px;border-radius:18px 18px 0 0;
-    padding:22px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:92vh;overflow:auto;animation:raSube .22s ease-out;}
-  @keyframes raSube{from{transform:translateY(30px);opacity:0;}to{transform:none;opacity:1;}}
+    padding:22px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:92vh;overflow:auto;animation:raHojaSube .22s ease-out;}
+  /* Nombre propio: raSube ya es la animación de las partículas que suben (murciélagos, corazones, chispas) */
+  @keyframes raHojaSube{from{transform:translateY(30px);opacity:0;}to{transform:none;opacity:1;}}
 
   .ra-sheet{position:fixed;inset:0;z-index:220;background:rgba(10,12,16,0);display:flex;align-items:flex-end;justify-content:center;transition:background .18s;}
   .ra-sheet.on{background:rgba(10,12,16,.5);}
   .ra-sheet-card{background:#fff;color:var(--ink);width:100%;max-width:520px;border-radius:18px 18px 0 0;
-    padding:16px 14px calc(14px + env(safe-area-inset-bottom,0px));animation:raSube .2s ease-out;}
+    padding:16px 14px calc(14px + env(safe-area-inset-bottom,0px));animation:raHojaSube .2s ease-out;}
   .ra-sheet-t{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);padding:2px 6px 10px;}
   .ra-sheet-op{width:100%;display:flex;align-items:center;gap:14px;text-align:left;background:#F6F7F9;border:1px solid var(--line);
     border-radius:12px;padding:14px;margin-bottom:9px;cursor:pointer;color:var(--ink);font-family:inherit;}
@@ -648,6 +649,97 @@
   html[data-oscuro="1"] .cam-btn.dark{color:#E8EAED;background:rgba(255,255,255,.08);}
   html[data-oscuro="1"] .ra-idcam, html[data-oscuro="1"] .ra-galbtn{background:#1B1F26;color:#E8EAED;}
   html[data-oscuro="1"] .ra-gal-aviso, html[data-oscuro="1"] .ra-gal-sug{background:#1C2836;color:#DCE3EC;}
+
+  /* Botones de fotos debajo del ID (el ID queda a todo lo ancho) */
+  .ra-fotos-id{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 14px;}
+  .ra-fotobtn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 12px;
+    border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:var(--radius);font-family:inherit;
+    font-size:14px;font-weight:600;cursor:pointer;position:relative;}
+  .ra-fotobtn svg{color:var(--accent);flex:0 0 auto;}
+  .ra-fotobtn:active{transform:scale(.98);}
+  .ra-fotobtn b{background:var(--accent);color:#fff;border-radius:999px;padding:1px 8px;font-size:11.5px;}
+  html[data-oscuro="1"] .ra-fotobtn{background:#1B1F26;color:#E8EAED;}
+  /* Escáner de códigos */
+  .ra-scan .scan-ventana{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:min(86vw,470px);height:min(60vw,310px);
+    border:2px solid rgba(255,255,255,.92);border-radius:14px;box-shadow:0 0 0 100vmax rgba(0,0,0,.5);z-index:1;pointer-events:none;
+    overflow:hidden;transition:border-color .15s;}
+  .ra-scan .scan-ventana.casi{border-color:#FFC75F;}
+  .ra-scan .scan-ventana.ok{border-color:#3DDC84;border-width:3px;}
+  .ra-scan .scan-linea{position:absolute;left:5%;right:5%;top:8%;height:2px;background:var(--accent);box-shadow:0 0 12px var(--accent);
+    animation:raScanLinea 1.9s ease-in-out infinite alternate;}
+  .ra-scan .scan-ventana.ok .scan-linea{display:none;}
+  @keyframes raScanLinea{to{top:92%;}}
+  .ra-scan .scan-pie{position:absolute;left:0;right:0;bottom:0;z-index:2;text-align:center;
+    padding:18px 16px calc(26px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,rgba(0,0,0,.78));}
+  .ra-scan .scan-zoom{display:flex;justify-content:center;gap:8px;margin-bottom:14px;}
+  .ra-scan .scan-zoom[hidden]{display:none;}
+  .ra-scan .scan-zoom button{background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;
+    min-width:50px;padding:9px 12px;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;}
+  .ra-scan .scan-zoom button.on{background:#fff;color:#111;}
+  .ra-scan .scan-estado{font-size:15px;font-weight:600;}
+  .ra-scan .scan-motor{font-size:11.5px;opacity:.65;margin-top:4px;}
+  .ra-scan .scan-val{font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all;background:#F4F5F7;color:var(--ink);
+    padding:10px 12px;border-radius:8px;font-size:15px;margin:10px 0 4px;max-height:30vh;overflow:auto;}
+
+  /* ===== Escenas con personajes (pantalla de inicio, temporadas) ===== */
+  .ra-escena{position:absolute;left:0;right:0;bottom:0;height:clamp(130px,26vh,300px);pointer-events:none;}
+  .ra-escena svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible;}
+  .ra-escena .flota{animation:raFlota 3s ease-in-out infinite alternate;}
+  @keyframes raFlota{from{transform:translateY(2px);}to{transform:translateY(-9px);}}
+  .ra-escena .mece{animation:raMece 2.6s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%;}
+  @keyframes raMece{from{transform:rotate(-5deg);}to{transform:rotate(5deg);}}
+  .ra-escena .parpadea{animation:raParpadeo 4.6s infinite;transform-box:fill-box;transform-origin:center;}
+  @keyframes raParpadeo{0%,89%,100%{transform:scaleY(1);}93%{transform:scaleY(.08);}}
+  .ra-escena .titila{animation:raTitila 1.8s ease-in-out infinite;}
+  @keyframes raTitila{0%,100%{opacity:.3;}50%{opacity:1;}}
+  .ra-escena .latido{animation:raLatidoE 1.1s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+  @keyframes raLatidoE{0%,100%{transform:scale(1);}15%{transform:scale(1.14);}30%{transform:scale(1);}45%{transform:scale(1.08);}}
+  .ra-escena .gira{animation:raGira 2.2s linear infinite;transform-box:fill-box;transform-origin:center;}
+  .ra-escena .flama{animation:raFlama .7s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%;}
+  @keyframes raFlama{from{transform:scale(1,1);}to{transform:scale(.86,1.14);}}
+  .ra-escena .vela-luz{animation:raVelaLuz 1.5s ease-in-out infinite;}
+  @keyframes raVelaLuz{0%,100%{opacity:1;}30%{opacity:.7;}55%{opacity:.95;}75%{opacity:.6;}}
+  .ra-escena .ventana{animation:raVentana 6s ease-in-out infinite;}
+  @keyframes raVentana{0%,100%{opacity:1;}50%{opacity:.62;}}
+  .ra-escena .aletea{animation:raAletea .26s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center;}
+  @keyframes raAletea{from{transform:scaleX(1);}to{transform:scaleX(.25);}}
+  .ra-escena .vuela1{animation:raVuela1 11s ease-in-out infinite;}
+  @keyframes raVuela1{0%,100%{transform:translate(0,0);}25%{transform:translate(46px,-22px);}50%{transform:translate(10px,-40px);}75%{transform:translate(-40px,-12px);}}
+  .ra-escena .vuela2{animation:raVuela2 13s ease-in-out infinite;}
+  @keyframes raVuela2{0%,100%{transform:translate(0,0);}30%{transform:translate(-52px,16px);}60%{transform:translate(-20px,-18px);}80%{transform:translate(30px,6px);}}
+  .ra-escena .vuela3{animation:raVuela3 7s ease-in-out infinite;}
+  @keyframes raVuela3{0%,100%{transform:translate(0,0);}20%{transform:translate(30px,-14px);}45%{transform:translate(60px,4px);}70%{transform:translate(24px,10px);}85%{transform:translate(-14px,-6px);}}
+  .ra-escena .salta{animation:raSalta .9s cubic-bezier(.3,0,.6,1) infinite alternate;}
+  @keyframes raSalta{from{transform:translateY(0);}to{transform:translateY(-16px);}}
+  .ra-escena .trompo{animation:raTrompo .45s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%;}
+  @keyframes raTrompo{from{transform:rotate(-7deg);}to{transform:rotate(7deg);}}
+  .ra-escena .ondea{animation:raOndea 1.5s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:0 50%;}
+  @keyframes raOndea{from{transform:skewY(-2deg) scaleX(1);}to{transform:skewY(3deg) scaleX(.95);}}
+  .ra-escena .cola,.ra-escena .cola-papalote{animation:raCola 1.8s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:0 100%;}
+  .ra-escena .cola-papalote{transform-origin:50% 0;}
+  @keyframes raCola{from{transform:rotate(-7deg);}to{transform:rotate(7deg);}}
+  .ra-escena .saluda{animation:raSaluda .8s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:0 100%;}
+  @keyframes raSaluda{from{transform:rotate(-14deg);}to{transform:rotate(10deg);}}
+  .ra-escena .caravana{animation:raCaravana 46s linear infinite;}
+  @keyframes raCaravana{from{transform:translateX(-260px);}to{transform:translateX(430px);}}
+  .ra-escena .burbuja{animation:raBurbuja 2.2s ease-in infinite;}
+  @keyframes raBurbuja{0%{transform:translateY(0);opacity:0;}15%{opacity:.9;}100%{transform:translateY(-46px);opacity:0;}}
+  .ra-escena .brinda-i{animation:raBrindaI 3s ease-in-out infinite;}
+  .ra-escena .brinda-d{animation:raBrindaD 3s ease-in-out infinite;}
+  @keyframes raBrindaI{0%,30%,70%,100%{transform:translateX(-6px);}45%,55%{transform:translateX(1px);}}
+  @keyframes raBrindaD{0%,30%,70%,100%{transform:translateX(6px);}45%,55%{transform:translateX(-1px);}}
+  .ra-escena .vapor{animation:raVapor 3s ease-in-out infinite;}
+  @keyframes raVapor{0%{opacity:0;transform:translateY(4px);}40%{opacity:.8;}100%{opacity:0;transform:translateY(-10px);}}
+  /* Personajes que cruzan el cielo */
+  .ra-cruza{position:absolute;left:0;width:48px;animation:raCruzaCielo 14s linear infinite;}
+  .ra-cruza svg{display:block;width:100%;height:auto;}
+  .ra-cruza.ra-trineo{width:150px;}
+  @keyframes raCruzaCielo{0%{transform:translate(-170px,0);}25%{transform:translate(25vw,-14px);}50%{transform:translate(50vw,6px);}75%{transform:translate(75vw,-10px);}100%{transform:translate(calc(100vw + 40px),0);}}
+  .aletea-css{animation:raAleteoP .2s ease-in-out infinite alternate;transform-origin:50% 40%;}
+  @keyframes raAleteoP{from{transform:scaleY(1);}to{transform:scaleY(.3);}}
+  /* Halloween: los murciélagos que suben también aletean */
+  html[data-estilo="halloween"] #ra-deco .ra-p-sube svg,html[data-estilo="halloween"] #ra-deco-cab .ra-p-sube svg{animation:raAleteoP .22s ease-in-out infinite alternate;transform-origin:50% 40%;}
+  @media (prefers-reduced-motion: reduce){ .ra-escena *, .ra-cruza, .aletea-css{animation:none !important;} }
 </style>
 </head>
 <body>
@@ -1040,7 +1132,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       franja: 'linear-gradient(90deg,#FF8F00,#FFD54F 25%,#E91E63 50%,#8E24AA 75%,#FF8F00)',
       arriba: 46,
       extra: function(){ return '<div class="ra-adorno-top" style="background-image:'+papelPicado(['#E91E63','#FF8F00','#8E24AA','#43A047','#FFD54F'])+';background-size:auto 46px;height:46px;"></div>' +
-        '<div class="ra-velas" style="background-image:'+velas('#FFB300')+';background-size:auto 40px;"></div>'; },
+''; },
       part: [{tipo:'confeti', n:30, min:7, max:13, dmin:9, dmax:16, aspecto:1, forma:svgForma('-9 -9 18 18', pathFlor(4.3,3.6), '<circle r="2.2" fill="#BF360C" fill-opacity=".6"/>'), colores:['#FF8F00','#FFB300','#FFCA28','#F57C00']},
              {tipo:'sube', n:7, min:16, max:24, dmin:16, dmax:26, aspecto:1, forma:svgForma('-10 -10 20 20', FORMA_CALAVERA), colores:['#FFFFFF','#F8BBD0','#FFE0B2']},
              {tipo:'brilla', n:14, min:2.5, max:4.5, dmin:2, dmax:4, colores:['#FFB74D','#FFE082']}]
@@ -1048,8 +1140,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     nochebuena: {
       patron: svgTile(80, 70, '<g fill="#F4DFA0" fill-opacity=".22"><path transform="translate(22 20) scale(.7)" d="'+pathEstrella(10,2.6,4)+'"/><circle cx="58" cy="16" r="1.3"/><circle cx="14" cy="56" r="1"/><circle cx="64" cy="54" r="1.6"/></g>'),
       franja: 'linear-gradient(90deg,#9A7420,#F4DFA0 50%,#9A7420)',
-      extra: function(){ return '<div class="ra-aurora"></div><div class="ra-estrella-grande"></div>' +
-        '<div class="ra-velas" style="background-image:'+velas('#FFC107')+';background-size:auto 40px;"></div>'; },
+      extra: function(){ return '<div class="ra-aurora"></div><div class="ra-estrella-grande"></div>'; },
       part: [{tipo:'brilla', n:46, min:1.5, max:3.6, dmin:2, dmax:5, colores:['#FFFFFF','#F4DFA0','#FFF8E1']},
              {tipo:'nieve', n:18, min:2, max:4, dmin:12, dmax:20, colores:['#FFFFFF']}]
     },
@@ -1076,6 +1167,416 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   /* Año Nuevo: además del confeti, fuegos artificiales */
   DECO.anionuevo.part = [DECO.anionuevo.part, {tipo:'fuego', n:5, min:70, max:120, dmin:2.8, dmax:4.4, colores:['#E5C76B','#FFFFFF','#7FDBFF','#FF8A80']}];
   DECO.mexicano.arriba = 46; DECO.navidad.arriba = 46;
+  /* ===== Escenas con personajes en la parte de abajo de la pantalla de inicio (una por temporada) =====
+     Lienzo de 400×180 centrado; el suelo se extiende a todo lo ancho. Todo es dibujo propio en SVG. */
+  function escena(svg, suelos){
+    /* suelos: [[y, color], …] — franjas que siguen a los lados en pantallas anchas */
+    var base = (suelos||[]).map(function(f){ return '<rect x="-3000" y="'+f[0]+'" width="6400" height="'+(400-f[0])+'" fill="'+f[1]+'"/>'; }).join('');
+    return '<div class="ra-escena"><svg viewBox="0 0 400 180" preserveAspectRatio="xMidYMax meet">'+base+svg+'</svg></div>';
+  }
+  function cir(x, y, r, f, extra){ return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+f+'"'+(extra||'')+'/>'; }
+  function elip(x, y, rx, ry, f, extra){ return '<ellipse cx="'+x+'" cy="'+y+'" rx="'+rx+'" ry="'+ry+'" fill="'+f+'"'+(extra||'')+'/>'; }
+  function ojos(x1, x2, y, r, cls){ return '<g class="'+(cls||'parpadea')+'">'+cir(x1,y,r,'#1A1220')+cir(x2,y,r,'#1A1220')+cir(x1+r*.35,y-r*.35,r*.35,'#fff')+cir(x2+r*.35,y-r*.35,r*.35,'#fff')+'</g>'; }
+  /* Calabaza (con o sin cara tallada) */
+  function calabaza(x, y, s, tallada, delay){
+    var g = '<g transform="translate('+x+' '+y+') scale('+s+')">' +
+      elip(0,0,30,24,'#B8460A') + elip(-14,0,16,23,'#E8620C') + elip(14,0,16,23,'#E8620C') + elip(0,0,14,24,'#F47A1F') +
+      '<path d="M-2-22q1-9 7-12" stroke="#4E6B2A" stroke-width="5" fill="none" stroke-linecap="round"/>' +
+      '<path d="M3-24q9-6 14 0" stroke="#6B8E3A" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+    if(tallada) g += '<g class="vela-luz" style="animation-delay:'+(delay||0)+'s"><path d="M-17-7l7-9 6 9Z M17-7l-7-9-6 9Z" fill="#FFD45C"/><path d="M-3 0l3-5 3 5Z" fill="#FFD45C"/>' +
+      '<path d="M-19 6q19 16 38 0l-4 1-3 5-4-4-4 5-4-5-4 5-4-5-4 4-3-5Z" fill="#FFD45C"/></g>';
+    else g += '<path d="M-12-18q-2 18 0 38M12-18q2 18 0 38" stroke="#B8460A" stroke-width="1.4" fill="none" stroke-opacity=".6"/>';
+    return g + '</g>';
+  }
+  /* Flor de cempasúchil / genérica: corona de pétalos */
+  function florPetalos(x, y, r, c1, c2, n){
+    n = n || 12; var g = '<g transform="translate('+x+' '+y+')">';
+    for(var i=0;i<n;i++) g += '<ellipse rx="'+(r*.38).toFixed(1)+'" ry="'+(r*.62).toFixed(1)+'" cy="'+(-r*.5).toFixed(1)+'" fill="'+(i%2?c1:c2)+'" transform="rotate('+(360/n*i)+')"/>';
+    return g + cir(0,0,r*.42,c2) + cir(0,0,r*.24,c1) + '</g>';
+  }
+  /* Mariposa que aletea */
+  function mariposa(x, y, s, c1, c2, cls, delay){
+    return '<g class="'+(cls||'flota')+'" style="animation-delay:'+(delay||0)+'s"><g transform="translate('+x+' '+y+') scale('+s+')">' +
+      '<g class="aletea" style="animation-delay:'+(delay||0)+'s">' +
+        '<path d="M0 0C-6-14-20-16-19-5-18 2-8 3 0 0Z M0 0C-5 4-15 9-12 14-8 18-2 9 0 0Z" fill="'+c1+'"/>' +
+        '<path d="M0 0C6-14 20-16 19-5 18 2 8 3 0 0Z M0 0C5 4 15 9 12 14 8 18 2 9 0 0Z" fill="'+c1+'"/>' +
+        cir(-11,-6,2.6,c2) + cir(11,-6,2.6,c2) + '</g>' +
+      elip(0,2,1.6,8,'#2A1E2E') + '<path d="M0-5q-3-6-6-7M0-5q3-6 6-7" stroke="#2A1E2E" stroke-width=".9" fill="none"/>' +
+      '</g></g>';
+  }
+  /* Pasto con hojitas a lo ancho del lienzo */
+  function pasto(y, c){
+    var d = 'M0 '+(y+30)+'V'+y;
+    for(var x=0;x<=400;x+=8) d += 'L'+(x+4)+' '+(y-6-(x*7%9))+'L'+(x+8)+' '+y;
+    return '<path d="'+d+'V'+(y+30)+'Z" fill="'+c+'"/>';
+  }
+  /* Montones de nieve */
+  function nieve(y){ return '<path d="M0 '+y+'Q50 '+(y-14)+' 100 '+(y-4)+'T200 '+(y-6)+'T300 '+(y-3)+'T400 '+(y-8)+'V180H0Z" fill="#F4F8FF"/>' +
+    '<path d="M0 '+(y+8)+'Q60 '+(y-2)+' 130 '+(y+6)+'T260 '+(y+4)+'T400 '+(y+2)+'V180H0Z" fill="#DCE7F5"/>'; }
+  /* Regalo con moño */
+  function regalo(x, y, w, h, c, cinta){
+    return '<g transform="translate('+x+' '+y+')"><rect x="0" y="0" width="'+w+'" height="'+h+'" rx="2" fill="'+c+'"/>' +
+      '<rect x="-2" y="-5" width="'+(w+4)+'" height="7" rx="1.5" fill="'+c+'" style="filter:brightness(1.15)"/>' +
+      '<rect x="'+(w/2-3)+'" y="-5" width="6" height="'+(h+5)+'" fill="'+cinta+'"/>' +
+      '<path d="M'+(w/2)+' -5c-10-10-14 0-1 0M'+(w/2)+' -5c10-10 14 0 1 0" stroke="'+cinta+'" stroke-width="3" fill="none" stroke-linecap="round"/></g>';
+  }
+
+  var ESCENAS = {
+    halloween: function(){
+      return escena(
+        '<path d="M0 150Q70 128 140 146T270 140T400 146V180H0Z" fill="#0B0710"/>' +
+        /* cerca */
+        '<g fill="#0B0710">' + [8,26,44,62].map(function(x){ return '<path d="M'+x+' 152V118l5-7 5 7V152Z"/>'; }).join('') + '<rect x="4" y="126" width="80" height="4"/><rect x="4" y="140" width="80" height="4"/></g>' +
+        /* lápida con gato */
+        '<path d="M104 152V106q0-22 26-22t26 22V152Z" fill="#3A3247"/><path d="M104 152V106q0-22 26-22t26 22V152Z" fill="none" stroke="#56496A" stroke-width="2"/>' +
+        '<text x="130" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="14" font-weight="700" fill="#1E1828">RIP</text>' +
+        '<path d="M118 128h24M121 134h18" stroke="#2B2437" stroke-width="2"/>' +
+        '<g transform="translate(140 84)"><path class="cola" d="M10 0q16-4 12-22" stroke="#0B0710" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+          elip(0,-4,12,10,'#0B0710') + cir(-6,-16,8,'#0B0710') + '<path d="M-13-20l1-10 6 5Z M-1-21l3-9 3 9Z" fill="#0B0710"/>' +
+          '<g class="parpadea">'+elip(-9,-17,1.8,2.4,'#FFD45C')+elip(-3,-17,1.8,2.4,'#FFD45C')+'</g></g>' +
+        /* fantasma */
+        '<g class="flota" style="animation-duration:2.8s"><g transform="translate(212 74)">' +
+          '<path d="M-26 34V-6q0-30 26-30t26 30V34l-6-7-7 7-6-7-7 7-6-7-7 7-6-7Z" fill="#F6F2FF"/>' +
+          '<path d="M-26 34V-6q0-30 26-30t26 30V34l-6-7-7 7-6-7-7 7-6-7-7 7-6-7Z" fill="none" stroke="#C9BEE6" stroke-width="1.4"/>' +
+          '<path d="M-26 4q-12 4-10 14M26 4q12 2 12 12" stroke="#F6F2FF" stroke-width="7" fill="none" stroke-linecap="round"/>' +
+          ojos(-8,8,-8,3.6) + elip(0,6,3.4,4.4,'#1A1220') + cir(-14,0,3.4,'#FFB3C7',' fill-opacity=".7"') + cir(14,0,3.4,'#FFB3C7',' fill-opacity=".7"') +
+        '</g></g>' +
+        /* calabazas */
+        calabaza(312, 128, 1.15, true, 0) + calabaza(362, 142, .72, true, .4) + calabaza(270, 146, .55, false) +
+        '<path d="M0 166H400V180H0Z" fill="#07040B"/>', [[149,'#0B0710'],[166,'#07040B']]);
+    },
+    muertos: function(){
+      var flores = '';
+      [[22,140,15],[52,150,12],[350,140,15],[378,152,12],[84,160,9],[318,160,9]].forEach(function(f){ flores += florPetalos(f[0],f[1],f[2],'#FF8F00','#FFB300',14); });
+      var velasE = '';
+      [[110,128,26],[290,128,26],[126,140,16],[274,140,16]].forEach(function(v, i){
+        velasE += '<rect x="'+(v[0]-5)+'" y="'+(v[1]-v[2])+'" width="10" height="'+v[2]+'" rx="2" fill="#FFF3E0"/>' +
+          '<g class="flama" style="animation-delay:'+(i*.23)+'s">'+elip(v[0],v[1]-v[2]-7,4,7,'#FFB300')+elip(v[0],v[1]-v[2]-5,1.8,3.4,'#FFFDE7')+'</g>' +
+          cir(v[0],v[1]-v[2]-7,14,'#FFB300',' fill-opacity=".14"');
+      });
+      return escena(
+        '<path d="M60 130H340L352 180H48Z" fill="#6A1B4D"/><path d="M60 130H340V136H60Z" fill="#8E2465"/>' +
+        '<path d="M60 136h280l-6 12-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-8-6-8 6-6-12Z" fill="#FF8F00"/>' +
+        velasE +
+        /* pan de muerto */
+        '<g transform="translate(160 122)">' + elip(0,8,26,6,'#E0E0E0') + elip(0,0,22,12,'#C8782A') + elip(0,-3,19,8,'#D98C3A') +
+          '<path d="M-16-2q16-12 32 0M-2-12q2 10 0 20" stroke="#A85A1A" stroke-width="3.6" fill="none" stroke-linecap="round"/>' + cir(0,-10,3.6,'#A85A1A') +
+          '<g fill="#fff" fill-opacity=".7">'+cir(-10,-3,.9,'#fff')+cir(8,2,.9,'#fff')+cir(12,-5,.9,'#fff')+cir(-4,4,.9,'#fff')+'</g></g>' +
+        /* calaverita de azúcar */
+        '<g class="flota" style="animation-duration:3.6s"><g transform="translate(222 96)">' +
+          '<path d="M0-34C20-34 30-21 30-6 30 6 24 13 18 16V28H-18V16C-24 13-30 6-30-6-30-21-20-34 0-34Z" fill="#FFFFFF"/>' +
+          florPetalos(0,-22,8,'#E91E63','#FFC1E3',10) +
+          cir(-12,-4,9,'#1E88E5') + cir(12,-4,9,'#43A047') + ojos(-12,12,-4,5) +
+          '<path d="M-2 6l2-5 2 5Z" fill="#8E24AA"/>' +
+          '<path d="M-14 16q14 8 28 0" stroke="#1A1220" stroke-width="2" fill="none"/>' +
+          '<path d="M-10 15v7M-5 17v6M0 18v6M5 17v6M10 15v7" stroke="#1A1220" stroke-width="1.4"/>' +
+          '<path d="M-26-10q-4-6 0-10M26-10q4-6 0-10" stroke="#FFB300" stroke-width="2" fill="none"/>' +
+          cir(-22,6,2,'#E91E63') + cir(22,6,2,'#E91E63') +
+        '</g></g>' + flores, []);
+    },
+    navidad: function(){
+      var luces = '', cols = ['#FFD54F','#E53935','#42A5F5','#FFFFFF'];
+      [[322,62],[336,78],[310,88],[346,98],[300,108],[330,112],[354,124],[296,128],[318,134]].forEach(function(p, i){
+        luces += cir(p[0],p[1],3,cols[i%4],' class="titila" style="animation-delay:-'+(i*.37).toFixed(2)+'s"');
+      });
+      return escena(
+        nieve(150) +
+        /* árbol */
+        '<rect x="318" y="140" width="12" height="16" fill="#6D4C41"/>' +
+        '<path d="M324 40L364 142H284Z" fill="#1B5E20"/><path d="M324 40L354 104H294Z" fill="#2E7D32"/><path d="M324 40L344 76H304Z" fill="#388E3C"/>' +
+        '<path d="M298 96q26 14 52-4M290 124q34 16 68-6" stroke="#FFD54F" stroke-width="1.6" fill="none" stroke-dasharray="3 3"/>' + luces +
+        '<path class="titila" transform="translate(324 38)" d="'+pathEstrella(10,4.4)+'" fill="#FFD54F"/>' +
+        regalo(276,138,22,16,'#C62828','#FFD54F') + regalo(356,142,18,12,'#1565C0','#FFFFFF') +
+        /* muñeco de nieve */
+        '<g transform="translate(78 0)">' +
+          elip(0,134,28,22,'#FFFFFF') + elip(0,96,21,18,'#FFFFFF') + cir(0,66,16,'#FFFFFF') +
+          '<path d="M-28 134a28 22 0 0 0 56 0" fill="none" stroke="#DCE7F5" stroke-width="3"/>' +
+          cir(0,92,2.4,'#263238') + cir(0,102,2.4,'#263238') + cir(0,128,2.6,'#263238') +
+          ojos(-6,6,62,2.4) + '<path d="M0 67l14 3-14 3Z" fill="#FB8C00"/>' +
+          '<path d="M-7 73q7 5 14 0" stroke="#263238" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+          cir(-10,69,2.6,'#FF8A80',' fill-opacity=".6"') + cir(10,69,2.6,'#FF8A80',' fill-opacity=".6"') +
+          '<path d="M-17 80q17 8 34 0v6q-17 8-34 0Z" fill="#D32F2F"/><path class="mece" d="M8 84l4 22h-8Z" fill="#D32F2F"/>' +
+          '<path d="M-14 52h28v-4h-5v-18h-18v18h-5Z" fill="#263238"/><rect x="-9" y="44" width="18" height="4" fill="#C62828"/>' +
+          '<path d="M-19 94l-24-14M-36 84l-6-9M-36 84l-9 1" stroke="#5D4037" stroke-width="2.6" fill="none" stroke-linecap="round"/>' +
+          '<g class="saluda"><path d="M19 94l22-18M36 80l4-10M36 80l9-2" stroke="#5D4037" stroke-width="2.6" fill="none" stroke-linecap="round"/></g>' +
+        '</g>' +
+        regalo(150,144,16,12,'#2E7D32','#FFD54F'), [[150,'#F4F8FF'],[158,'#DCE7F5']]);
+    },
+    nochebuena: function(){
+      var casas = '';
+      [[30,110,40,'#2B3A67'],[80,98,46,'#22305A'],[250,104,42,'#2B3A67'],[300,92,50,'#22305A'],[356,108,40,'#2B3A67']].forEach(function(c, i){
+        var x = c[0], y = c[1], w = c[2];
+        casas += '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+(160-y)+'" fill="'+c[3]+'"/>' +
+          '<path d="M'+(x-4)+' '+y+'L'+(x+w/2)+' '+(y-22)+'L'+(x+w+4)+' '+y+'Z" fill="#162246"/>' +
+          '<path d="M'+(x-4)+' '+y+'L'+(x+w/2)+' '+(y-22)+'L'+(x+w+4)+' '+y+'l-4 2-'+(w/2)+'-20-'+(w/2)+' 20Z" fill="#F4F8FF"/>' +
+          '<rect class="ventana" style="animation-delay:-'+(i*1.3)+'s" x="'+(x+7)+'" y="'+(y+10)+'" width="10" height="11" fill="#FFD27A"/>' +
+          '<rect class="ventana" style="animation-delay:-'+(i*1.3+.6)+'s" x="'+(x+w-17)+'" y="'+(y+10)+'" width="10" height="11" fill="#FFD27A"/>';
+      });
+      var noche = '';
+      [[70,150,1],[330,148,1.1],[190,160,.8]].forEach(function(f){
+        var g = '<g transform="translate('+f[0]+' '+f[1]+') scale('+f[2]+')">';
+        for(var i=0;i<6;i++) g += '<path transform="rotate('+(i*60)+')" d="M0 0C-6-8-4-18 0-22 4-18 6-8 0 0Z" fill="#C62828"/>';
+        for(var j=0;j<6;j++) g += '<path transform="rotate('+(j*60+30)+') scale(.7)" d="M0 0C-6-8-4-18 0-22 4-18 6-8 0 0Z" fill="#E53935"/>';
+        noche += g + cir(0,0,3,'#FFD54F') + cir(-2,2,1.4,'#8BC34A') + cir(2,-2,1.4,'#8BC34A') + '</g>';
+      });
+      return escena(
+        casas +
+        /* iglesita */
+        '<rect x="160" y="70" width="70" height="90" fill="#1D2A55"/><rect x="180" y="40" width="30" height="40" fill="#1D2A55"/>' +
+        '<path d="M176 40L195 14 214 40Z" fill="#F4F8FF"/><path d="M193 4h4v12h-4Z M189 8h12v4h-12Z" fill="#FFD27A"/>' +
+        '<path d="M156 72L195 50 234 72Z" fill="#F4F8FF"/>' + cir(195,56,5,'#FFD27A',' class="ventana"') +
+        '<path d="M187 160v-24q8-10 16 0v24Z" fill="#FFD27A" class="ventana"/>' +
+        nieve(158) + noche, [[158,'#F4F8FF'],[166,'#DCE7F5']]);
+    },
+    anionuevo: function(){
+      var anio = new Date().getFullYear() + (new Date().getMonth()===11 ? 1 : 0);
+      var burbujas = '';
+      for(var i=0;i<10;i++) burbujas += cir(i%2 ? 196+(i%3)*4 : 214-(i%3)*4, 70, 1.6+(i%3)*.5, '#FFF6D0', ' class="burbuja" style="animation-delay:-'+(i*.35).toFixed(2)+'s"');
+      var digitos = String(anio).split('').map(function(d, i){
+        var cols = ['#E5C76B','#C0C6D0','#E5C76B','#F3DC8A'];
+        return '<g class="flota" style="animation-delay:-'+(i*.5)+'s;animation-duration:'+(3+i*.3)+'s"><text x="'+(36+i*26)+'" y="'+(72+(i%2)*8)+'" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="36" fill="'+cols[i]+'" stroke="#8A6D12" stroke-width="1.2">'+d+'</text>' +
+          '<path d="M'+(46+i*26)+' '+(78+(i%2)*8)+'q4 20-2 40" stroke="#E5C76B" stroke-opacity=".6" fill="none"/></g>';
+      }).join('');
+      return escena(
+        '<path d="M0 158H400V180H0Z" fill="#070C22"/>' + digitos +
+        /* copas que brindan */
+        '<g class="brinda-i"><g transform="translate(186 86) rotate(14)">' +
+          '<path d="M-14-30h28l-4 30q-10 10-20 0Z" fill="#F3DC8A" fill-opacity=".85"/><path d="M-14-30h28" stroke="#FFF6D0" stroke-width="1.4"/>' +
+          '<path d="M0 6v34M-12 42h24" stroke="#E8EEF8" stroke-width="3" stroke-linecap="round"/><path d="M-9-24l2 20" stroke="#fff" stroke-opacity=".7" stroke-width="1.6"/></g></g>' +
+        '<g class="brinda-d"><g transform="translate(230 86) rotate(-14)">' +
+          '<path d="M-14-30h28l-4 30q-10 10-20 0Z" fill="#F3DC8A" fill-opacity=".85"/><path d="M-14-30h28" stroke="#FFF6D0" stroke-width="1.4"/>' +
+          '<path d="M0 6v34M-12 42h24" stroke="#E8EEF8" stroke-width="3" stroke-linecap="round"/><path d="M-9-24l2 20" stroke="#fff" stroke-opacity=".7" stroke-width="1.6"/></g></g>' +
+        burbujas +
+        '<path class="titila" transform="translate(208 50) scale(.9)" d="'+FORMA_BRILLO+'" fill="#FFF6D0"/>' +
+        /* botella */
+        '<g transform="translate(320 70) rotate(12)"><path d="M-12 88V30q0-14 8-20V-6h8V10q8 6 8 20v58Z" fill="#1E4D2B"/>' +
+          '<path d="M-4-6h8v14h-8Z" fill="#E5C76B"/><rect x="-11" y="40" width="22" height="22" rx="2" fill="#F3DC8A"/>' +
+          '<text x="0" y="55" text-anchor="middle" font-size="8" font-weight="700" fill="#8A6D12">'+anio+'</text>' +
+          '<path d="M-7 34v46" stroke="#fff" stroke-opacity=".25" stroke-width="3"/></g>' +
+        '<g class="salta">'+elip(343,46,4,6,'#C8A060')+'</g>' +
+        /* gorrito y serpentinas */
+        '<g transform="translate(118 158)"><path d="M-14 0L0-38 14 0Z" fill="#B388FF"/><path d="M-10-10l20 0M-6-22h12" stroke="#FFD54F" stroke-width="3"/>' + cir(0,-40,4,'#FFD54F') + '</g>' +
+        '<path d="M150 170q10-14 20 0t20 0t20 0" stroke="#FF8A80" stroke-width="3" fill="none"/><path d="M240 172q8-12 16 0t16 0" stroke="#7FDBFF" stroke-width="3" fill="none"/>', [[158,'#070C22']]);
+    },
+    findeanio: function(){
+      var uvas = '';
+      [[0,0],[-8,-2],[8,-2],[-4,-9],[4,-9],[-12,-9],[12,-9],[-8,-16],[0,-16],[8,-16],[-4,-23],[4,-23]].forEach(function(u, i){
+        uvas += cir(200+u[0],128+u[1],5,i%3?'#8BC34A':'#9CCC65') + cir(198.6+u[0],126.6+u[1],1.4,'#E6F5C9');
+      });
+      return escena(
+        '<path d="M0 160H400V180H0Z" fill="#0C0814"/>' +
+        /* plato con 12 uvas */
+        elip(200,140,40,8,'#C0C6D0') + elip(200,138,34,5,'#E8EEF8') + uvas + '<path d="M200 100q2-8 8-10" stroke="#6D4C41" stroke-width="2.4" fill="none"/>' +
+        '<text x="200" y="166" text-anchor="middle" font-size="10" font-weight="700" letter-spacing="2" fill="#E9C46A">12 UVAS</text>' +
+        /* maleta */
+        '<g class="mece" style="animation-duration:3s"><g transform="translate(70 116)"><rect x="-26" y="0" width="52" height="38" rx="5" fill="#B5562E"/>' +
+          '<path d="M-10 0v-8q0-4 4-4h12q4 0 4 4v8" stroke="#5D3A23" stroke-width="3.4" fill="none"/>' +
+          '<path d="M-26 12h52" stroke="#8A3F20" stroke-width="2"/><rect x="-4" y="9" width="8" height="6" rx="1" fill="#E9C46A"/>' +
+          cir(-18,40,3,'#2A2140') + cir(18,40,3,'#2A2140') + '<rect x="6" y="20" width="16" height="12" rx="2" fill="#E9C46A" fill-opacity=".85"/></g></g>' +
+        /* copas y botella */
+        '<g transform="translate(318 96)"><path d="M-12 62V22q0-12 7-17V-8h7V5q7 5 7 17v40Z" fill="#2A1F3D"/><rect x="-11" y="28" width="21" height="16" rx="2" fill="#E9C46A"/></g>' +
+        '<g transform="translate(352 122)"><path d="M-9-18h18l-3 18q-6 6-12 0Z" fill="#F3DC8A" fill-opacity=".85"/><path d="M0 4v22M-8 28h16" stroke="#E8EEF8" stroke-width="2.4" stroke-linecap="round"/></g>' +
+        '<g transform="translate(276 122)"><path d="M-9-18h18l-3 18q-6 6-12 0Z" fill="#FF8FB3" fill-opacity=".8"/><path d="M0 4v22M-8 28h16" stroke="#E8EEF8" stroke-width="2.4" stroke-linecap="round"/></g>' +
+        '<path d="M110 172q10-14 20 0t20 0" stroke="#E9C46A" stroke-width="3" fill="none"/><path d="M240 172q8-12 16 0t16 0" stroke="#FF6F91" stroke-width="3" fill="none"/>', [[160,'#0C0814']]);
+    },
+    reyes: function(){
+      function camello(x, c, corona){
+        return '<g transform="translate('+x+' 0)">' +
+          '<path d="M-30 118q-2-20 14-22 6-14 16-2 10-14 18 0h8q6-14 14-12 8 2 6 14l-4 10q-4 6-12 4v38h-6v-30h-4v30h-6v-26h-30v26h-6v-30q-8 0-8-10Z" fill="'+c+'"/>' +
+          '<path d="M-4 96h16l-2-16h-12Z" fill="'+c+'"/>' + cir(4,72,8,c) +
+          '<path d="M-4 66l2-8 3 5 3-6 3 6 3-5 2 8Z" fill="'+corona+'"/>' +
+          '<path d="M-10 98q14 10 28 0v6q-14 8-28 0Z" fill="'+corona+'" fill-opacity=".7"/></g>';
+      }
+      return escena(
+        '<path d="M0 150Q60 124 130 142T260 132T400 140V180H0Z" fill="#2A1640"/>' +
+        '<g class="caravana">' + camello(40,'#170B26','#F2D27A') + camello(120,'#170B26','#F2D27A') + camello(200,'#170B26','#F2D27A') + '</g>' +
+        '<path d="M0 160Q90 146 200 156T400 152V180H0Z" fill="#1E0F30"/>' +
+        /* rosca de reyes */
+        '<g transform="translate(316 150)">' + elip(0,8,58,10,'#E8EEF8',' fill-opacity=".9"') +
+          '<ellipse rx="52" ry="17" fill="#C8782A"/><ellipse rx="30" ry="7" fill="#1E0F30"/>' +
+          '<ellipse rx="52" ry="17" fill="none" stroke="#E09A4A" stroke-width="6" stroke-dasharray="2 5"/>' +
+          '<g stroke-width="5" stroke-linecap="round"><path d="M-44-4l10 2" stroke="#E53935"/><path d="M-20-14l12-1" stroke="#43A047"/><path d="M10-15l12 2" stroke="#FDD835"/><path d="M36-8l10 5" stroke="#E53935"/><path d="M28 10l-12 4" stroke="#43A047"/><path d="M-12 14l-12-2" stroke="#FB8C00"/></g>' +
+          cir(-32,-10,2.6,'#C62828') + cir(2,-15,2.6,'#C62828') + cir(44,4,2.6,'#C62828') + cir(-40,8,2.6,'#C62828') + '</g>', [[146,'#2A1640'],[156,'#1E0F30']]);
+    },
+    sanvalentin: function(){
+      return escena(
+        '<path d="M0 156H400V180H0Z" fill="#7A0E33"/>' +
+        /* globos de corazón */
+        '<g class="flota" style="animation-duration:3.4s"><path transform="translate(60 52) scale(2)" d="'+FORMA_CORAZON+'" fill="#FF4D7E"/><path d="M60 66q-6 30 6 56t-2 34" stroke="#FFD1DE" fill="none"/></g>' +
+        '<g class="flota" style="animation-duration:4s;animation-delay:-1s"><path transform="translate(96 38) scale(1.5)" d="'+FORMA_CORAZON+'" fill="#FFFFFF"/><path d="M96 49q8 34-4 60t2 46" stroke="#FFD1DE" fill="none"/></g>' +
+        /* osito */
+        '<g transform="translate(206 0)">' +
+          cir(-22,64,10,'#8D5A3B') + cir(22,64,10,'#8D5A3B') + cir(-22,64,5,'#D7A47E') + cir(22,64,5,'#D7A47E') +
+          elip(0,128,32,30,'#8D5A3B') + elip(0,132,18,18,'#D7A47E') + cir(0,82,25,'#8D5A3B') +
+          elip(0,92,11,8,'#D7A47E') + elip(0,88,4,3,'#3E2416') + '<path d="M-4 95q4 4 8 0" stroke="#3E2416" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+          ojos(-9,9,78,3) + cir(-15,90,3.4,'#FF8FB3',' fill-opacity=".6"') + cir(15,90,3.4,'#FF8FB3',' fill-opacity=".6"') +
+          elip(-22,154,12,8,'#8D5A3B') + elip(22,154,12,8,'#8D5A3B') + elip(-22,155,6,4,'#D7A47E') + elip(22,155,6,4,'#D7A47E') +
+          '<g class="latido"><path transform="translate(0 124) scale(1.7)" d="'+FORMA_CORAZON+'" fill="#E91E63"/><path d="M-6 116q-3 4 0 8" stroke="#fff" stroke-opacity=".6" stroke-width="2" fill="none" stroke-linecap="round"/></g>' +
+          elip(-24,118,8,11,'#8D5A3B',' transform="rotate(30 -24 118)"') + elip(24,118,8,11,'#8D5A3B',' transform="rotate(-30 24 118)"') +
+          '<path d="M-14 104q14 8 28 0l-2 6q-12 6-24 0Z" fill="#E91E63"/>' +
+        '</g>' +
+        /* carta */
+        '<g class="mece" style="animation-duration:3.2s"><g transform="translate(320 128)"><rect x="-26" y="-18" width="52" height="34" rx="3" fill="#FFF5F8"/>' +
+          '<path d="M-26-18L0 4 26-18" stroke="#F8BBD0" stroke-width="2" fill="none"/>' +
+          '<path transform="translate(0 2) scale(.8)" d="'+FORMA_CORAZON+'" fill="#C2185B"/></g></g>' +
+        /* rosas */
+        '<g transform="translate(370 156)"><path d="M0 0V-34M-8 0q0-20 4-30M8 0q0-22-2-32" stroke="#2E7D32" stroke-width="2" fill="none"/>' +
+          cir(0,-38,7,'#D81B60') + cir(-4,-34,7,'#D81B60') + cir(-6,-32,5,'#AD1457') + cir(6,-34,5,'#AD1457') + '</g>', [[156,'#7A0E33']]);
+    },
+    primavera: function(){
+      var tulipanes = '';
+      [[30,'#E53935'],[52,'#FDD835'],[74,'#F06292'],[320,'#FB8C00'],[344,'#E53935'],[368,'#F06292'],[392,'#FDD835']].forEach(function(t, i){
+        tulipanes += '<g class="mece" style="animation-delay:-'+(i*.4).toFixed(1)+'s;animation-duration:'+(2.4+(i%3)*.4)+'s"><g transform="translate('+t[0]+' 158)">' +
+          '<path d="M0 0V-36" stroke="#43A047" stroke-width="2.4"/><path d="M0-10q-12-6-12-20q10 6 12 18Z" fill="#66BB6A"/>' +
+          '<path d="M-8-36q0-14 8-14 8 0 8 14l-4-4-4 5-4-5Z" fill="'+t[1]+'"/><path d="M-8-36q4 6 8 6t8-6" fill="'+t[1]+'" style="filter:brightness(.85)"/></g></g>';
+      });
+      var margaritas = '';
+      [[110,162],[140,166],[260,164],[290,160],[200,168]].forEach(function(m){ margaritas += florPetalos(m[0],m[1],7,'#FFFFFF','#FFFFFF',10).replace(/<\/g>$/, cir(0,0,3,'#FDD835')+'</g>'); });
+      return escena(
+        '<path d="M0 150Q100 136 200 146T400 142V180H0Z" fill="#66BB6A"/>' + pasto(156,'#43A047') + tulipanes + margaritas +
+        mariposa(150, 84, 1.3, '#BA68C8', '#FFF59D', 'vuela1', 0) + mariposa(250, 66, 1.05, '#4FC3F7', '#FFFFFF', 'vuela2', -2) +
+        /* abejita */
+        '<g class="vuela3"><g transform="translate(210 112)">' +
+          '<g class="aletea">'+elip(-4,-9,6,4,'#E1F5FE',' fill-opacity=".85"')+elip(5,-9,6,4,'#E1F5FE',' fill-opacity=".85"')+'</g>' +
+          elip(0,0,11,8,'#FDD835') + '<path d="M-4-7.5v15M3-7.6v15" stroke="#263238" stroke-width="3"/>' +
+          cir(9,-2,1.6,'#263238') + '<path d="M-11 0l-4 1" stroke="#263238" stroke-width="1.6"/></g></g>' +
+        /* catarina */
+        '<g transform="translate(176 150)">' + elip(0,0,8,6,'#E53935') + '<path d="M0-6v12" stroke="#263238" stroke-width="1.2"/>' + cir(7,-1,3.4,'#263238') +
+          cir(-4,-2,1.4,'#263238') + cir(3,2,1.4,'#263238') + cir(-3,3,1.2,'#263238') + '</g>', [[146,'#66BB6A'],[158,'#43A047']]);
+    },
+    nino: function(){
+      var aspas = '', cols = ['#E53935','#FDD835','#1E88E5','#43A047'];
+      for(var i=0;i<4;i++) aspas += '<path transform="rotate('+(i*90)+')" d="M0 0L0-22Q14-18 10-4Z" fill="'+cols[i]+'"/>';
+      return escena(
+        '<path d="M0 154Q100 142 200 150T400 146V180H0Z" fill="#7CB342"/>' + pasto(160,'#558B2F') +
+        /* papalote */
+        '<g class="flota" style="animation-duration:2.6s"><g transform="translate(330 40) rotate(12)">' +
+          '<path d="M0-26L20 0 0 32-20 0Z" fill="#FF7043"/><path d="M0-26L20 0H-20Z" fill="#FFCA28"/><path d="M0-26V32M-20 0H20" stroke="#5D4037" stroke-width="1.2"/>' +
+          '<path class="cola-papalote" d="M0 32q-10 14 0 26t0 26 0 24" stroke="#5D4037" stroke-width="1.2" fill="none"/>' +
+          '<path d="M-3 46l6 4-6 4Z M-3 70l6 4-6 4Z" fill="#E53935"/></g></g>' +
+        '<path d="M318 76Q260 120 236 158" stroke="#FFFFFF" stroke-opacity=".7" stroke-width=".8" fill="none"/>' +
+        /* rehilete */
+        '<path d="M70 158V96" stroke="#8D6E63" stroke-width="3"/><g transform="translate(70 92)"><g class="gira">'+aspas+'</g>'+cir(0,0,3,'#fff')+'</g>' +
+        /* cubos ABC */
+        '<g font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="15" text-anchor="middle">' +
+          '<rect x="130" y="134" width="24" height="24" rx="3" fill="#1E88E5"/><text x="142" y="152" fill="#fff">A</text>' +
+          '<rect x="156" y="134" width="24" height="24" rx="3" fill="#E53935"/><text x="168" y="152" fill="#fff">B</text>' +
+          '<rect x="143" y="110" width="24" height="24" rx="3" fill="#FDD835"/><text x="155" y="128" fill="#5D4037">C</text></g>' +
+        /* pelota */
+        '<g class="salta"><g transform="translate(212 144)"><circle r="13" fill="#FFFFFF"/><path d="M-13 0a13 13 0 0 1 26 0Z" fill="#E53935"/><path d="M-13 0h26" stroke="#263238" stroke-width="1.4"/>' + cir(0,0,3.4,'#FFFFFF',' stroke="#263238" stroke-width="1.4"') + '</g></g>' +
+        /* trompo */
+        '<g class="trompo"><g transform="translate(280 146)"><path d="M-14-10q14-10 28 0L0 14Z" fill="#8E24AA"/><path d="M-12-6h24" stroke="#FDD835" stroke-width="3"/><path d="M0-14v-6" stroke="#5D4037" stroke-width="3"/><path d="M-1 14l1 6 1-6Z" fill="#455A64"/></g></g>', [[150,'#7CB342'],[160,'#558B2F']]);
+    },
+    madres: function(){
+      var rosas = '';
+      [[-16,-38,'#EC407A'],[0,-48,'#F48FB1'],[16,-38,'#D81B60'],[-8,-26,'#F8BBD0'],[10,-24,'#EC407A'],[-24,-22,'#BA68C8'],[24,-20,'#F8BBD0']].forEach(function(r){
+        rosas += cir(r[0],r[1],8,r[2]) + '<path d="M'+(r[0]-4)+' '+r[1]+'a4 4 0 1 1 8 0a3 3 0 1 1-5 0" stroke="#fff" stroke-opacity=".45" stroke-width="1.2" fill="none"/>';
+      });
+      return escena(
+        '<path d="M0 158H400V180H0Z" fill="#5E2346"/>' +
+        /* florero con ramo */
+        '<g class="mece" style="animation-duration:4s"><g transform="translate(200 130)">' +
+          '<path d="M-18 0q-8 30 4 30h28q12 0 4-30Z" fill="#B3E5FC" fill-opacity=".85"/><path d="M-12 4q-4 18 2 22" stroke="#fff" stroke-opacity=".7" stroke-width="2" fill="none"/>' +
+          '<path d="M0 0L-16-36M0 0V-46M0 0L16-36M0 0L-24-20M0 0L24-18" stroke="#558B2F" stroke-width="2"/>' +
+          '<path d="M-10-12q-12-4-14-14 12 0 14 12Z M10-14q12-6 16-14-12 0-16 12Z" fill="#7CB342"/>' + rosas +
+          '<path d="M-18 4q18 8 36 0" stroke="#F8BBD0" stroke-width="3" fill="none"/></g></g>' +
+        /* tarjeta MAMÁ */
+        '<g transform="translate(88 134) rotate(-8)"><rect x="-34" y="-24" width="68" height="44" rx="4" fill="#FFF8FB"/>' +
+          '<rect x="-30" y="-20" width="60" height="36" rx="3" fill="none" stroke="#F8BBD0" stroke-dasharray="3 2"/>' +
+          '<text x="0" y="4" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-weight="700" font-size="15" fill="#AD1457">Mamá</text>' +
+          '<g class="latido"><path transform="translate(0 12) scale(.42)" d="'+FORMA_CORAZON+'" fill="#E91E63"/></g></g>' +
+        regalo(300,136,30,22,'#BA68C8','#FFF59D') +
+        mariposa(330, 80, 1.1, '#F48FB1', '#FFFFFF', 'vuela1', -1) + mariposa(90, 70, .9, '#CE93D8', '#FFF59D', 'vuela2', -3), [[158,'#5E2346']]);
+    },
+    padre: function(){
+      return escena(
+        '<path d="M0 156H400V180H0Z" fill="#14253D"/>' +
+        /* trofeo */
+        '<g transform="translate(200 0)">' +
+          '<path d="M-28 52h56v18q0 28-28 34-28-6-28-34Z" fill="#FFC107"/><path d="M-28 58q-18 0-16 16 2 12 18 14M28 58q18 0 16 16-2 12-18 14" stroke="#FFC107" stroke-width="5" fill="none"/>' +
+          '<path d="M-6 104h12v18h-12Z" fill="#FFB300"/><path d="M-22 122h44v12h-44Z M-28 134h56v20h-56Z" fill="#6D4C41"/>' +
+          '<text x="0" y="86" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="22" fill="#8D6E00">#1</text>' +
+          '<rect x="-18" y="138" width="36" height="12" rx="2" fill="#FFE082"/><text x="0" y="147" text-anchor="middle" font-size="8.5" font-weight="700" fill="#5D4037">PAPÁ</text>' +
+          '<path class="titila" transform="translate(-20 60) scale(.5)" d="'+FORMA_BRILLO+'" fill="#FFFDE7"/></g>' +
+        /* taza con vapor */
+        '<g transform="translate(86 128)"><path d="M-22-18h40v28q0 14-14 14h-12q-14 0-14-14Z" fill="#ECEFF1"/>' +
+          '<path d="M18-10q12 0 10 12-2 8-12 8" stroke="#ECEFF1" stroke-width="5" fill="none"/>' +
+          '<text x="-2" y="2" text-anchor="middle" font-size="9" font-weight="800" fill="#1F3A5F">PAPÁ</text>' +
+          '<path class="vapor" d="M-10-24q-6-8 0-14t0-14" stroke="#fff" stroke-opacity=".6" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+          '<path class="vapor" style="animation-delay:-1.2s" d="M2-24q-6-8 0-14t0-14" stroke="#fff" stroke-opacity=".6" stroke-width="2.4" fill="none" stroke-linecap="round"/></g>' +
+        /* caja de herramientas */
+        '<g transform="translate(316 132)"><rect x="-34" y="-10" width="68" height="34" rx="4" fill="#D32F2F"/><path d="M-34 0h68" stroke="#B71C1C" stroke-width="2"/>' +
+          '<path d="M-12-10v-8h24v8" stroke="#455A64" stroke-width="4" fill="none"/><rect x="-6" y="-3" width="12" height="7" rx="1" fill="#CFD8DC"/>' +
+          '<g class="mece" style="animation-duration:3s"><path d="M18-12l18-34" stroke="#8D6E63" stroke-width="5" stroke-linecap="round"/><path d="M26-50l18 8-4 6-18-8Z" fill="#90A4AE"/></g></g>' +
+        /* corbata */
+        '<g class="mece" style="animation-duration:2.4s"><g transform="translate(140 128) scale(1.6)"><path fill="#BFD4EA" d="'+FORMA_CORBATA+'"/><path d="M-3 0l6-3M-4 4l8-4" stroke="#1F3A5F" stroke-width="1"/></g></g>', [[156,'#14253D']]);
+    },
+    mexicano: function(){
+      return escena(
+        '<path d="M0 156H400V180H0Z" fill="#00452F"/>' +
+        /* bandera ondeando (sin escudo) */
+        '<path d="M40 160V30" stroke="#B0BEC5" stroke-width="4"/>' + cir(40,28,4,'#FFD54F') +
+        '<g class="ondea"><path d="M42 34q20-8 38 0t38 0v56q-20 8-38 0t-38 0Z" fill="#FFFFFF"/>' +
+          '<path d="M42 34q10-4 25-3v56q-15-1-25 3Z" fill="#006847"/><path d="M93 31q15 1 25 3v56q-10-4-25-3Z" fill="#CE1126"/></g>' +
+        /* sombrero */
+        '<g transform="translate(206 140)">' + elip(0,6,62,13,'#C9A227') + elip(0,4,58,10,'#E2BC4A') +
+          '<path d="M-24 4q-4-34 24-38 28 4 24 38Z" fill="#E2BC4A"/><path d="M-24 0q24 10 48 0v6q-24 10-48 0Z" fill="#CE1126"/>' +
+          '<path d="M-56 4q56 22 112 0" stroke="#006847" stroke-width="3" fill="none" stroke-dasharray="6 4"/></g>' +
+        /* maracas */
+        '<g class="mece" style="animation-duration:.9s"><g transform="translate(316 150) rotate(-20)">' + elip(0,-28,13,17,'#E53935') + '<path d="M0-12v26" stroke="#6D4C41" stroke-width="4" stroke-linecap="round"/>' +
+          '<path d="M-10-30h20M-12-24h24" stroke="#FFD54F" stroke-width="2.4"/></g></g>' +
+        '<g class="mece" style="animation-duration:.9s;animation-delay:-.45s"><g transform="translate(350 150) rotate(16)">' + elip(0,-28,13,17,'#00A859') + '<path d="M0-12v26" stroke="#6D4C41" stroke-width="4" stroke-linecap="round"/>' +
+          '<path d="M-10-30h20M-12-24h24" stroke="#FFFFFF" stroke-width="2.4"/></g></g>' +
+        /* chiles */
+        '<g transform="translate(130 156)"><path d="M0 0q-18-4-22-22 8 12 24 14Z" fill="#C62828"/><path d="M2-8q2-6 6-6" stroke="#2E7D32" stroke-width="2.4" fill="none"/>' +
+          '<path d="M12 2q-14-8-14-24 6 12 18 16Z" fill="#2E7D32"/></g>', [[156,'#00452F']]);
+    },
+    otono: function(){
+      var copa = '';
+      [[60,58,34,'#E65100'],[34,74,26,'#F57C00'],[90,76,28,'#BF360C'],[62,88,30,'#FB8C00'],[40,96,20,'#FFB300'],[86,100,22,'#E65100']].forEach(function(c){ copa += cir(c[0],c[1],c[2],c[3]); });
+      var hojas = '';
+      [[150,160,'#E65100',20],[166,158,'#FBC02D',-30],[184,162,'#BF360C',50],[138,164,'#F57F17',-60],[200,164,'#FB8C00',10]].forEach(function(h){
+        hojas += '<path transform="translate('+h[0]+' '+h[1]+') rotate('+h[3]+') scale(.8)" d="'+FORMA_HOJA_ARCE+'" fill="'+h[2]+'"/>';
+      });
+      return escena(
+        '<path d="M0 156Q100 146 200 154T400 150V180H0Z" fill="#5D3A1A"/>' +
+        /* árbol */
+        '<path d="M56 160V92q-2-10-10-18M60 104q10-10 22-12" stroke="#4E342E" stroke-width="10" fill="none" stroke-linecap="round"/>' + copa +
+        hojas +
+        /* ardilla */
+        '<g transform="translate(270 0)">' +
+          '<path class="cola" d="M20 150q34-6 30-40-4-30-26-26-16 4-8 20 10 14 0 30" fill="#B5652B"/><path d="M28 100q8 8 4 20" stroke="#D9894A" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+          elip(0,136,20,22,'#C06A2C') + elip(-2,140,11,14,'#F1C79A') + cir(-6,106,15,'#C06A2C') +
+          '<path d="M-14 94l-4-12 9 6Z M2 92l2-12 6 10Z" fill="#C06A2C"/>' + elip(-18,110,6,5,'#F1C79A') + cir(-22,108,2,'#3E2416') +
+          ojos(-12,-2,102,2.6) + elip(-10,158,8,4,'#C06A2C') + elip(10,158,8,4,'#C06A2C') +
+          /* bellota */
+          '<g transform="translate(-14 128)">' + elip(0,4,7,8,'#8D6E63') + '<path d="M-8 0q8-8 16 0Z" fill="#5D4037"/><path d="M0-6v-4" stroke="#5D4037" stroke-width="2"/></g>' +
+          elip(-22,130,5,4,'#C06A2C') + elip(-6,132,5,4,'#C06A2C') + '</g>' +
+        calabaza(360, 150, .62, false) + calabaza(328, 158, .42, false) +
+        /* hongos */
+        '<g transform="translate(110 160)"><path d="M-3 0v-10h6V0Z" fill="#FFF3E0"/><path d="M-12-9q12-16 24 0Z" fill="#D84315"/>' + cir(-4,-12,1.6,'#fff') + cir(4,-11,1.4,'#fff') + '</g>', [[152,'#5D3A1A']]);
+    }
+  };
+  /* Murciélago extra que cruza volando el cielo de Halloween; trineo en Nochebuena */
+  function vuelaCielo(tipo){
+    if(tipo==='murcielago') return '<div class="ra-cruza" style="top:24%;animation-duration:13s;"><svg viewBox="-14 -7 28 12" class="aletea-css"><path fill="#0A0610" d="'+FORMA_MURCIELAGO+'"/></svg></div>' +
+      '<div class="ra-cruza" style="top:38%;animation-duration:17s;animation-delay:-8s;width:34px;"><svg viewBox="-14 -7 28 12" class="aletea-css"><path fill="#E8620C" d="'+FORMA_MURCIELAGO+'"/></svg></div>';
+    if(tipo==='trineo') return '<div class="ra-cruza ra-trineo" style="top:17%;animation-duration:24s;"><svg viewBox="0 0 160 40">' +
+      '<g fill="#F4DFA0" fill-opacity=".85">' +
+        [0,30].map(function(x){ return '<path d="M'+x+' 22q4-8 14-8h8l4-8 2 1-2 8q4 2 4 8l-2 10h-3l-1-8h-12l-2 8h-3l1-9q-6 0-8-4Z M'+(x+26)+' 6l3-6M'+(x+26)+' 6l6-3" stroke="#F4DFA0" stroke-width="1.2"/>'; }).join('') +
+        '<path d="M70 18h40q10 0 14-10l4 2q-4 14-18 16h-36Z M66 30h60q6 0 8-4" /><path d="M66 30h60q6 0 8-4" stroke="#F4DFA0" stroke-width="2" fill="none"/>' +
+        '<path d="M86 16q0-10 10-10t8 10Z"/></g>' +
+      '<path d="M22 18L70 22" stroke="#F4DFA0" stroke-opacity=".6" stroke-width=".8"/></svg></div>';
+    return '';
+  }
+  /* Cada temporada suma su escena de personajes a su decoración */
+  Object.keys(ESCENAS).forEach(function(k){
+    if(!DECO[k]) return;
+    var antes = DECO[k].extra;
+    DECO[k].extra = function(){ return (antes ? antes() : '') + ESCENAS[k]() + vuelaCielo(k==='halloween' ? 'murcielago' : k==='nochebuena' ? 'trineo' : ''); };
+  });
+  /* Fiestas Patrias: también fuegos artificiales */
+  DECO.mexicano.part = [].concat(DECO.mexicano.part, {tipo:'fuego', n:4, min:60, max:100, dmin:3, dmax:4.6, colores:['#00A859','#FFFFFF','#CE1126']});
   /* Telaraña en la esquina superior izquierda: radios y anillos con caída natural */
   function telarana(){
     function pt(gr, r){ var a = gr*Math.PI/180; return (Math.cos(a)*r).toFixed(1)+' '+(Math.sin(a)*r).toFixed(1); }
@@ -2306,33 +2807,36 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 
     var campo, aviso;
     var nGalId = ok ? galeriaLibresDe(id).length : 0, nGalTot = galeriaLibres().length;
-    var camBtn = '<button type="button" class="ra-idcam" id="btn-cam-id" aria-label="Tomar fotos para este rollo" title="Tomar fotos">'+ICO_CAM+
-      (nGalId ? '<span class="n">'+nGalId+'</span>' : '')+'</button>';
+    var botonesFotos = '<div class="ra-fotos-id">' +
+        '<button type="button" class="ra-fotobtn" id="btn-cam-id" aria-label="Tomar fotos para este rollo">'+ICO_CAM+'Tomar fotos'+(nGalId?' <b>'+nGalId+'</b>':'')+'</button>' +
+        '<button type="button" class="ra-fotobtn" id="btn-gal-id">'+ICO_GAL+'Galería'+(nGalTot?' <b>'+nGalTot+'</b>':'')+'</button>' +
+      '</div>';
     if(S.idModo === 'guiado'){
       var faltan = ID_MID_LEN - S.idMid.length;
       aviso = ok ? '<div class="ra-idpreview">ID completo: <b>'+escHtml(id)+'</b></div>'
                  : '<div class="ra-idpreview'+(S.idMid.length?' warn':'')+'">' +
                    (S.idMid.length ? 'Faltan '+faltan+' dígito'+(faltan===1?'':'s')+' — el ID debe llevar exactamente '+ID_MID_LEN+'.'
                                    : 'Captura los '+ID_MID_LEN+' dígitos del centro.') + '</div>';
-      campo = '<div class="ra-idrow"><div class="ra-idbox'+(ok?' ok':'')+'">' +
+      campo = '<div class="ra-idbox'+(ok?' ok':'')+'">' +
           '<div class="ra-idfix">'+ID_PREFIX+'</div>' +
           '<input class="ra-idmid" id="input-id-mid" type="tel" inputmode="numeric" pattern="[0-9]*" ' +
             'maxlength="'+ID_MID_LEN+'" placeholder="000000" value="'+escAttr(S.idMid)+'" autocomplete="off">' +
           '<div class="ra-idfix suffix">'+ID_SUFFIX+'</div>' +
-        '</div>' + camBtn + '</div>' + aviso +
+        '</div>' + aviso +
         '<button class="ra-link" id="btn-modo-libre">Este rollo no sigue el formato</button>';
     } else {
-      campo = '<div class="ra-idrow"><input class="ra-input" id="input-id-full" placeholder="ID completo del rollo" value="'+escAttr(S.idFull)+'" autocapitalize="characters" autocomplete="off" spellcheck="false">' + camBtn + '</div>' +
+      campo = '<input class="ra-input" id="input-id-full" placeholder="ID completo del rollo" value="'+escAttr(S.idFull)+'" autocapitalize="characters" autocomplete="off" spellcheck="false" style="margin-bottom:6px;">' +
         '<button class="ra-link" id="btn-modo-guiado">Volver al formato '+ID_PREFIX+'…'+ID_SUFFIX+'</button>';
     }
 
     return '<div class="ra-card">' +
         '<div class="ra-h1">Identificar rollo</div>' +
-        '<div class="ra-h2">Escanea el código QR del rollo o captura los dígitos manualmente.</div>' + camWarn +
-        '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-scan"'+(isInsecureContext()?' disabled':'')+' style="margin-bottom:20px;">Escanear código QR</button>' +
-        '<div class="ra-label-row"><label class="ra-label">ID DE ROLLO</label>' +
-          '<button type="button" class="ra-galbtn" id="btn-gal-id">'+ICO_GAL+'Galería'+(nGalTot?' <b>'+nGalTot+'</b>':'')+'</button></div>' + campo +
-        (nGalId ? '<div class="ra-gal-aviso" style="margin:10px 0 0;">'+ICO_GAL+'<span><b>'+nGalId+' foto'+(nGalId===1?'':'s')+' en la galería</b> para este rollo. Se agregarán solas al registro.</span></div>' : '') +
+        (escanerActivo()
+          ? '<div class="ra-h2">Escanea el código del rollo o captura los dígitos manualmente.</div>' + camWarn +
+            '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-scan"'+(isInsecureContext()?' disabled':'')+' style="margin-bottom:20px;">Escanear código</button>'
+          : '<div class="ra-h2">Captura los dígitos del ID del rollo.</div>' + camWarn) +
+        '<label class="ra-label">ID DE ROLLO</label>' + campo + botonesFotos +
+        (nGalId ? '<div class="ra-gal-aviso" style="margin:0;">'+ICO_GAL+'<span><b>'+nGalId+' foto'+(nGalId===1?'':'s')+' en la galería</b> para este rollo. Se agregarán solas al registro.</span></div>' : '') +
         (ok && S.tracking[id] ? rolloExistenteCard(S.tracking[id], previos) :
           (previos ? '<div class="ra-note" style="margin-top:14px;">Este rollo ya tiene '+previos+' inspección(es) registrada(s).</div>' : '')) +
         (ok ? datosIdSeccion(master) : '') +
@@ -3258,6 +3762,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
            plegar('inspectores', nInsp + (nInsp===1 ? ' inspector registrado' : ' inspectores registrados'), inspectoresCard()) +
            temaCard() +
            plegar('bloqueo', 'Admins: '+etqBloqueo(minutosBloqueo(false))+' · Inspectores: '+etqBloqueo(minutosBloqueo(true)), bloqueoCard()) +
+           plegar('escaner', escanerActivo() ? 'Activado · el botón aparece al identificar el rollo' : 'Desactivado · no aparece en la captura', escanerCard()) +
            plegar('rango', hayRango ? 'Validación activa' : 'Sin validar', rangoMedidaCard()) +
            plegar('grados', nGrados + ' grados en el catálogo', gradosCard()) +
            plegar('defectos', nDef ? nDef + ' activos en la captura' : 'Elige cuáles aparecen al capturar', defectosCard()) +
@@ -3679,6 +4184,21 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div class="ra-label" style="margin-top:12px;">INSPECTORES (equipo compartido)</div>' +
         '<div class="ra-grid" style="grid-template-columns:repeat(4,1fr);gap:6px;">'+chipsInsp+'</div>' +
         '<div class="ra-meta" style="margin-top:9px;">Se recomienda un tiempo corto para inspectores porque suelen compartir la tableta entre varias personas.</div>' +
+      '</div>';
+  }
+
+  function escanerCard(){
+    var on = escanerActivo();
+    return '<div class="ra-card">' +
+        '<div class="ra-h1">Escáner de códigos</div>' +
+        '<div class="ra-h2">Muestra u oculta el botón “Escanear código” en la pantalla de identificar rollo, en todos los equipos. Apagado, el ID se captura a mano.</div>' +
+        '<div class="ra-grid" style="grid-template-columns:1fr 1fr;gap:8px;">' +
+          '<button class="ra-btn ra-btn-sm '+(on?'ra-btn-primary':'ra-btn-outline')+'" data-escaner="1" style="margin-bottom:0;">Activado</button>' +
+          '<button class="ra-btn ra-btn-sm '+(!on?'ra-btn-primary':'ra-btn-outline')+'" data-escaner="0" style="margin-bottom:0;">Desactivado</button>' +
+        '</div>' +
+        '<div class="ra-meta" style="margin-top:10px;">Lee QR, Micro QR, DataMatrix, Aztec, PDF417, MaxiCode, Code 128, Code 39, Code 93, Codabar, EAN-13, EAN-8, UPC-A, UPC-E, ITF y GS1 DataBar, en papel o en pantalla, normales o invertidos. ' +
+          'Si el código trae el ID ('+ID_PREFIX+'······'+ID_SUFFIX+') aunque venga junto con otros datos, lo toma solo; si no, pregunta antes de usarlo.</div>' +
+        '<button class="ra-btn ra-btn-outline ra-btn-block ra-btn-sm" data-escaner-probar style="margin:12px 0 0;">Probar el escáner</button>' +
       '</div>';
   }
 
@@ -4294,77 +4814,294 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       (deGal ? '<div class="ra-gal-aviso">'+ICO_GAL+'<span>'+deGal+' foto'+(deGal===1?'':'s')+' de la galería de este rollo se agregaron solas. Quita las que no quieras.</span></div>' : '');
   }
 
-  /* ============ QR ============ */
+  /* ============ ESCÁNER DE CÓDIGOS ============
+     Lee QR y casi cualquier código de barras. Usa el lector nativo del equipo (si existe) y,
+     alternando cuadros, el motor ZXing-C++ (WebAssembly). Si nada de eso carga, usa jsQR (solo QR).
+     El administrador decide si el botón aparece (catalogos.escanerActivo). */
+  var ZXING_PONYFILL = 'https://cdn.jsdelivr.net/npm/barcode-detector@3.2.2/dist/iife/ponyfill.js';
+  var NOMBRE_FORMATO = {qr_code:'QR', micro_qr_code:'Micro QR', rm_qr_code:'rMQR', data_matrix:'DataMatrix', aztec:'Aztec',
+    pdf417:'PDF417', maxi_code:'MaxiCode', code_128:'Code 128', code_39:'Code 39', code_93:'Code 93', codabar:'Codabar',
+    ean_13:'EAN-13', ean_8:'EAN-8', upc_a:'UPC-A', upc_e:'UPC-E', itf:'ITF', databar:'GS1 DataBar',
+    databar_limited:'GS1 DataBar Limited', databar_expanded:'GS1 DataBar Expanded', dx_film_edge:'DX Film Edge'};
+  function nombreFormato(f){ return NOMBRE_FORMATO[f] || String(f||'código').replace(/_/g,' ').toUpperCase(); }
+  function formatoLineal(f){ return /^(code_|codabar|ean_|upc_|itf|databar|dx_)/.test(String(f||'')); }
+  function escanerActivo(){ return !!(S.catalogs && S.catalogs.escanerActivo); }
+
+  /* Limpia lo leído (caracteres de control GS1, espacios) y busca el ID dentro, aunque venga con más datos */
+  function limpiarLectura(v){ return String(v||'').replace(/[\x00-\x1f\x7f]/g,' ').replace(/\s+/g,' ').trim(); }
+  function extraerId(v){
+    var compacto = limpiarLectura(v).toUpperCase().replace(/[\s\-_.\/]/g,'');
+    var m = compacto.match(new RegExp(ID_PREFIX+'(\\d{'+ID_MID_LEN+'})'+ID_SUFFIX));
+    return m ? m[1] : '';
+  }
   function aplicarIdEscaneado(valor){
-    var v = String(valor||'').trim().toUpperCase().replace(/\s+/g,'');
-    var m = v.match(new RegExp('^'+ID_PREFIX+'(\\d{'+ID_MID_LEN+'})'+ID_SUFFIX+'$'));
-    if(m){ S.idModo='guiado'; S.idMid=m[1]; }
-    else { S.idModo='libre'; S.idFull=v; }
+    var mid = extraerId(valor);
+    if(mid){ S.idModo='guiado'; S.idMid=mid; return; }
+    S.idModo='libre'; S.idFull=limpiarLectura(valor).toUpperCase().replace(/\s+/g,'');
   }
 
   function loadScript(src){
     return new Promise(function(resolve,reject){
       var s=document.createElement('script');
-      s.src=src; s.onload=resolve; s.onerror=reject;
+      s.src=src; s.onload=resolve; s.onerror=function(){ s.remove(); reject(new Error('carga')); };
       document.head.appendChild(s);
     });
   }
   function loadJsQR(){ return window.jsQR ? Promise.resolve() : loadScript("https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"); }
   function loadSheetJS(){ return window.XLSX ? Promise.resolve() : loadScript("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"); }
 
-  function openScanner(){
-    if(isInsecureContext()){ toast('La cámara requiere https — captura el ID manualmente'); return; }
-    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ toast('Este navegador no permite usar la cámara'); return; }
-    loadJsQR().then(function(){
-      var modal=el('<div class="ra-video-modal"><button class="close-scan" aria-label="Cerrar">✕</button><video autoplay playsinline muted></video><div class="ra-scan-frame"></div><div class="hint">Apunta al código QR del rollo</div></div>');
-      document.body.appendChild(modal);
-      var video=modal.querySelector('video');
-      var canvas=document.createElement('canvas');
-      var ctx=canvas.getContext('2d',{willReadFrequently:true});
-      var stream=null, stop=false, torchOn=false;
-      navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}).then(function(s){
-        stream=s; video.srcObject=s; video.play().catch(function(){});
-        var track=s.getVideoTracks()[0];
-        var caps=(track && track.getCapabilities)?(track.getCapabilities()||{}):{};
-        if(caps.torch){
-          var tb=el('<button class="torch-btn" aria-label="Linterna">☀</button>');
-          modal.appendChild(tb);
-          tb.addEventListener('click',function(){
-            torchOn=!torchOn;
-            track.applyConstraints({advanced:[{torch:torchOn}]}).catch(function(){});
-            tb.classList.toggle('on',torchOn);
-          });
-        }
-        requestAnimationFrame(tick);
-      }).catch(function(){ toast('No se pudo abrir la cámara — revisa los permisos'); cerrar(); });
+  /* Motores de lectura (se crean una vez y se reutilizan) */
+  var motorNativo = null, motorZxing = null, motorJsqr = null;
+  function crearNativo(){
+    if(motorNativo) return motorNativo;
+    motorNativo = Promise.resolve().then(function(){
+      if(!('BarcodeDetector' in window) || !window.BarcodeDetector.getSupportedFormats) return null;
+      return window.BarcodeDetector.getSupportedFormats().then(function(f){
+        if(!f || !f.length) return null;
+        return {nombre:'nativo', det:new window.BarcodeDetector({formats:f}), formatos:f};
+      });
+    }).catch(function(){ return null; });
+    return motorNativo;
+  }
+  function crearZxing(){
+    if(motorZxing) return motorZxing;
+    motorZxing = (window.BarcodeDetectionAPI ? Promise.resolve() : loadScript(ZXING_PONYFILL)).then(function(){
+      var api = window.BarcodeDetectionAPI;
+      if(!api || !api.BarcodeDetector) return null;
+      var ver = api.ZXING_WASM_VERSION;
+      var over = {locateFile:function(path, prefix){
+        return (ver && /\.wasm$/.test(path)) ? 'https://cdn.jsdelivr.net/npm/zxing-wasm@'+ver+'/dist/reader/'+path : prefix+path;
+      }};
+      try{ if(api.setZXingModuleOverrides) api.setZXingModuleOverrides(over); }catch(e){}
+      return api.BarcodeDetector.getSupportedFormats().then(function(f){
+        var det = new api.BarcodeDetector({formats:f});
+        /* Primera lectura en vacío: obliga a bajar el motor ahora y avisa si no hay conexión */
+        var c = document.createElement('canvas'); c.width = c.height = 8;
+        return det.detect(c).then(function(){ return {nombre:'zxing', det:det, formatos:f}; });
+      });
+    }).catch(function(e){ console.warn('ZXing no disponible', e); motorZxing = null; return null; });
+    return motorZxing;
+  }
+  function crearJsqr(){
+    if(motorJsqr) return motorJsqr;
+    motorJsqr = loadJsQR().then(function(){
+      var cv = document.createElement('canvas'), cx = cv.getContext('2d', {willReadFrequently:true});
+      return {nombre:'jsqr', formatos:['qr_code'], det:{detect:function(src){
+        var w = src.width, h = src.height, k = Math.min(1, 800/Math.max(1,w));
+        cv.width = Math.max(1, Math.round(w*k)); cv.height = Math.max(1, Math.round(h*k));
+        cx.drawImage(src, 0, 0, cv.width, cv.height);
+        var d = cx.getImageData(0, 0, cv.width, cv.height);
+        var r = window.jsQR(d.data, d.width, d.height, {inversionAttempts:'attemptBoth'});
+        return Promise.resolve(r && r.data ? [{rawValue:r.data, format:'qr_code'}] : []);
+      }}};
+    }).catch(function(){ motorJsqr = null; return null; });
+    return motorJsqr;
+  }
 
-      function tick(){
-        if(stop) return;
-        if(video.readyState===video.HAVE_ENOUGH_DATA && video.videoWidth){
-          var scale=Math.min(1,480/video.videoWidth);
-          canvas.width=Math.max(1,Math.round(video.videoWidth*scale));
-          canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
-          ctx.drawImage(video,0,0,canvas.width,canvas.height);
-          try{
-            var d=ctx.getImageData(0,0,canvas.width,canvas.height);
-            var code=window.jsQR(d.data,d.width,d.height,{inversionAttempts:'attemptBoth'});
-            if(code && code.data && code.data.trim()){
-              aplicarIdEscaneado(code.data);
-              if(navigator.vibrate) navigator.vibrate(60);
-              cerrar(); render(); toast(rolloId());
-              return;
-            }
-          }catch(e){}
+  /* opts.prueba: modo de prueba para el administrador (solo muestra lo leído) */
+  function openScanner(opts){
+    opts = opts || {};
+    if(isInsecureContext()){ toast('La cámara requiere https — captura el ID manualmente'); return; }
+    var modal = el('<div class="ra-cam ra-scan">' +
+        '<video autoplay playsinline muted></video>' +
+        '<div class="scan-ventana"><i class="scan-linea"></i></div>' +
+        '<div class="cam-top">' +
+          '<button class="cam-btn" data-sc-cerrar aria-label="Cerrar">✕</button>' +
+          '<div class="cam-chip" style="pointer-events:none;">'+(opts.prueba ? '<b>Prueba</b> del escáner' : 'Escanear <b>código del rollo</b>')+'</div>' +
+          '<div class="cam-top-r"><button class="cam-btn" data-sc-torch aria-label="Linterna" hidden>☀</button>' +
+          '<button class="cam-btn" data-sc-girar aria-label="Cambiar cámara" hidden>'+ICO_GIRAR+'</button></div>' +
+        '</div>' +
+        '<div class="cam-msg" hidden></div>' +
+        '<div class="scan-pie">' +
+          '<div class="scan-zoom" hidden></div>' +
+          '<div class="scan-estado">Preparando lector…</div>' +
+          '<div class="scan-motor"></div>' +
+        '</div>' +
+      '</div>');
+    document.body.appendChild(modal);
+    document.body.classList.add('ra-cam-abierta');
+    var video = modal.querySelector('video'), msg = modal.querySelector('.cam-msg');
+    var estado = modal.querySelector('.scan-estado'), motorTxt = modal.querySelector('.scan-motor');
+    var ventana = modal.querySelector('.scan-ventana');
+    var canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', {willReadFrequently:true});
+    var stream = null, track = null, torchOn = false, facing = 'environment';
+    var motores = [], turno = 0, pausado = false, cerrado = false, previo = null, buscando = false, ignorar = null, ultimo = null;
+
+    function abierto(){ return !cerrado && modal.isConnected; }
+    function cerrar(){
+      cerrado = true;
+      if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
+      stream = null;
+      if(modal.parentNode) modal.remove();
+      if(!document.querySelector('.ra-cam')) document.body.classList.remove('ra-cam-abierta');
+    }
+    modal.querySelector('[data-sc-cerrar]').addEventListener('click', cerrar);
+
+    function pintarMotores(){
+      var n = {}; motores.forEach(function(m){ (m.formatos||[]).forEach(function(f){ n[f]=1; }); });
+      var tipos = Object.keys(n).length;
+      estado.textContent = 'Apunta al código del rollo';
+      motorTxt.textContent = tipos > 1 ? 'QR, códigos de barras, DataMatrix, PDF417 y más · '+tipos+' tipos'
+                                       : 'Solo QR (no se pudo cargar el lector completo)';
+    }
+    /* Arranca el nativo y ZXing en paralelo; el que llegue primero empieza a leer */
+    var listos = 0;
+    function agregar(m){
+      listos++;
+      if(m && abierto()){ motores.push(m); pintarMotores(); }
+      if(listos === 2 && !motores.length){
+        crearJsqr().then(function(j){
+          if(!abierto()) return;
+          if(j){ motores.push(j); pintarMotores(); }
+          else { estado.textContent = 'No se pudo cargar el lector — revisa la conexión'; motorTxt.textContent = ''; }
+        });
+      }
+    }
+    crearNativo().then(agregar);
+    crearZxing().then(agregar);
+
+    function iniciar(){
+      if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
+      stream = null; track = null; msg.hidden = true;
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        msg.hidden = false;
+        msg.innerHTML = '<b>Este navegador no permite usar la cámara dentro de la página.</b><p>Actualiza el navegador o la app de kiosco.</p>';
+        return;
+      }
+      var pedir = function(c){ return navigator.mediaDevices.getUserMedia({audio:false, video:c}); };
+      pedir({facingMode:{ideal:facing}, width:{ideal:1920}, height:{ideal:1080}})
+      .catch(function(e){ if(e && (e.name==='NotAllowedError' || e.name==='SecurityError')) throw e; return pedir({facingMode:{ideal:facing}}); })
+      .then(function(s){
+        if(!abierto()){ s.getTracks().forEach(function(t){ t.stop(); }); return; }
+        stream = s; video.srcObject = s; video.play().catch(function(){});
+        track = s.getVideoTracks()[0];
+        var caps = (track && track.getCapabilities) ? (track.getCapabilities()||{}) : {};
+        if(caps.focusMode && caps.focusMode.indexOf('continuous') >= 0){
+          track.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(function(){});
         }
-        requestAnimationFrame(tick);
+        var tb = modal.querySelector('[data-sc-torch]');
+        tb.hidden = !caps.torch; torchOn = false; tb.classList.remove('on');
+        pintarZoom(caps);
+        if(navigator.mediaDevices.enumerateDevices){
+          navigator.mediaDevices.enumerateDevices().then(function(ds){
+            modal.querySelector('[data-sc-girar]').hidden = ds.filter(function(d){ return d.kind==='videoinput'; }).length < 2;
+          }).catch(function(){});
+        }
+        if(!buscando) bucle();
+      }).catch(function(err){
+        var negado = err && (err.name==='NotAllowedError' || err.name==='SecurityError');
+        msg.hidden = false;
+        msg.innerHTML = '<b>'+(negado ? 'La app no tiene permiso para usar la cámara' : 'No se pudo abrir la cámara')+'</b>' +
+          '<p>'+(negado ? 'Permite el acceso a la cámara para esta página y vuelve a intentarlo.'
+                        : 'Puede que otra app esté usando la cámara. Ciérrala y vuelve a intentarlo.')+'</p>' +
+          '<ul><li><b>Fully Kiosk:</b> Ajustes → Web Content Settings → activa <i>Enable Webcam Access</i>.</li>' +
+          '<li><b>Chrome:</b> toca el candado junto a la dirección → Permisos → Cámara → Permitir.</li>' +
+          '<li>Otras apps de kiosco: busca la opción de permitir cámara o webcam para páginas web.</li></ul>' +
+          '<button class="ra-btn ra-btn-primary" data-sc-reintentar>Reintentar</button>';
+        msg.querySelector('[data-sc-reintentar]').addEventListener('click', iniciar);
+      });
+    }
+
+    /* Acercamiento (útil para etiquetas pequeñas o lejanas) */
+    function pintarZoom(caps){
+      var zb = modal.querySelector('.scan-zoom');
+      var z = caps && caps.zoom;
+      if(!z || !(z.max > (z.min||1))){ zb.hidden = true; zb.innerHTML = ''; return; }
+      var base = Math.max(1, z.min||1);
+      var nivs = [1, 2, 3, 5].map(function(x){ return x*base; }).filter(function(x){ return x <= z.max + 1e-6; });
+      if(nivs.length < 2){ zb.hidden = true; return; }
+      zb.hidden = false;
+      zb.innerHTML = nivs.map(function(x, i){
+        return '<button data-sc-zoom="'+x+'"'+(i===0?' class="on"':'')+'>'+(x/base)+'×</button>';
+      }).join('');
+      zb.querySelectorAll('[data-sc-zoom]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var v = parseFloat(b.getAttribute('data-sc-zoom'));
+          if(track) track.applyConstraints({advanced:[{zoom:v}]}).catch(function(){});
+          zb.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x===b); });
+        });
+      });
+    }
+    modal.querySelector('[data-sc-torch]').addEventListener('click', function(){
+      if(!track) return;
+      torchOn = !torchOn;
+      track.applyConstraints({advanced:[{torch:torchOn}]}).catch(function(){});
+      this.classList.toggle('on', torchOn);
+    });
+    modal.querySelector('[data-sc-girar]').addEventListener('click', function(){
+      facing = facing==='environment' ? 'user' : 'environment'; iniciar();
+    });
+
+    function esperar(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+    /* Elige, entre todo lo que se vio en el cuadro, el que trae el ID o el más cercano al centro */
+    function mejor(res, w, h){
+      var conId = res.filter(function(r){ return extraerId(r.rawValue); });
+      if(conId.length) return conId[0];
+      return res.slice().sort(function(a, b){
+        function d(r){ var bb = r.boundingBox; if(!bb) return 1e9; var cx = bb.x+bb.width/2-w/2, cy = bb.y+bb.height/2-h/2; return cx*cx+cy*cy; }
+        return d(a) - d(b);
+      })[0];
+    }
+    function bucle(){
+      buscando = true;
+      (function paso(){
+        if(!abierto()){ buscando = false; return; }
+        if(pausado || !motores.length || video.readyState < 2 || !video.videoWidth){ esperar(120).then(paso); return; }
+        var m = motores[turno++ % motores.length];
+        var w = video.videoWidth, h = video.videoHeight;
+        var fuente = video;
+        if(m.nombre !== 'nativo'){
+          var k = Math.min(1, 1280/Math.max(w, h));
+          canvas.width = Math.round(w*k); canvas.height = Math.round(h*k);
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          fuente = canvas; w = canvas.width; h = canvas.height;
+        }
+        Promise.resolve().then(function(){ return m.det.detect(fuente); }).then(function(res){
+          res = (res||[]).filter(function(r){ return r && limpiarLectura(r.rawValue); });
+          if(res.length && !pausado && abierto()) evaluar(mejor(res, w, h), m);
+        }).catch(function(){}).then(function(){ esperar(40).then(paso); });
+      })();
+    }
+    /* Los códigos de barras lineales se confirman con dos lecturas iguales (evita lecturas falsas) */
+    function evaluar(r, m){
+      var valor = r.rawValue, fmt = r.format, clave = fmt+'|'+valor;
+      if(ignorar && ignorar.clave === clave && Date.now() < ignorar.hasta) return;
+      if(formatoLineal(fmt) && !extraerId(valor) && previo !== clave){
+        previo = clave;
+        ventana.classList.add('casi'); setTimeout(function(){ ventana.classList.remove('casi'); }, 400);
+        return;
       }
-      function cerrar(){
-        stop=true;
-        if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
-        if(modal.parentNode) modal.remove();
+      previo = null;
+      leido(valor, fmt, m);
+    }
+    function leido(valor, fmt, m){
+      pausado = true; ultimo = fmt+'|'+valor;
+      ventana.classList.add('ok');
+      if(navigator.vibrate) navigator.vibrate(60);
+      var mid = extraerId(valor), limpio = limpiarLectura(valor);
+      if(!opts.prueba && mid){
+        aplicarIdEscaneado(valor);
+        cerrar(); render();
+        toast(nombreFormato(fmt)+' leído · '+rolloId());
+        return;
       }
-      modal.querySelector('.close-scan').addEventListener('click',cerrar);
-    }).catch(function(){ toast('No se pudo cargar el lector de QR — revisa tu conexión'); });
+      var usable = limpio.replace(/\s+/g,'').length >= 4 && limpio.length <= 40;
+      msg.hidden = false;
+      msg.innerHTML = '<b>'+(opts.prueba ? 'Código leído' : 'Se leyó un código sin el formato del ID')+'</b>' +
+        '<div class="ra-meta" style="margin-top:2px;">'+escHtml(nombreFormato(fmt))+(opts.prueba ? ' · lector '+escHtml(m.nombre==='nativo'?'del equipo':m.nombre==='zxing'?'ZXing':'jsQR') : '')+'</div>' +
+        '<div class="scan-val">'+escHtml(limpio.length > 300 ? limpio.slice(0,300)+'…' : limpio)+'</div>' +
+        (mid ? '<p style="color:var(--conforme);font-weight:600;">Contiene el ID '+escHtml(ID_PREFIX+mid+ID_SUFFIX)+' — se tomaría solo.</p>'
+             : '<p>No contiene un ID con el formato '+ID_PREFIX+'······'+ID_SUFFIX+'.</p>') +
+        (!opts.prueba && usable ? '<button class="ra-btn ra-btn-primary ra-btn-block" data-sc-usar>Usar como ID del rollo</button>' : '') +
+        '<button class="ra-btn '+(!opts.prueba && usable ? 'ra-btn-outline' : 'ra-btn-primary')+' ra-btn-block" data-sc-otra style="margin-bottom:0;">Escanear '+(opts.prueba?'otro':'de nuevo')+'</button>';
+      var bu = msg.querySelector('[data-sc-usar]');
+      if(bu) bu.addEventListener('click', function(){ aplicarIdEscaneado(valor); cerrar(); render(); toast(rolloId()); });
+      msg.querySelector('[data-sc-otra]').addEventListener('click', function(){
+        msg.hidden = true; ventana.classList.remove('ok'); previo = null; pausado = false;
+        ignorar = {clave:ultimo, hasta:Date.now()+2500};  /* no vuelve a leer el mismo código al instante */
+      });
+    }
+    iniciar();
   }
 
   /* ============ IMPORTAR GRADOS ============ */
@@ -4968,7 +5705,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       S.idMid = m ? m[1] : '';
       render();
     });
-    on('#btn-scan','click',openScanner);
+    on('#btn-scan','click',function(){ openScanner(); });
     on('#btn-continue-id','click',function(){
       if(!idValido()){ toast('El ID debe llevar exactamente '+ID_MID_LEN+' dígitos'); sacudir('.ra-idbox'); return; }
       collectManualFields();
@@ -5464,6 +6201,17 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       set('catalogs', S.catalogs);
       toast('Rangos guardados'); render();
     });
+    each('[data-escaner]',function(b){
+      b.addEventListener('click',function(){
+        if(!S.isAdmin) return;
+        var v = b.getAttribute('data-escaner')==='1';
+        if(v === escanerActivo()) return;
+        S.catalogs.escanerActivo = v; set('catalogs', S.catalogs);
+        auditar('edicion','','Escáner de códigos: '+(v?'activado':'desactivado'),'');
+        toast('Escáner de códigos '+(v?'activado':'desactivado')); render();
+      });
+    });
+    on('[data-escaner-probar]','click',function(){ openScanner({prueba:true}); });
     each('[data-bloqueo-insp]',function(b){
       b.addEventListener('click',function(){
         var m=parseInt(b.getAttribute('data-bloqueo-insp'),10);

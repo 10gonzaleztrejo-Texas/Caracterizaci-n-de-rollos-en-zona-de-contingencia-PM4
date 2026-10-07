@@ -524,6 +524,130 @@
   html[data-oscuro="1"] .ra-subtle-bg{background:var(--line) !important;}
   html[data-oscuro="1"] .ra-video-modal .torch-btn.on{background:#fff;}
   html[data-oscuro="1"] img,html[data-oscuro="1"] .ra-logo{filter:brightness(.94);}
+
+  /* ===== Cámara interna, galería compartida ===== */
+  body.ra-cam-abierta{overflow:hidden;}
+  .ra-idrow{display:flex;align-items:stretch;gap:8px;}
+  .ra-idrow > .ra-idbox, .ra-idrow > .ra-input{flex:1;min-width:0;margin-bottom:0;}
+  .ra-idcam{flex:0 0 auto;width:58px;border:1px solid var(--line-strong);background:#fff;color:var(--accent);
+    border-radius:var(--radius);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
+  .ra-idcam:active{transform:scale(.96);}
+  .ra-idcam .n{position:absolute;top:-7px;right:-7px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;
+    background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #fff;}
+  .ra-label-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .ra-label-row .ra-label{margin-bottom:8px;}
+  .ra-galbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);
+    font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;cursor:pointer;margin-bottom:8px;font-family:inherit;}
+  .ra-galbtn b{background:var(--accent);color:#fff;border-radius:999px;padding:1px 7px;font-size:11px;}
+  .ra-gal-aviso{display:flex;gap:9px;align-items:flex-start;background:#EEF4FB;border-left:3px solid var(--info);
+    padding:10px 12px;font-size:12.5px;line-height:1.45;color:var(--ink-mid);margin:-4px 0 14px;}
+  .ra-gal-aviso svg{flex:0 0 auto;color:var(--info);margin-top:1px;}
+  .ra-photo-thumb.gal{border:2px solid var(--info);}
+  .ra-foto-gal{position:absolute;left:3px;bottom:3px;background:var(--info);color:#fff;font-size:8.5px;font-weight:700;letter-spacing:.05em;padding:2px 4px;border-radius:3px;}
+  button.ra-add-photo{font-family:inherit;color:var(--accent);}
+  .ra-gal-sug{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:#EEF4FB;border:1px dashed var(--info);
+    color:var(--ink);padding:11px 12px;border-radius:var(--radius);font-size:13px;cursor:pointer;margin:-4px 0 14px;font-family:inherit;}
+  .ra-gal-sug svg{color:var(--info);flex:0 0 auto;}
+
+  .ra-cam{position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column;color:#fff;}
+  .ra-cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .ra-cam .cam-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;}
+  .ra-cam .cam-flash.on{animation:raCamFlash .35s ease-out;}
+  @keyframes raCamFlash{0%{opacity:.85;}100%{opacity:0;}}
+  .ra-cam .cam-top{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:10px;
+    padding:calc(14px + env(safe-area-inset-top,0px)) 14px 26px;background:linear-gradient(rgba(0,0,0,.62),transparent);z-index:2;}
+  .ra-cam .cam-top-r{display:flex;gap:8px;margin-left:auto;}
+  .cam-btn{background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:17px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+  .cam-btn[hidden]{display:none;}
+  .cam-btn.on{background:#fff;color:#000;}
+  .cam-btn.dark{background:rgba(0,0,0,.06);color:var(--ink);}
+  .ra-cam .cam-chip{min-width:0;flex:0 1 auto;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.28);
+    border-radius:999px;padding:9px 14px;font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ra-cam .cam-chip:disabled{cursor:default;opacity:1;}
+  .ra-cam .cam-chip b{font-weight:700;letter-spacing:.02em;}
+  .ra-cam .cam-cambiar{margin-left:6px;color:#FFC79E;font-size:12px;text-decoration:underline;}
+  .ra-cam .cam-bottom{position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+    padding:24px 22px calc(26px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,rgba(0,0,0,.7));z-index:2;}
+  .ra-cam .cam-last{width:58px;height:58px;border-radius:10px;overflow:visible;position:relative;cursor:pointer;justify-self:start;
+    border:2px solid rgba(255,255,255,.55);background:rgba(255,255,255,.08);}
+  .ra-cam .cam-last img{width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;}
+  .ra-cam .cam-last img[hidden], .ra-cam .cam-count[hidden]{display:none;}
+  .ra-cam .cam-count{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;border-radius:11px;background:var(--accent);
+    color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px;}
+  .ra-cam .cam-shutter{width:78px;height:78px;border-radius:50%;border:4px solid #fff;background:transparent;padding:5px;cursor:pointer;}
+  .ra-cam .cam-shutter i{display:block;width:100%;height:100%;border-radius:50%;background:#fff;transition:transform .12s;}
+  .ra-cam .cam-shutter:active i{transform:scale(.86);}
+  .ra-cam .cam-shutter:disabled{opacity:.35;}
+  .ra-cam .cam-done{justify-self:end;background:#fff;color:#111;border:none;border-radius:999px;padding:12px 20px;font-weight:700;
+    font-size:14px;cursor:pointer;font-family:inherit;}
+  .ra-cam .cam-msg{position:absolute;left:18px;right:18px;top:50%;transform:translateY(-50%);background:#fff;color:var(--ink);
+    padding:20px;border-radius:14px;z-index:3;font-size:13.5px;line-height:1.5;max-height:70vh;overflow:auto;}
+  .ra-cam .cam-msg[hidden]{display:none;}
+  .ra-cam .cam-msg p{margin:8px 0;}
+  .ra-cam .cam-msg ul{margin:8px 0 14px;padding-left:18px;}
+  .ra-cam .cam-msg li{margin-bottom:6px;}
+
+  .ra-pid{position:fixed;inset:0;z-index:260;background:rgba(10,12,16,.55);display:flex;align-items:flex-end;justify-content:center;}
+  .ra-pid-card{background:#fff;color:var(--ink);width:100%;max-width:520px;border-radius:18px 18px 0 0;
+    padding:22px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:92vh;overflow:auto;animation:raSube .22s ease-out;}
+  @keyframes raSube{from{transform:translateY(30px);opacity:0;}to{transform:none;opacity:1;}}
+
+  .ra-sheet{position:fixed;inset:0;z-index:220;background:rgba(10,12,16,0);display:flex;align-items:flex-end;justify-content:center;transition:background .18s;}
+  .ra-sheet.on{background:rgba(10,12,16,.5);}
+  .ra-sheet-card{background:#fff;color:var(--ink);width:100%;max-width:520px;border-radius:18px 18px 0 0;
+    padding:16px 14px calc(14px + env(safe-area-inset-bottom,0px));animation:raSube .2s ease-out;}
+  .ra-sheet-t{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);padding:2px 6px 10px;}
+  .ra-sheet-op{width:100%;display:flex;align-items:center;gap:14px;text-align:left;background:#F6F7F9;border:1px solid var(--line);
+    border-radius:12px;padding:14px;margin-bottom:9px;cursor:pointer;color:var(--ink);font-family:inherit;}
+  .ra-sheet-op:disabled{opacity:.45;cursor:default;}
+  .ra-sheet-op .i{width:44px;height:44px;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:18px;}
+  .ra-sheet-op b{display:block;font-size:15px;}
+  .ra-sheet-op small{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .ra-sheet-cancel{width:100%;background:none;border:none;color:var(--ink-mid);font-weight:600;font-size:14px;padding:12px;cursor:pointer;font-family:inherit;}
+
+  .ra-gal{position:fixed;inset:0;z-index:210;background:#F3F4F6;color:var(--ink);display:flex;flex-direction:column;}
+  .ra-gal-head{display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px;background:#fff;border-bottom:1px solid var(--line);}
+  .ra-gal-head .tt{flex:1;min-width:0;}
+  .ra-gal-head .a{font-size:17px;font-weight:700;}
+  .ra-gal-head .b{font-size:12.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ra-gal-head .ra-btn{margin:0;width:auto;}
+  .ra-gal-cam{margin:12px 14px 0;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--accent);color:#fff;
+    border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .ra-gal-body{flex:1;overflow:auto;padding:12px 14px 110px;-webkit-overflow-scrolling:touch;}
+  .ra-gal-grupo{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;}
+  .ra-gal-grupo.actual{border:2px solid var(--conforme);}
+  .ra-gal-grupo.sinid{border-style:dashed;}
+  .ra-gal-gh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;width:100%;
+    background:none;border:none;padding:0;text-align:left;color:inherit;font-family:inherit;}
+  .ra-gal-toggle{cursor:pointer;margin-bottom:0;}
+  .ra-gal-grupo.usadas .ra-gal-grid{margin-top:10px;}
+  .ra-gal-gh .n{font-size:14.5px;font-weight:700;}
+  .ra-gal-gh .m{font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.4;}
+  .ra-gal-gh .m .w{color:var(--defecto);}
+  .ra-gal-gh .ra-link{white-space:nowrap;padding:4px 0;}
+  .ra-gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px;}
+  .ra-gal-tile{position:relative;aspect-ratio:1;border:none;padding:0;border-radius:8px;overflow:hidden;background:#E3E6EA;cursor:pointer;}
+  .ra-gal-tile img{width:100%;height:100%;object-fit:cover;display:block;}
+  .ra-gal-tile .t{position:absolute;left:0;right:0;bottom:0;font-size:10.5px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));padding:12px 5px 4px;text-align:left;}
+  .ra-gal-tile .p{position:absolute;top:4px;left:4px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;border-radius:4px;padding:1px 5px;}
+  .ra-gal-tile .ck{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.3);
+    color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .ra-gal-tile.sel{outline:3px solid var(--accent);outline-offset:-3px;}
+  .ra-gal-tile.sel .ck{background:var(--accent);border-color:var(--accent);}
+  .ra-gal-tile.usada img{filter:saturate(.35);opacity:.8;}
+  .ra-gal-bar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;
+    padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 24px rgba(0,0,0,.08);flex-wrap:wrap;}
+  .ra-gal-bar span{flex:1;min-width:120px;font-size:13px;font-weight:600;}
+  .ra-gal-bar .ra-btn{margin:0;width:auto;}
+  .ra-gal-bar.acciones .ra-btn{flex:1 1 auto;}
+  html[data-oscuro="1"] .ra-gal, html[data-oscuro="1"] .ra-gal-head, html[data-oscuro="1"] .ra-gal-grupo,
+  html[data-oscuro="1"] .ra-gal-bar, html[data-oscuro="1"] .ra-sheet-card, html[data-oscuro="1"] .ra-pid-card{background:#1B1F26;color:#E8EAED;border-color:#2C323C;}
+  html[data-oscuro="1"] .ra-gal{background:#12151A;}
+  html[data-oscuro="1"] .ra-sheet-op{background:#232933;border-color:#2C323C;color:#E8EAED;}
+  html[data-oscuro="1"] .cam-btn.dark{color:#E8EAED;background:rgba(255,255,255,.08);}
+  html[data-oscuro="1"] .ra-idcam, html[data-oscuro="1"] .ra-galbtn{background:#1B1F26;color:#E8EAED;}
+  html[data-oscuro="1"] .ra-gal-aviso, html[data-oscuro="1"] .ra-gal-sug{background:#1C2836;color:#DCE3EC;}
 </style>
 </head>
 <body>
@@ -554,7 +678,7 @@ import { getAuth, initializeAuth, inMemoryPersistence, onAuthStateChanged, signI
          updatePassword, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection,
          getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch, arrayUnion, query,
-         orderBy, deleteField } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+         orderBy, deleteField, where } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 (function(){
   "use strict";
@@ -1479,6 +1603,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       S.pendRegs = qs.metadata.hasPendingWrites;
       marcarCambios();
     }, errEscucha));
+    escucharGaleria();
     unsubs.push(onSnapshot(collection(db, COL.tracking), {includeMetadataChanges:true}, function(qs){
       var m = {}, anul = {};
       qs.docs.forEach(function(d){
@@ -1532,7 +1657,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     trackSeleccion:[], trackModoSel:false, trackMedio:'', trackFinal:false,
     reporteFiltro:'Todos', repSel:null,
     rollosMaster:{}, catalogs:null, variacionesCat:null, registros:[], tracking:{}, auditoria:[],
-    trackingAnulado:{}, editFotos:[], editQuitar:[], editVolver:''
+    trackingAnulado:{}, editFotos:[], editQuitar:[], editVolver:'',
+    galeria:[], galDescartadas:[], galLimpia:false
   };
 
   function rolloId(){
@@ -1575,7 +1701,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   function resetCaptureFlow(){
     S.step='id'; S.idMid=''; S.idFull=''; S.idModo='guiado'; S.rolloData={}; S.gradoQuery=''; S.gradoAbierto=false;
     S.resultado=null; S.familia=null; S.defecto=null; S.variacion=null; S.ubicacion=null; S.severidad=null;
-    S.fotos=[]; S.comentario=''; S.medidaErr=false;
+    S.fotos=[]; S.comentario=''; S.medidaErr=false; S.galDescartadas=[];
   }
 
   function migrarGrados(cat){
@@ -2179,21 +2305,24 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       ? '<div class="ra-warn">La cámara solo funciona en páginas https o en localhost. Al abrir el archivo desde el disco el escaneo queda deshabilitado.</div>' : '';
 
     var campo, aviso;
+    var nGalId = ok ? galeriaLibresDe(id).length : 0, nGalTot = galeriaLibres().length;
+    var camBtn = '<button type="button" class="ra-idcam" id="btn-cam-id" aria-label="Tomar fotos para este rollo" title="Tomar fotos">'+ICO_CAM+
+      (nGalId ? '<span class="n">'+nGalId+'</span>' : '')+'</button>';
     if(S.idModo === 'guiado'){
       var faltan = ID_MID_LEN - S.idMid.length;
       aviso = ok ? '<div class="ra-idpreview">ID completo: <b>'+escHtml(id)+'</b></div>'
                  : '<div class="ra-idpreview'+(S.idMid.length?' warn':'')+'">' +
                    (S.idMid.length ? 'Faltan '+faltan+' dígito'+(faltan===1?'':'s')+' — el ID debe llevar exactamente '+ID_MID_LEN+'.'
                                    : 'Captura los '+ID_MID_LEN+' dígitos del centro.') + '</div>';
-      campo = '<div class="ra-idbox'+(ok?' ok':'')+'">' +
+      campo = '<div class="ra-idrow"><div class="ra-idbox'+(ok?' ok':'')+'">' +
           '<div class="ra-idfix">'+ID_PREFIX+'</div>' +
           '<input class="ra-idmid" id="input-id-mid" type="tel" inputmode="numeric" pattern="[0-9]*" ' +
             'maxlength="'+ID_MID_LEN+'" placeholder="000000" value="'+escAttr(S.idMid)+'" autocomplete="off">' +
           '<div class="ra-idfix suffix">'+ID_SUFFIX+'</div>' +
-        '</div>' + aviso +
+        '</div>' + camBtn + '</div>' + aviso +
         '<button class="ra-link" id="btn-modo-libre">Este rollo no sigue el formato</button>';
     } else {
-      campo = '<input class="ra-input" id="input-id-full" placeholder="ID completo del rollo" value="'+escAttr(S.idFull)+'" autocapitalize="characters" autocomplete="off" spellcheck="false">' +
+      campo = '<div class="ra-idrow"><input class="ra-input" id="input-id-full" placeholder="ID completo del rollo" value="'+escAttr(S.idFull)+'" autocapitalize="characters" autocomplete="off" spellcheck="false">' + camBtn + '</div>' +
         '<button class="ra-link" id="btn-modo-guiado">Volver al formato '+ID_PREFIX+'…'+ID_SUFFIX+'</button>';
     }
 
@@ -2201,7 +2330,9 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div class="ra-h1">Identificar rollo</div>' +
         '<div class="ra-h2">Escanea el código QR del rollo o captura los dígitos manualmente.</div>' + camWarn +
         '<button class="ra-btn ra-btn-primary ra-btn-block" id="btn-scan"'+(isInsecureContext()?' disabled':'')+' style="margin-bottom:20px;">Escanear código QR</button>' +
-        '<label class="ra-label">ID DE ROLLO</label>' + campo +
+        '<div class="ra-label-row"><label class="ra-label">ID DE ROLLO</label>' +
+          '<button type="button" class="ra-galbtn" id="btn-gal-id">'+ICO_GAL+'Galería'+(nGalTot?' <b>'+nGalTot+'</b>':'')+'</button></div>' + campo +
+        (nGalId ? '<div class="ra-gal-aviso" style="margin:10px 0 0;">'+ICO_GAL+'<span><b>'+nGalId+' foto'+(nGalId===1?'':'s')+' en la galería</b> para este rollo. Se agregarán solas al registro.</span></div>' : '') +
         (ok && S.tracking[id] ? rolloExistenteCard(S.tracking[id], previos) :
           (previos ? '<div class="ra-note" style="margin-top:14px;">Este rollo ya tiene '+previos+' inspección(es) registrada(s).</div>' : '')) +
         (ok ? datosIdSeccion(master) : '') +
@@ -2419,15 +2550,12 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   }
 
   function screenEvidencia(){
-    var fotos = S.fotos.map(function(f,i){
-      return '<div class="ra-photo-thumb"><img src="'+f+'" alt="Evidencia '+(i+1)+'"><button data-remove-foto="'+i+'" aria-label="Quitar foto">✕</button></div>';
-    }).join('');
     return backRow('defecto') +
       '<div class="ra-card">' +
         '<div class="ra-h1">Evidencia y comentario</div>' +
         '<div class="ra-h2">Ambos campos son opcionales.</div>' +
         '<label class="ra-label">FOTOGRAFÍA</label>' +
-        '<div class="ra-photo-row">'+fotos+'<label class="ra-add-photo">＋<input type="file" accept="image/*" capture="environment" id="input-foto" style="display:none;"></label></div>' +
+        filaFotosRegistro() +
         '<label class="ra-label" for="input-comentario">COMENTARIO</label>' +
         '<textarea class="ra-input" id="input-comentario" placeholder="Información adicional">'+escHtml(S.comentario)+'</textarea>' +
         resumen() +
@@ -2445,7 +2573,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
           '<div class="ra-meta">Revisa los datos antes de guardar.</div>' +
         '</div>' +
         resumen() +
-        '<label class="ra-label" style="margin-top:16px;" for="input-comentario">COMENTARIO (OPCIONAL)</label>' +
+        '<label class="ra-label" style="margin-top:16px;">FOTOGRAFÍA (OPCIONAL)</label>' + filaFotosRegistro() +
+        '<label class="ra-label" for="input-comentario">COMENTARIO (OPCIONAL)</label>' +
         '<textarea class="ra-input" id="input-comentario" placeholder="Información adicional">'+escHtml(S.comentario)+'</textarea>' +
         '<button class="ra-btn ra-btn-conforme ra-btn-block" id="btn-guardar">Confirmar y guardar</button>' +
         '<button class="ra-btn ra-btn-outline ra-btn-block" data-goto="resultado" style="margin-bottom:0;">Cancelar</button>' +
@@ -2502,9 +2631,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         (S.isAdmin && f.id ? '<button data-edit-quitar-foto="'+escAttr(f.id)+'" aria-label="Quitar foto">✕</button>' : '') + '</div>';
     }).join('');
     var nuevas = S.editFotos.map(function(d,i){
-      return '<div class="ra-photo-thumb nueva"><img src="'+d+'" alt="Foto nueva '+(i+1)+'"><span class="ra-foto-nueva">NUEVA</span>' +
+      var gal = d && d.fid;
+      return '<div class="ra-photo-thumb nueva'+(gal?' gal':'')+'"><img src="'+srcFoto(d)+'" alt="Foto nueva '+(i+1)+'">' +
+        (gal ? '<span class="ra-foto-gal">GALERÍA</span>' : '<span class="ra-foto-nueva">NUEVA</span>') +
         '<button data-edit-quitar-nueva="'+i+'" aria-label="Quitar foto">✕</button></div>';
     }).join('');
+    var yaEdit = S.editFotos.filter(function(f){ return f && f.fid; }).map(function(f){ return f.fid; });
+    var sugGal = galeriaLibresDe(r.rolloId).filter(function(g){ return yaEdit.indexOf(g.fid)===-1 && (r.fotoIds||[]).indexOf(g.fid)===-1; });
     var nQuitar = S.editQuitar.length;
 
     return '<div class="ra-topbar"><button class="ra-back" id="btn-cancel-edit">‹ Cancelar</button></div>' +
@@ -2514,7 +2647,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         (ediciones ? '<div class="ra-note">Este registro ya tiene '+ediciones+' modificación(es) previas. Puedes verlas en el reporte de movimientos.</div>' : '') +
         '<label class="ra-label">FOTOGRAFÍAS</label>' +
         '<div class="ra-photo-row">'+existentes+nuevas +
-          '<label class="ra-add-photo" title="Agregar fotos">＋<input type="file" accept="image/*" multiple id="edit-input-foto" style="display:none;"></label></div>' +
+          '<button type="button" class="ra-add-photo" data-add-foto="edit" title="Agregar fotos" aria-label="Agregar fotos">'+ICO_CAM+'</button></div>' +
+        (sugGal.length ? '<button type="button" class="ra-gal-sug" data-edit-sug-gal>'+ICO_GAL+'<span><b>Agregar '+sugGal.length+' foto'+(sugGal.length===1?'':'s')+' de la galería</b> que se tomaron para este rollo</span></button>' : '') +
         '<div class="ra-meta" style="margin:-6px 0 14px;">Puedes tomar fotos nuevas o elegirlas de la galería.' +
           (S.editFotos.length ? ' <b style="color:var(--conforme);">'+S.editFotos.length+' foto(s) nueva(s) se agregarán al guardar.</b>' : '') +
           (nQuitar ? ' <b style="color:var(--scrap);">'+nQuitar+' foto(s) se quitarán al guardar.</b> <button class="ra-link" id="btn-edit-restaurar-fotos" style="padding:0;font-size:12.5px;">Deshacer</button>' : '') + '</div>' +
@@ -3629,6 +3763,537 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     lb.addEventListener('click', function(e){ if(e.target===lb) cerrar(); });
   }
 
+
+  /* ============ CÁMARA INTERNA Y GALERÍA COMPARTIDA ============
+     Las fotos se toman dentro de la app (sin abrir la app de Cámara del celular,
+     para no romper el modo kiosco). La galería es compartida entre todos los equipos:
+     cada foto tiene un documento completo en "fotos" y un índice ligero (miniatura,
+     ID del rollo) que es lo único que se descarga para mostrar la galería. */
+  var ICO_CAM = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.2h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>';
+  var ICO_GAL = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M21 16l-5.2-5.2L6 20"/></svg>';
+  var ICO_GIRAR = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.6L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.3 4.6L20 16"/><path d="M20 21v-5h-5"/></svg>';
+
+  function normId(x){ return String(x||'').toUpperCase().replace(/[\s\-_.\/]/g,''); }
+  function fidsUsados(){
+    var s = {};
+    S.registros.forEach(function(r){ (r.fotoIds||[]).forEach(function(f){ s[f] = true; }); });
+    return s;
+  }
+  function galPorTs(a,b){ return (a.ts||0) - (b.ts||0); }
+  /* Fotos de la galería sin usar que pertenecen a un rollo */
+  function galeriaLibresDe(id){
+    var n = normId(id); if(!n) return [];
+    var u = fidsUsados();
+    return S.galeria.filter(function(g){ return g.rolloId && normId(g.rolloId)===n && !u[g.fid]; }).sort(galPorTs);
+  }
+  function galeriaLibres(){
+    var u = fidsUsados();
+    return S.galeria.filter(function(g){ return !u[g.fid]; });
+  }
+  function fechaCorta(ts){
+    var d = new Date(ts||0), hoy = new Date();
+    var mismo = d.toDateString()===hoy.toDateString();
+    var ayer = new Date(hoy.getTime()-86400000).toDateString()===d.toDateString();
+    return (mismo ? 'Hoy' : ayer ? 'Ayer' : pad(d.getDate())+'/'+pad(d.getMonth()+1)) + ' ' + horaAhora(d);
+  }
+  function hace(ts){
+    var h = (Date.now()-(ts||0))/3600000;
+    if(h < 1) return 'hace un momento';
+    if(h < 24) return 'hace '+Math.floor(h)+' h';
+    var d = Math.floor(h/24); return 'hace '+d+' día'+(d===1?'':'s');
+  }
+
+  /* Escucha de la galería: solo índices (miniaturas) */
+  function escucharGaleria(){
+    unsubs.push(onSnapshot(query(collection(db, COL.fotos), where('tipo','==','galeria')), function(qs){
+      S.galeria = qs.docs.map(function(d){ var x = d.data(); x.id = d.id; x._pend = d.metadata.hasPendingWrites; return x; });
+      limpiarGaleriaVieja(qs.metadata.fromCache);
+      refrescarGaleriaAbierta();
+      marcarCambios();
+    }, function(e){ console.error(e); }));
+  }
+  /* Los índices de fotos ya usadas en un registro se retiran solos a los 30 días
+     (la foto sigue en su registro; solo se quita de la galería) */
+  function limpiarGaleriaVieja(desdeCache){
+    if(S.galLimpia || desdeCache || !S.registros.length) return;
+    S.galLimpia = true;
+    var u = fidsUsados(), lim = Date.now() - 30*86400000;
+    var viejas = S.galeria.filter(function(g){ return u[g.fid] && (g.ts||0) < lim; });
+    if(!viejas.length) return;
+    var b = writeBatch(db);
+    viejas.slice(0,400).forEach(function(g){ b.delete(ref(COL.fotos, g.id)); });
+    b.commit().catch(function(){});
+  }
+
+  /* Comprime un cuadro del video al mismo tamaño que las fotos de siempre */
+  function cuadroAJpeg(fuente, w, h){
+    function reducir(maxW, q){
+      var scale = Math.min(1, maxW/w);
+      var c = document.createElement('canvas');
+      c.width = Math.max(1,Math.round(w*scale)); c.height = Math.max(1,Math.round(h*scale));
+      c.getContext('2d').drawImage(fuente, 0, 0, c.width, c.height);
+      return c.toDataURL('image/jpeg', q);
+    }
+    var full = reducir(900, 0.6);
+    if(full.length > 700000) full = reducir(700, 0.45);
+    if(full.length > 700000) full = reducir(520, 0.4);
+    return {full:full, thumb:reducir(240, 0.6)};
+  }
+  function miniaturaDe(dataURL){
+    return new Promise(function(resolve){
+      var img = new Image();
+      img.onload = function(){ resolve(cuadroAJpeg(img, img.width, img.height).thumb); };
+      img.onerror = function(){ resolve(dataURL); };
+      img.src = dataURL;
+    });
+  }
+
+  function guardarEnGaleria(full, thumb, rolloId){
+    var now = Date.now(), base = 'g'+now+Math.random().toString(36).slice(2,7);
+    var fid = base+'_f', gid = base+'_i';
+    S.fotoCache[fid] = full;
+    var b = writeBatch(db);
+    b.set(ref(COL.fotos, fid), {galeria:true, rolloId:rolloId||'', data:full, ts:now, uid:S.perfil.uid});
+    b.set(ref(COL.fotos, gid), {tipo:'galeria', fid:fid, data:thumb, rolloId:rolloId||'', ts:now,
+      uid:S.perfil.uid, autor:usuarioActual()});
+    escribir(b.commit());
+  }
+  /* Cambiar el ID de fotos: se crea un índice nuevo y se borra el anterior
+     (los inspectores pueden crear y borrar fotos, no modificarlas) */
+  function reetiquetarGaleria(gids, nuevoId){
+    var b = writeBatch(db), n = 0;
+    gids.forEach(function(gid){
+      var g = S.galeria.filter(function(x){ return x.id===gid; })[0];
+      if(!g || (g.rolloId||'')===(nuevoId||'')) return;
+      var nid = 'g'+Date.now()+Math.random().toString(36).slice(2,7)+'_i';
+      b.set(ref(COL.fotos, nid), {tipo:'galeria', fid:g.fid, data:g.data, rolloId:nuevoId||'', ts:g.ts||Date.now(),
+        uid:g.uid||S.perfil.uid, autor:g.autor||'', etiquetadoPor:usuarioActual()});
+      b.delete(ref(COL.fotos, gid));
+      n++;
+    });
+    if(n) escribir(b.commit());
+    return n;
+  }
+  function borrarDeGaleria(gids){
+    var u = fidsUsados(), b = writeBatch(db), n = 0;
+    gids.forEach(function(gid){
+      var g = S.galeria.filter(function(x){ return x.id===gid; })[0];
+      if(!g) return;
+      b.delete(ref(COL.fotos, gid));
+      if(g.fid && !u[g.fid]){ b.delete(ref(COL.fotos, g.fid)); delete S.fotoCache[g.fid]; }
+      n++;
+    });
+    if(n) escribir(b.commit());
+    return n;
+  }
+  /* Al borrar fotos de un registro, su índice en la galería también se va */
+  function borrarIndicesDe(fids, batch){
+    if(!fids || !fids.length) return;
+    S.galeria.forEach(function(g){ if(fids.indexOf(g.fid)!==-1) batch.delete(ref(COL.fotos, g.id)); });
+  }
+
+  /* ---------- Ventana para elegir el ID de las fotos ---------- */
+  function pedirIdFotos(actual, alElegir){
+    var modo = 'guiado', mid = '', libre = '';
+    var m = String(actual||'').match(new RegExp('^'+ID_PREFIX+'(\\d{'+ID_MID_LEN+'})'+ID_SUFFIX+'$'));
+    if(m) mid = m[1]; else if(actual){ modo = 'libre'; libre = actual; }
+    var recientes = [];
+    function agregarReciente(id){ if(id && recientes.indexOf(id)===-1 && recientes.length<6) recientes.push(id); }
+    galeriaLibres().slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).forEach(function(g){ agregarReciente(g.rolloId); });
+    S.registros.slice(0,10).forEach(function(r){ agregarReciente(r.rolloId); });
+    var ov = el('<div class="ra-pid"><div class="ra-pid-card" role="dialog" aria-label="ID de las fotos"></div></div>');
+    document.body.appendChild(ov);
+    var card = ov.querySelector('.ra-pid-card');
+    function valor(){ return modo==='guiado' ? (mid.length===ID_MID_LEN ? ID_PREFIX+mid+ID_SUFFIX : '') : libre.trim().toUpperCase(); }
+    function valido(){ return modo==='guiado' ? mid.length===ID_MID_LEN : libre.trim().length>=4; }
+    function pintar(foco){
+      card.innerHTML =
+        '<div class="ra-h1" style="font-size:18px;">¿De qué rollo son estas fotos?</div>' +
+        '<div class="ra-meta" style="margin-bottom:12px;">Las fotos quedan ligadas a este ID y se agregan solas cuando registres el rollo.</div>' +
+        (modo==='guiado'
+          ? '<div class="ra-idbox'+(valido()?' ok':'')+'"><div class="ra-idfix">'+ID_PREFIX+'</div>' +
+            '<input class="ra-idmid" id="pid-mid" type="tel" inputmode="numeric" maxlength="'+ID_MID_LEN+'" placeholder="000000" value="'+escAttr(mid)+'" autocomplete="off">' +
+            '<div class="ra-idfix suffix">'+ID_SUFFIX+'</div></div>' +
+            '<button class="ra-link" data-pid-modo="libre" style="margin-top:6px;">Este rollo no sigue el formato</button>'
+          : '<input class="ra-input" id="pid-full" placeholder="ID completo del rollo" value="'+escAttr(libre)+'" autocapitalize="characters" autocomplete="off" spellcheck="false">' +
+            '<button class="ra-link" data-pid-modo="guiado">Volver al formato '+ID_PREFIX+'…'+ID_SUFFIX+'</button>') +
+        (recientes.length ? '<div class="ra-meta" style="margin:12px 0 6px;">Recientes</div><div class="ra-zchips">' +
+          recientes.map(function(r){ return '<button class="ra-zchip" data-pid-rec="'+escAttr(r)+'">'+escHtml(r)+'</button>'; }).join('') + '</div>' : '') +
+        '<button class="ra-btn ra-btn-primary ra-btn-block" data-pid-ok style="margin-top:16px;"'+(valido()?'':' disabled')+'>Usar este ID</button>' +
+        '<button class="ra-btn ra-btn-outline ra-btn-block" data-pid-sin>Sin ID por ahora</button>' +
+        '<button class="ra-link" data-pid-cancel style="display:block;margin:2px auto 0;">Cancelar</button>';
+      var inp = card.querySelector('#pid-mid'), inf = card.querySelector('#pid-full');
+      if(inp){
+        inp.addEventListener('input', function(){
+          mid = inp.value.replace(/\D/g,'').slice(0,ID_MID_LEN); inp.value = mid;
+          card.querySelector('.ra-idbox').classList.toggle('ok', valido());
+          card.querySelector('[data-pid-ok]').disabled = !valido();
+        });
+        inp.addEventListener('keydown', function(e){ if(e.key==='Enter' && valido()) listo(valor()); });
+      }
+      if(inf){
+        inf.addEventListener('input', function(){ libre = inf.value; card.querySelector('[data-pid-ok]').disabled = !valido(); });
+        inf.addEventListener('keydown', function(e){ if(e.key==='Enter' && valido()) listo(valor()); });
+      }
+      if(foco!==false){ var f = inp || inf; if(f) setTimeout(function(){ try{ f.focus(); }catch(e){} }, 60); }
+      card.querySelectorAll('[data-pid-modo]').forEach(function(b){
+        b.addEventListener('click', function(){ modo = b.getAttribute('data-pid-modo'); pintar(); });
+      });
+      card.querySelectorAll('[data-pid-rec]').forEach(function(b){
+        b.addEventListener('click', function(){ listo(b.getAttribute('data-pid-rec')); });
+      });
+      card.querySelector('[data-pid-ok]').addEventListener('click', function(){ if(valido()) listo(valor()); });
+      card.querySelector('[data-pid-sin]').addEventListener('click', function(){ listo(''); });
+      card.querySelector('[data-pid-cancel]').addEventListener('click', cerrar);
+    }
+    function cerrar(){ if(ov.parentNode) ov.remove(); }
+    function listo(v){ cerrar(); alElegir(v); }
+    ov.addEventListener('click', function(e){ if(e.target===ov) cerrar(); });
+    pintar();
+  }
+
+  /* ---------- Cámara a pantalla completa dentro de la app ----------
+     opts.modo: 'galeria' (guarda en la galería con un ID) o 'registro' (entrega la foto al registro)
+     opts.rolloId, opts.alTomar(full), opts.alCerrar(n) */
+  function abrirCamara(opts){
+    opts = opts || {};
+    if(isInsecureContext()){ toast('La cámara requiere https'); return; }
+    var etiqueta = opts.rolloId || '', tomadas = 0, facing = 'environment';
+    var modal = el('<div class="ra-cam">' +
+        '<video autoplay playsinline muted></video><div class="cam-flash"></div>' +
+        '<div class="cam-top">' +
+          '<button class="cam-btn" data-cam-cerrar aria-label="Cerrar">✕</button>' +
+          '<button class="cam-chip" data-cam-id></button>' +
+          '<div class="cam-top-r"><button class="cam-btn" data-cam-torch aria-label="Linterna" hidden>☀</button>' +
+          '<button class="cam-btn" data-cam-girar aria-label="Cambiar cámara" hidden>'+ICO_GIRAR+'</button></div>' +
+        '</div>' +
+        '<div class="cam-msg" hidden></div>' +
+        '<div class="cam-bottom">' +
+          '<div class="cam-last"><img alt="" hidden><span class="cam-count" hidden></span></div>' +
+          '<button class="cam-shutter" data-cam-disparar aria-label="Tomar foto" disabled><i></i></button>' +
+          '<button class="cam-done" data-cam-listo>Listo</button>' +
+        '</div>' +
+      '</div>');
+    document.body.appendChild(modal);
+    document.body.classList.add('ra-cam-abierta');
+    var video = modal.querySelector('video'), stream = null, track = null, torchOn = false, ultimo = null;
+    var chip = modal.querySelector('[data-cam-id]');
+    function pintarChip(){
+      if(opts.modo==='registro'){
+        chip.innerHTML = 'Foto para <b>'+escHtml(etiqueta||'este registro')+'</b>';
+        chip.disabled = true;
+      } else {
+        chip.innerHTML = etiqueta ? 'ID <b>'+escHtml(etiqueta)+'</b> <span class="cam-cambiar">cambiar</span>'
+                                  : '<b>Sin ID</b> <span class="cam-cambiar">asignar</span>';
+      }
+    }
+    pintarChip();
+    function detener(){ if(stream) stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; track = null; }
+    function iniciar(){
+      detener();
+      var msg = modal.querySelector('.cam-msg'); msg.hidden = true;
+      navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:facing}, width:{ideal:1920}, height:{ideal:1080}}})
+      .then(function(s){
+        if(!modal.parentNode){ s.getTracks().forEach(function(t){ t.stop(); }); return; }
+        stream = s; video.srcObject = s; video.play().catch(function(){});
+        track = s.getVideoTracks()[0];
+        var caps = (track && track.getCapabilities) ? (track.getCapabilities()||{}) : {};
+        var tb = modal.querySelector('[data-cam-torch]');
+        tb.hidden = !caps.torch; torchOn = false; tb.classList.remove('on');
+        modal.querySelector('[data-cam-disparar]').disabled = false;
+        if(navigator.mediaDevices.enumerateDevices){
+          navigator.mediaDevices.enumerateDevices().then(function(ds){
+            var n = ds.filter(function(d){ return d.kind==='videoinput'; }).length;
+            modal.querySelector('[data-cam-girar]').hidden = n < 2;
+          }).catch(function(){});
+        }
+      }).catch(function(err){
+        modal.querySelector('[data-cam-disparar]').disabled = true;
+        var negado = err && (err.name==='NotAllowedError' || err.name==='SecurityError');
+        msg.hidden = false;
+        msg.innerHTML = '<b>'+(negado ? 'La app no tiene permiso para usar la cámara' : 'No se pudo abrir la cámara')+'</b>' +
+          '<p>'+(negado
+            ? 'Permite el acceso a la cámara para esta página y vuelve a intentarlo.'
+            : 'Puede que otra app esté usando la cámara. Ciérrala y vuelve a intentarlo.')+'</p>' +
+          '<ul><li><b>Fully Kiosk:</b> Ajustes → Web Content Settings → activa <i>Enable Webcam Access</i>.</li>' +
+          '<li><b>Chrome:</b> toca el candado junto a la dirección → Permisos → Cámara → Permitir.</li>' +
+          '<li>Otras apps de kiosco: busca la opción de permitir cámara o webcam para páginas web.</li></ul>' +
+          '<button class="ra-btn ra-btn-primary" data-cam-reintentar>Reintentar</button>';
+        msg.querySelector('[data-cam-reintentar]').addEventListener('click', iniciar);
+      });
+    }
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      var msg0 = modal.querySelector('.cam-msg'); msg0.hidden = false;
+      msg0.innerHTML = '<b>Este navegador no permite usar la cámara dentro de la página.</b><p>Actualiza el navegador o la app de kiosco.</p>';
+    } else iniciar();
+
+    function disparar(){
+      if(!stream || !video.videoWidth) return;
+      var r = cuadroAJpeg(video, video.videoWidth, video.videoHeight);
+      var fl = modal.querySelector('.cam-flash');
+      fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on');
+      if(navigator.vibrate) navigator.vibrate(30);
+      tomadas++; ultimo = r;
+      var im = modal.querySelector('.cam-last img'), ct = modal.querySelector('.cam-count');
+      im.src = r.thumb; im.hidden = false; ct.textContent = tomadas; ct.hidden = false;
+      if(opts.modo==='galeria') guardarEnGaleria(r.full, r.thumb, etiqueta);
+      else if(opts.alTomar) opts.alTomar(r.full, r.thumb);
+    }
+    function cerrar(){
+      detener();
+      if(modal.parentNode) modal.remove();
+      document.body.classList.remove('ra-cam-abierta');
+      if(opts.modo==='galeria' && tomadas) toast(tomadas+' foto'+(tomadas===1?'':'s')+' en la galería'+(etiqueta?' · '+etiqueta:' · sin ID'));
+      if(opts.alCerrar) opts.alCerrar(tomadas);
+    }
+    modal.querySelector('[data-cam-disparar]').addEventListener('click', disparar);
+    modal.querySelector('[data-cam-listo]').addEventListener('click', cerrar);
+    modal.querySelector('[data-cam-cerrar]').addEventListener('click', cerrar);
+    modal.querySelector('[data-cam-torch]').addEventListener('click', function(){
+      if(!track) return;
+      torchOn = !torchOn;
+      track.applyConstraints({advanced:[{torch:torchOn}]}).catch(function(){});
+      this.classList.toggle('on', torchOn);
+    });
+    modal.querySelector('[data-cam-girar]').addEventListener('click', function(){
+      facing = facing==='environment' ? 'user' : 'environment'; iniciar();
+    });
+    modal.querySelector('.cam-last').addEventListener('click', function(){ if(ultimo) abrirFoto(ultimo.full, 'Última foto tomada'); });
+    if(opts.modo!=='registro') chip.addEventListener('click', function(){
+      pedirIdFotos(etiqueta, function(v){ etiqueta = v; pintarChip(); if(v) toast('Las siguientes fotos van al ID '+v); });
+    });
+  }
+
+  /* ---------- Opciones al tocar ＋ en un registro ---------- */
+  function opcionesFoto(o){
+    var libres = galeriaLibres().filter(function(g){ return (o.excluir||[]).indexOf(g.fid)===-1; });
+    var deEste = o.rolloId ? galeriaLibresDe(o.rolloId).filter(function(g){ return (o.excluir||[]).indexOf(g.fid)===-1; }).length : 0;
+    var sh = el('<div class="ra-sheet"><div class="ra-sheet-card">' +
+        '<div class="ra-sheet-t">Agregar foto</div>' +
+        '<button class="ra-sheet-op" data-op="cam"><span class="i">'+ICO_CAM+'</span><span><b>Tomar foto ahora</b><small>Con la cámara de la app</small></span></button>' +
+        '<button class="ra-sheet-op" data-op="gal"'+(libres.length?'':' disabled')+'><span class="i">'+ICO_GAL+'</span><span><b>Elegir de la galería</b><small>' +
+          (libres.length ? libres.length+' foto'+(libres.length===1?'':'s')+' disponible'+(libres.length===1?'':'s')+(deEste?' · '+deEste+' de este rollo':'') : 'No hay fotos sin usar') + '</small></span></button>' +
+        (S.isAdmin ? '<button class="ra-sheet-op" data-op="arch"><span class="i">⇪</span><span><b>Subir archivo</b><small>Solo administradores · desde el equipo</small></span></button>' : '') +
+        '<button class="ra-sheet-cancel" data-op="x">Cancelar</button>' +
+      '</div></div>');
+    document.body.appendChild(sh);
+    requestAnimationFrame(function(){ sh.classList.add('on'); });
+    function cerrar(){ if(sh.parentNode) sh.remove(); }
+    sh.addEventListener('click', function(e){
+      if(e.target===sh){ cerrar(); return; }
+      var b = e.target.closest('[data-op]'); if(!b || b.disabled) return;
+      var op = b.getAttribute('data-op');
+      cerrar();
+      if(op==='cam') abrirCamara({modo:'registro', rolloId:o.rolloId, alTomar:function(full){ o.alAgregar([full]); }, alCerrar:o.alTerminar});
+      else if(op==='gal') abrirGaleria({modo:'elegir', rolloId:o.rolloId, excluir:o.excluir||[],
+        alElegir:function(sel){ o.alAgregar(sel.map(function(g){ return {gal:g.id, fid:g.fid, thumb:g.data}; })); if(o.alTerminar) o.alTerminar(); }});
+      else if(op==='arch'){
+        var inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
+        inp.addEventListener('change', function(){
+          var files = Array.prototype.slice.call(inp.files||[]); if(!files.length) return;
+          toast(files.length>1 ? 'Procesando '+files.length+' fotos…' : 'Procesando foto…');
+          var out = [];
+          files.reduce(function(p,f){ return p.then(function(){ return compressImage(f).then(function(d){ out.push(d); }); }); }, Promise.resolve())
+            .catch(function(){ toast('No se pudo procesar alguna foto'); })
+            .then(function(){ if(out.length) o.alAgregar(out); if(o.alTerminar) o.alTerminar(); });
+        });
+        inp.click();
+      }
+    });
+  }
+
+  /* ---------- Galería a pantalla completa ----------
+     opts.modo: 'ver' (administrar) o 'elegir' (agregar a un registro) */
+  var galAbierta = null;
+  function refrescarGaleriaAbierta(){ if(galAbierta) galAbierta.pintar(); }
+  function abrirGaleria(opts){
+    opts = opts || {};
+    if(galAbierta) galAbierta.cerrar();
+    var elegir = opts.modo==='elegir';
+    var sel = {}, modoSel = elegir, verUsadas = false;
+    var ov = el('<div class="ra-gal" role="dialog" aria-label="Galería de fotos"></div>');
+    document.body.appendChild(ov);
+    document.body.classList.add('ra-cam-abierta');
+    var api = {pintar:pintar, cerrar:cerrar};
+    galAbierta = api;
+    function cerrar(){
+      if(ov.parentNode) ov.remove();
+      if(galAbierta===api) galAbierta = null;
+      if(!document.querySelector('.ra-cam')) document.body.classList.remove('ra-cam-abierta');
+    }
+    function grupos(){
+      var u = fidsUsados(), excl = opts.excluir||[];
+      var libres = S.galeria.filter(function(g){ return !u[g.fid] && excl.indexOf(g.fid)===-1; });
+      var usadas = elegir ? [] : S.galeria.filter(function(g){ return u[g.fid]; });
+      var mapa = {}, lista = [];
+      libres.forEach(function(g){
+        var k = g.rolloId ? normId(g.rolloId) : '';
+        if(!mapa[k]){ mapa[k] = {clave:k, rolloId:g.rolloId||'', fotos:[]}; lista.push(mapa[k]); }
+        mapa[k].fotos.push(g);
+      });
+      lista.forEach(function(gr){ gr.fotos.sort(galPorTs); gr.ultimo = gr.fotos[gr.fotos.length-1].ts||0; gr.primero = gr.fotos[0].ts||0; });
+      var actual = normId(opts.rolloId||'');
+      lista.sort(function(a,b){
+        if(actual && a.clave===actual) return -1; if(actual && b.clave===actual) return 1;
+        if(!a.clave) return 1; if(!b.clave) return -1;
+        return b.ultimo - a.ultimo;
+      });
+      usadas.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+      return {lista:lista, usadas:usadas, actual:actual};
+    }
+    function tile(g, usada){
+      var on = !!sel[g.id];
+      return '<button class="ra-gal-tile'+(on?' sel':'')+(usada?' usada':'')+'" data-gal-tile="'+escAttr(g.id)+'">' +
+        '<img src="'+g.data+'" alt="">' +
+        '<span class="t">'+escHtml(fechaCorta(g.ts))+'</span>' +
+        (g._pend ? '<span class="p" title="Subiendo">⇡</span>' : '') +
+        (modoSel ? '<span class="ck">'+(on?'✓':'')+'</span>' : '') +
+      '</button>';
+    }
+    function pintar(){
+      var G = grupos(), nSel = Object.keys(sel).filter(function(k){ return sel[k]; }).length;
+      Object.keys(sel).forEach(function(k){ if(!S.galeria.some(function(g){ return g.id===k; })) delete sel[k]; });
+      var total = G.lista.reduce(function(a,g){ return a+g.fotos.length; }, 0);
+      var cuerpo = '';
+      if(!total && !G.usadas.length){
+        cuerpo = '<div class="ra-empty"><div class="big">'+ICO_GAL+'</div>' +
+          (elegir ? 'No hay fotos sin usar en la galería.' : 'Aún no hay fotos.<br>Toma fotos con el botón de cámara y quedarán aquí para todos los equipos.') + '</div>';
+      }
+      else if(!total) cuerpo = '<div class="ra-meta" style="text-align:center;padding:16px 0 20px;">No hay fotos pendientes por usar.</div>';
+      G.lista.forEach(function(gr){
+        var vieja = gr.primero && (Date.now()-gr.primero) > 48*3600000;
+        var esActual = G.actual && gr.clave===G.actual;
+        var todas = gr.fotos.every(function(g){ return sel[g.id]; });
+        cuerpo += '<div class="ra-gal-grupo'+(esActual?' actual':'')+(!gr.clave?' sinid':'')+'">' +
+          '<div class="ra-gal-gh">' +
+            '<div><div class="n">'+(gr.clave ? 'ID '+escHtml(gr.rolloId) : 'Sin ID asignado')+'</div>' +
+              '<div class="m">'+gr.fotos.length+' foto'+(gr.fotos.length===1?'':'s')+' · '+hace(gr.ultimo) +
+              (esActual ? ' · <b>este rollo</b>' : '') +
+              (vieja && gr.clave ? ' · <b class="w">pendiente de usar</b>' : '') +
+              (!gr.clave ? ' · asígnales un ID para que se agreguen solas' : '') + '</div></div>' +
+            (modoSel ? '<button class="ra-link" data-gal-todo="'+escAttr(gr.clave)+'">'+(todas?'Quitar':'Elegir todas')+'</button>' : '') +
+          '</div>' +
+          '<div class="ra-gal-grid">'+gr.fotos.map(function(g){ return tile(g,false); }).join('')+'</div>' +
+        '</div>';
+      });
+      if(G.usadas.length){
+        cuerpo += '<div class="ra-gal-grupo usadas"><button class="ra-gal-gh ra-gal-toggle" data-gal-usadas>' +
+            '<div><div class="n">Usadas en registros</div><div class="m">'+G.usadas.length+' foto'+(G.usadas.length===1?'':'s')+' · se retiran solas de la galería a los 30 días</div></div>' +
+            '<span class="ra-acc-chev">'+(verUsadas?'▴':'▾')+'</span></button>' +
+          (verUsadas ? '<div class="ra-gal-grid">'+G.usadas.map(function(g){ return tile(g,true); }).join('')+'</div>' : '') +
+        '</div>';
+      }
+      var barra = '';
+      if(elegir){
+        barra = '<div class="ra-gal-bar"><span>'+(nSel ? nSel+' seleccionada'+(nSel===1?'':'s') : 'Toca las fotos que quieres agregar')+'</span>' +
+          '<button class="ra-btn ra-btn-conforme" data-gal-agregar'+(nSel?'':' disabled')+'>Agregar'+(nSel?' '+nSel:'')+'</button></div>';
+      } else if(modoSel){
+        barra = '<div class="ra-gal-bar acciones"><span>'+nSel+' seleccionada'+(nSel===1?'':'s')+'</span>' +
+          '<button class="ra-btn ra-btn-primary ra-btn-sm" data-gal-asignar'+(nSel?'':' disabled')+'>Asignar ID</button>' +
+          '<button class="ra-btn ra-btn-outline ra-btn-sm" data-gal-quitarid'+(nSel?'':' disabled')+'>Quitar ID</button>' +
+          '<button class="ra-btn ra-btn-scrap ra-btn-sm" data-gal-borrar'+(nSel?'':' disabled')+'>Eliminar</button></div>';
+      }
+      ov.innerHTML =
+        '<div class="ra-gal-head">' +
+          '<button class="cam-btn dark" data-gal-cerrar aria-label="Cerrar">✕</button>' +
+          '<div class="tt"><div class="a">'+(elegir ? 'Elegir de la galería' : 'Galería de fotos')+'</div>' +
+            '<div class="b">'+(elegir && opts.rolloId ? 'Para '+escHtml(opts.rolloId) : total+' sin usar · compartida entre equipos')+'</div></div>' +
+          (!elegir ? '<button class="ra-btn ra-btn-outline ra-btn-sm" data-gal-sel>'+(modoSel?'Listo':'Seleccionar')+'</button>' : '') +
+        '</div>' +
+        (!elegir ? '<button class="ra-gal-cam" data-gal-cam><span class="i">'+ICO_CAM+'</span>Tomar fotos</button>' : '') +
+        '<div class="ra-gal-body">'+cuerpo+'</div>' + barra;
+      ov.querySelector('[data-gal-cerrar]').addEventListener('click', cerrar);
+      var bs = ov.querySelector('[data-gal-sel]');
+      if(bs) bs.addEventListener('click', function(){ modoSel = !modoSel; sel = {}; pintar(); });
+      var bc = ov.querySelector('[data-gal-cam]');
+      if(bc) bc.addEventListener('click', function(){
+        pedirIdFotos('', function(v){ abrirCamara({modo:'galeria', rolloId:v}); });
+      });
+      var bu = ov.querySelector('[data-gal-usadas]');
+      if(bu) bu.addEventListener('click', function(){ verUsadas = !verUsadas; pintar(); });
+      ov.querySelectorAll('[data-gal-todo]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var k = b.getAttribute('data-gal-todo');
+          var gr = grupos().lista.filter(function(g){ return g.clave===k; })[0]; if(!gr) return;
+          var todas = gr.fotos.every(function(g){ return sel[g.id]; });
+          gr.fotos.forEach(function(g){ sel[g.id] = !todas; });
+          pintar();
+        });
+      });
+      ov.querySelectorAll('[data-gal-tile]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var id = b.getAttribute('data-gal-tile');
+          var g = S.galeria.filter(function(x){ return x.id===id; })[0]; if(!g) return;
+          if(modoSel){ sel[id] = !sel[id]; pintar(); return; }
+          var meta = (g.rolloId ? 'ID '+g.rolloId : 'Sin ID') + ' · ' + fechaCorta(g.ts) + (g.autor ? ' · '+g.autor : '');
+          abrirFoto(S.fotoCache[g.fid] || g.data, meta);
+          if(!S.fotoCache[g.fid]) cargarFoto(g.fid).then(function(src){
+            var im = document.querySelector('.ra-lightbox img'); if(src && im) im.src = src;
+          });
+        });
+      });
+      function elegidas(){ return S.galeria.filter(function(g){ return sel[g.id]; }).sort(galPorTs); }
+      var ba = ov.querySelector('[data-gal-agregar]');
+      if(ba) ba.addEventListener('click', function(){
+        var lista = elegidas(); if(!lista.length) return;
+        cerrar(); if(opts.alElegir) opts.alElegir(lista);
+      });
+      var bas = ov.querySelector('[data-gal-asignar]');
+      if(bas) bas.addEventListener('click', function(){
+        var lista = elegidas(); if(!lista.length) return;
+        var comun = lista.every(function(g){ return g.rolloId===lista[0].rolloId; }) ? lista[0].rolloId : '';
+        pedirIdFotos(comun, function(v){
+          if(!v){ toast('Elige un ID para asignar'); return; }
+          var n = reetiquetarGaleria(lista.map(function(g){ return g.id; }), v);
+          sel = {}; toast(n ? n+' foto'+(n===1?'':'s')+' asignada'+(n===1?'':'s')+' a '+v : 'Ya tenían ese ID');
+        });
+      });
+      var bq = ov.querySelector('[data-gal-quitarid]');
+      if(bq) bq.addEventListener('click', function(){
+        var lista = elegidas(); if(!lista.length) return;
+        var n = reetiquetarGaleria(lista.map(function(g){ return g.id; }), '');
+        sel = {}; toast(n ? 'Se quitó el ID a '+n+' foto'+(n===1?'':'s') : 'No tenían ID');
+      });
+      var bb = ov.querySelector('[data-gal-borrar]');
+      if(bb) bb.addEventListener('click', function(){
+        var lista = elegidas(); if(!lista.length) return;
+        var u = fidsUsados(), usadas = lista.filter(function(g){ return u[g.fid]; }).length;
+        if(!confirm('¿Eliminar '+lista.length+' foto'+(lista.length===1?'':'s')+' de la galería?' +
+          (usadas ? '\n'+usadas+' ya está'+(usadas===1?'':'n')+' en un registro y ahí se conserva'+(usadas===1?'':'n')+'.' : '\nSe borran para todos los equipos.'))) return;
+        var n = borrarDeGaleria(lista.map(function(g){ return g.id; }));
+        sel = {}; toast(n+' foto'+(n===1?'':'s')+' eliminada'+(n===1?'':'s'));
+      });
+    }
+    pintar();
+  }
+
+  /* Agrega solas al registro en curso las fotos de la galería de ese rollo */
+  function sincronizarFotosGaleria(){
+    var id = rolloId(); if(!id) return 0;
+    var ya = S.fotos.filter(function(f){ return f && f.fid; }).map(function(f){ return f.fid; });
+    var n = 0;
+    galeriaLibresDe(id).forEach(function(g){
+      if(ya.indexOf(g.fid)!==-1 || S.galDescartadas.indexOf(g.id)!==-1) return;
+      S.fotos.push({gal:g.id, fid:g.fid, thumb:g.data}); n++;
+    });
+    return n;
+  }
+  function srcFoto(f){ return typeof f==='string' ? f : (S.fotoCache[f.fid] || f.thumb || PIXEL); }
+
+  /* Fila de fotos del registro en curso (evidencia y confirmación) */
+  function filaFotosRegistro(){
+    sincronizarFotosGaleria();
+    var deGal = S.fotos.filter(function(f){ return f && f.fid; }).length;
+    var fotos = S.fotos.map(function(f,i){
+      return '<div class="ra-photo-thumb'+(f && f.fid?' gal':'')+'"><img src="'+srcFoto(f)+'" alt="Evidencia '+(i+1)+'">' +
+        (f && f.fid ? '<span class="ra-foto-gal">GALERÍA</span>' : '') +
+        '<button data-remove-foto="'+i+'" aria-label="Quitar foto">✕</button></div>';
+    }).join('');
+    return '<div class="ra-photo-row">'+fotos+'<button type="button" class="ra-add-photo" data-add-foto="reg" aria-label="Agregar foto">'+ICO_CAM+'</button></div>' +
+      (deGal ? '<div class="ra-gal-aviso">'+ICO_GAL+'<span>'+deGal+' foto'+(deGal===1?'':'s')+' de la galería de este rollo se agregaron solas. Quita las que no quieras.</span></div>' : '');
+  }
+
   /* ============ QR ============ */
   function aplicarIdEscaneado(valor){
     var v = String(valor||'').trim().toUpperCase().replace(/\s+/g,'');
@@ -4181,7 +4846,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       S.trackVista='lista'; S.trackRollo=null; S.trackModoSel=false; S.trackSeleccion=[]; S.trackMedio=''; S.trackFinal=false;
       S.trackFiltro=''; S.trackZona='Todas';
       S.showChangePin=false; S.resetUid=null;
-      document.querySelectorAll('.ra-video-modal,.ra-lightbox').forEach(function(n){
+      document.body.classList.remove('ra-cam-abierta'); galAbierta=null;
+      document.querySelectorAll('.ra-video-modal,.ra-lightbox,.ra-cam,.ra-gal,.ra-sheet,.ra-pid').forEach(function(n){
         var v=n.querySelector('video');
         if(v && v.srcObject) v.srcObject.getTracks().forEach(function(t){ t.stop(); });
         n.remove();
@@ -4354,15 +5020,49 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     });
     each('[data-goto]',function(b){ b.addEventListener('click',function(){ S.step=b.getAttribute('data-goto'); render(); }); });
 
-    var foto=root.querySelector('#input-foto');
-    if(foto) foto.addEventListener('change',function(){
-      if(foto.files && foto.files[0]){
-        compressImage(foto.files[0]).then(function(d){ S.fotos.push(d); render(); })
-        .catch(function(){ toast('No se pudo procesar la foto'); });
-      }
+    each('[data-add-foto]',function(b){
+      b.addEventListener('click',function(){
+        if(b.getAttribute('data-add-foto')==='edit'){
+          borradorEdicion();
+          var r=S.editReg; if(!r) return;
+          opcionesFoto({rolloId:r.rolloId,
+            excluir:(r.fotoIds||[]).concat(S.editFotos.filter(function(f){ return f && f.fid; }).map(function(f){ return f.fid; })),
+            alAgregar:function(lista){ lista.forEach(function(x){ S.editFotos.push(x); }); if(S.editReg) render(); }});
+          return;
+        }
+        var com=root.querySelector('#input-comentario'); if(com) S.comentario=com.value;
+        opcionesFoto({rolloId:rolloId(),
+          excluir:S.fotos.filter(function(f){ return f && f.fid; }).map(function(f){ return f.fid; }),
+          alAgregar:function(lista){
+            lista.forEach(function(x){
+              S.fotos.push(x);
+              if(x && x.gal) S.galDescartadas=S.galDescartadas.filter(function(g){ return g!==x.gal; });
+            });
+            render();
+          }});
+      });
     });
+    on('[data-edit-sug-gal]','click',function(){
+      var r=S.editReg; if(!r) return;
+      borradorEdicion();
+      var ya=S.editFotos.filter(function(f){ return f && f.fid; }).map(function(f){ return f.fid; });
+      galeriaLibresDe(r.rolloId).forEach(function(g){
+        if(ya.indexOf(g.fid)===-1 && (r.fotoIds||[]).indexOf(g.fid)===-1) S.editFotos.push({gal:g.id, fid:g.fid, thumb:g.data});
+      });
+      render();
+    });
+    on('#btn-cam-id','click',function(){
+      if(idValido()) abrirCamara({modo:'galeria', rolloId:rolloId()});
+      else pedirIdFotos('', function(v){ abrirCamara({modo:'galeria', rolloId:v}); });
+    });
+    on('#btn-gal-id','click',function(){ abrirGaleria({modo:'ver', rolloId:idValido()?rolloId():''}); });
     each('[data-remove-foto]',function(b){
-      b.addEventListener('click',function(){ S.fotos.splice(parseInt(b.getAttribute('data-remove-foto'),10),1); render(); });
+      b.addEventListener('click',function(){
+        var com=root.querySelector('#input-comentario'); if(com) S.comentario=com.value;
+        var i=parseInt(b.getAttribute('data-remove-foto'),10), f=S.fotos[i];
+        if(f && f.gal) S.galDescartadas.push(f.gal);
+        S.fotos.splice(i,1); render();
+      });
     });
     var com=root.querySelector('#input-comentario');
     if(com) com.addEventListener('input',function(){ S.comentario=com.value; });
@@ -4380,17 +5080,6 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     on('#btn-cancel-edit','click',function(){
       if((S.editFotos.length || S.editQuitar.length) && !confirm('¿Salir sin guardar? Se descartan los cambios en las fotos.')) return;
       cerrarEdicion(); render();
-    });
-    var editFoto=root.querySelector('#edit-input-foto');
-    if(editFoto) editFoto.addEventListener('change',function(){
-      var files=Array.prototype.slice.call(editFoto.files||[]);
-      if(!files.length) return;
-      borradorEdicion();
-      toast(files.length>1 ? 'Procesando '+files.length+' fotos…' : 'Procesando foto…');
-      files.reduce(function(p,f){
-        return p.then(function(){ return compressImage(f).then(function(d){ S.editFotos.push(d); }); });
-      }, Promise.resolve()).catch(function(){ toast('No se pudo procesar alguna foto'); })
-      .then(function(){ if(S.editReg) render(); });
     });
     each('[data-edit-quitar-nueva]',function(b){
       b.addEventListener('click',function(){ borradorEdicion(); S.editFotos.splice(parseInt(b.getAttribute('data-edit-quitar-nueva'),10),1); render(); });
@@ -4665,6 +5354,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         var batch=writeBatch(db);
         batch.delete(ref(COL.registros,id));
         (r.fotoIds||[]).forEach(function(fid){ batch.delete(ref(COL.fotos,fid)); });
+        borrarIndicesDe(r.fotoIds||[], batch);
         var liberado = liberarRolloSinRegistros(r.rolloId, batch);
         escribir(batch.commit());
         auditar('eliminacion', r.rolloId, 'Registro eliminado ('+r.resultado+')'+(liberado?' · rollo liberado de Ubicación':''), motivo.trim());
@@ -5040,6 +5730,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     var regId='r'+now.getTime()+Math.random().toString(36).slice(2,7);
     var batch=writeBatch(db);
     var fotoIds=S.fotos.map(function(f,i){
+      if(f && f.fid) return f.fid;
       var fid=regId+'_'+i;
       S.fotoCache[fid]=f;
       batch.set(ref(COL.fotos,fid), {registroId:regId, rolloId:id, data:f, ts:now.getTime(), uid:S.perfil.uid});
@@ -5130,12 +5821,14 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       usuario:usuarioActual(), motivo:motivo, cambios:cambios.join(' | ')};
     var batch=writeBatch(db);
     var nuevosIds=S.editFotos.map(function(d,i){
+      if(d && d.fid) return d.fid;
       var fid=r.id+'_'+now.getTime()+'_'+i;
       S.fotoCache[fid]=d;
       batch.set(ref(COL.fotos,fid), {registroId:r.id, rolloId:r.rolloId, data:d, ts:now.getTime(), uid:S.perfil.uid});
       return fid;
     });
     quitar.forEach(function(fid){ batch.delete(ref(COL.fotos,fid)); delete S.fotoCache[fid]; });
+    borrarIndicesDe(quitar, batch);
     var datos=Object.assign({}, nuevo, {ediciones:arrayUnion(ed)});
     if(nNuevas || quitar.length){
       var ids=(r.fotoIds||[]).filter(function(fid){ return quitar.indexOf(fid)===-1; }).concat(nuevosIds);

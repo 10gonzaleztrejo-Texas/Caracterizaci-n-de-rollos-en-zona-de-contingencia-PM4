@@ -740,6 +740,21 @@
   /* Halloween: los murciélagos que suben también aletean */
   html[data-estilo="halloween"] #ra-deco .ra-p-sube svg,html[data-estilo="halloween"] #ra-deco-cab .ra-p-sube svg{animation:raAleteoP .22s ease-in-out infinite alternate;transform-origin:50% 40%;}
   @media (prefers-reduced-motion: reduce){ .ra-escena *, .ra-cruza, .aletea-css{animation:none !important;} }
+
+  /* Reyes que caminan, renos al galope, grúa y montacargas */
+  .ra-escena .pata-a,.ra-escena .pata-b{animation:raPaso .9s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 0;}
+  .ra-escena .pata-b{animation-delay:-.9s;}
+  @keyframes raPaso{from{transform:rotate(11deg);}to{transform:rotate(-11deg);}}
+  .ra-escena .gira-inv{animation:raGiraInv 5s linear infinite;transform-box:fill-box;transform-origin:center;}
+  @keyframes raGiraInv{to{transform:rotate(-360deg);}}
+  .ra-escena .mece-gancho{animation:raMece 3.2s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 0;}
+  .ra-escena .rueda{animation:raGira 1.6s linear infinite;transform-box:fill-box;transform-origin:center;}
+  .ra-trineo{width:200px !important;}
+  .ra-trineo .galope-a,.ra-trineo .galope-b{animation:raGalope .5s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 0;}
+  .ra-trineo .galope-b{animation-direction:alternate-reverse;}
+  @keyframes raGalope{from{transform:rotate(14deg);}to{transform:rotate(-12deg);}}
+  .ra-trineo .saluda-s{animation:raSaluda .7s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:0 100%;}
+  .ra-trineo svg{filter:drop-shadow(0 0 6px rgba(244,223,160,.45));}
 </style>
 </head>
 <body>
@@ -902,6 +917,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     primavera:  {nombre:'Primavera',     brand:'#2F7D5F', on:'#FFFFFF', rgb:'255,255,255', sub:'#FBD3E0', accent:'#2F7D5F', saludo:'BIENVENIDA LA PRIMAVERA'},
     nino:       {nombre:'Día del Niño',  brand:'#1565C0', on:'#FFFFFF', rgb:'255,255,255', sub:'#FFE082', accent:'#1565C0', saludo:'FELIZ DÍA DEL NIÑO'},
     madres:     {nombre:'Día de las Madres', brand:'#8E3B6A', on:'#FFFFFF', rgb:'255,255,255', sub:'#F7C6DA', accent:'#8E3B6A', saludo:'FELIZ DÍA DE LAS MADRES'},
+    trabajo:    {nombre:'Día del Trabajo', brand:'#8C2F1B', on:'#FFFFFF', rgb:'255,255,255', sub:'#FFD08A', accent:'#8C2F1B', saludo:'FELIZ DÍA DEL TRABAJO'},
+    ingeniero:  {nombre:'Día del Ingeniero', brand:'#0B3B66', on:'#FFFFFF', rgb:'255,255,255', sub:'#FFC93C', accent:'#0B4F8A', saludo:'FELIZ DÍA DEL INGENIERO'},
     padre:      {nombre:'Día del Padre', brand:'#1F3A5F', on:'#FFFFFF', rgb:'255,255,255', sub:'#BFD4EA', accent:'#1F3A5F', saludo:'FELIZ DÍA DEL PADRE'},
     otono:      {nombre:'Otoño',         brand:'#7A3E12', on:'#FFFFFF', rgb:'255,255,255', sub:'#F6C78A', accent:'#A0521C', saludo:'FELIZ OTOÑO'},
     muertos:    {nombre:'Día de Muertos', brand:'#3A1250', on:'#FFFFFF', rgb:'255,255,255', sub:'#FFB74D', accent:'#C2410C', saludo:'DÍA DE MUERTOS'},
@@ -910,7 +927,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   };
   var ORDEN_TEMAS = ['ternium','negro','rosa','marino','naranja','verde'];
   /* Orden del calendario (para Ajustes) */
-  var ORDEN_TEMPORADA = ['anionuevo','reyes','sanvalentin','primavera','nino','madres','padre','mexicano','otono','halloween','muertos','nochebuena','navidad','findeanio'];
+  var ORDEN_TEMPORADA = ['anionuevo','reyes','sanvalentin','primavera','nino','trabajo','madres','padre','ingeniero','mexicano','otono','halloween','muertos','nochebuena','navidad','findeanio'];
   /* Calendario de temporadas automáticas: [mes, día inicio, mes, día fin] (fechas locales del equipo) */
   var TEMPORADAS = [
     {k:'anionuevo',  r:[[1,1,1,1]],             f:'1 de enero'},
@@ -918,8 +935,10 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     {k:'sanvalentin',r:[[2,14,2,14]],           f:'14 de febrero'},
     {k:'primavera',  r:[[3,21,3,21]],           f:'21 de marzo'},
     {k:'nino',       r:[[4,30,4,30]],           f:'30 de abril'},
+    {k:'trabajo',    r:[[5,1,5,1]],             f:'1 de mayo'},
     {k:'madres',     r:[[5,10,5,10]],           f:'10 de mayo'},
     {k:'padre',      padre:true,                f:'Tercer domingo de junio'},
+    {k:'ingeniero',  r:[[7,1,7,1]],             f:'1 de julio'},
     {k:'mexicano',   r:[[9,15,9,16]],           f:'15 y 16 de septiembre'},
     {k:'otono',      r:[[9,22,9,23]],           f:'22 y 23 de septiembre'},
     {k:'halloween',  r:[[10,31,10,31]],         f:'31 de octubre'},
@@ -1329,7 +1348,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         nieve(158) + noche, [[158,'#F4F8FF'],[166,'#DCE7F5']]);
     },
     anionuevo: function(){
-      var anio = new Date().getFullYear() + (new Date().getMonth()===11 ? 1 : 0);
+      var hoyA = new Date(), anio = hoyA.getFullYear() + (hoyA.getMonth()===0 && hoyA.getDate()<=7 ? 0 : 1);
       var burbujas = '';
       for(var i=0;i<10;i++) burbujas += cir(i%2 ? 196+(i%3)*4 : 214-(i%3)*4, 70, 1.6+(i%3)*.5, '#FFF6D0', ' class="burbuja" style="animation-delay:-'+(i*.35).toFixed(2)+'s"');
       var digitos = String(anio).split('').map(function(d, i){
@@ -1561,14 +1580,238 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   function vuelaCielo(tipo){
     if(tipo==='murcielago') return '<div class="ra-cruza" style="top:24%;animation-duration:13s;"><svg viewBox="-14 -7 28 12" class="aletea-css"><path fill="#0A0610" d="'+FORMA_MURCIELAGO+'"/></svg></div>' +
       '<div class="ra-cruza" style="top:38%;animation-duration:17s;animation-delay:-8s;width:34px;"><svg viewBox="-14 -7 28 12" class="aletea-css"><path fill="#E8620C" d="'+FORMA_MURCIELAGO+'"/></svg></div>';
-    if(tipo==='trineo') return '<div class="ra-cruza ra-trineo" style="top:17%;animation-duration:24s;"><svg viewBox="0 0 160 40">' +
-      '<g fill="#F4DFA0" fill-opacity=".85">' +
-        [0,30].map(function(x){ return '<path d="M'+x+' 22q4-8 14-8h8l4-8 2 1-2 8q4 2 4 8l-2 10h-3l-1-8h-12l-2 8h-3l1-9q-6 0-8-4Z M'+(x+26)+' 6l3-6M'+(x+26)+' 6l6-3" stroke="#F4DFA0" stroke-width="1.2"/>'; }).join('') +
-        '<path d="M70 18h40q10 0 14-10l4 2q-4 14-18 16h-36Z M66 30h60q6 0 8-4" /><path d="M66 30h60q6 0 8-4" stroke="#F4DFA0" stroke-width="2" fill="none"/>' +
-        '<path d="M86 16q0-10 10-10t8 10Z"/></g>' +
-      '<path d="M22 18L70 22" stroke="#F4DFA0" stroke-opacity=".6" stroke-width=".8"/></svg></div>';
+    if(tipo==='trineo') return '<div class="ra-cruza ra-trineo" style="top:16%;animation-duration:26s;">'+trineoSanta('#F4DFA0')+'</div>';
     return '';
   }
+  /* ===== Rosca de Reyes: anillo en perspectiva con costras de azúcar, tiras de ate y cerezas ===== */
+  function rosca(){
+    var A = 74, B = 30, a = 40, b = 13, cy = -2, g = '';
+    function pO(t, k){ k = k||1; return [(A*k*Math.cos(t)).toFixed(1), (B*k*Math.sin(t)).toFixed(1)]; }
+    function pI(t, k){ k = k||1; return [(a*k*Math.cos(t)).toFixed(1), (cy + b*k*Math.sin(t)).toFixed(1)]; }
+    function mezcla(t, f){ var o = pO(t), i = pI(t); return [(+i[0] + (o[0]-i[0])*f).toFixed(1), (+i[1] + (o[1]-i[1])*f).toFixed(1)]; }
+    /* sombra, pared exterior del frente, pared interior del fondo y cara de arriba */
+    g += elip(0, 16, 82, 20, '#000', ' fill-opacity=".28"');
+    g += '<path d="M-74 0A74 30 0 0 0 74 0L74 11A74 30 0 0 1-74 11Z" fill="#C98745"/>';
+    g += '<path fill-rule="evenodd" fill="#E2A762" d="M-74 0a74 30 0 1 0 148 0a74 30 0 1 0-148 0ZM-40 -2a40 13 0 1 0 80 0a40 13 0 1 0-80 0Z"/>';
+    g += '<path d="M-40 -2A40 13 0 0 1 40 -2L40 6A40 13 0 0 0-40 6Z" fill="#B57336"/>';
+    var n = 8, paso = Math.PI*2/n, costras = [], tiras = [], cerezas = [];
+    var colTiras = [['#F4B98A','#2E9E44','#E0452C','#F0AE3E'],['#F0AE3E','#E0452C','#2E9E44','#F4B98A'],['#2E9E44','#E0452C','#F0AE3E','#F4B98A']];
+    for(var k=0; k<n; k++){
+      var t0 = k*paso + .2;
+      /* costra: banda de azúcar que cruza el anillo, con orillas redondeadas */
+      var t1 = t0 - .25, t2 = t0 + .25, d = '', s;
+      for(s=0; s<=8; s++){ var tt = t1 + (t2-t1)*s/8, p = mezcla(tt, .97); d += (s?'L':'M') + p[0] + ' ' + p[1]; }
+      for(s=8; s>=0; s--){ var tq = t1 + (t2-t1)*s/8, q = mezcla(tq, .05); d += 'L' + q[0] + ' ' + q[1]; }
+      costras.push({t:t0, html:'<path d="'+d+'Z" fill="#F8D58C" stroke="#F8D58C" stroke-width="7" stroke-linejoin="round"/>' +
+        '<path d="'+d+'Z" fill="none" stroke="#FBE3AE" stroke-width="2" stroke-opacity=".7" transform="translate(-1 -1.5)"/>'});
+      var pc = mezcla(t0 + .16, .28);
+      cerezas.push({t:t0, html:cir(pc[0], pc[1], 3.4, '#E0261C') + cir(pc[0]-1.1, pc[1]-1.1, 1.1, '#FF8A80')});
+      /* tiras de ate entre costras */
+      var tc = t0 + paso/2, cols = colTiras[k % 3];
+      [-.15, -.05, .05, .15].forEach(function(o, j){
+        var u = mezcla(tc+o, .08), v = mezcla(tc+o, .94);
+        tiras.push({t:tc+o, html:'<path d="M'+u[0]+' '+u[1]+'L'+v[0]+' '+v[1]+'" stroke="'+cols[j]+'" stroke-width="4.4" stroke-linecap="round"/>'});
+      });
+    }
+    /* lo de atrás primero (sin t < 0) para que lo de adelante tape */
+    function orden(x, y){ return Math.sin(x.t) - Math.sin(y.t); }
+    tiras.concat(costras).sort(orden).forEach(function(e){ g += e.html; });
+    cerezas.sort(orden).forEach(function(e){ g += e.html; });
+    /* azúcar */
+    for(var m=0; m<26; m++){ var tz = m*0.241, pz = mezcla(tz, .25 + (m*7 % 10)/16); g += cir(pz[0], pz[1], .7, '#FFFFFF', ' fill-opacity=".75"'); }
+    /* destellos */
+    [[-46,-46,1],[30,-58,1.3],[60,-40,.8],[-12,-62,.7]].forEach(function(e, i){
+      g += '<g class="titila" style="animation-delay:-'+(i*.5)+'s"><path transform="translate('+e[0]+' '+e[1]+') scale('+e[2]+')" d="M0-8C1-2 2-1 6 0 2 1 1 2 0 8-1 2-2 1-6 0-2-1-1-2 0-8Z" fill="#F0AE3E"/></g>';
+    });
+    [[-60,-30,'#2E9E44'],[16,-48,'#E0452C'],[48,-62,'#2E9E44'],[-30,-56,'#E0452C']].forEach(function(e, i){
+      g += cir(e[0], e[1], 1.8, e[2], ' class="titila" style="animation-delay:-'+(i*.7)+'s"');
+    });
+    return g;
+  }
+
+  /* ===== Reyes Magos sobre camellos (silueta), con patas que caminan ===== */
+  function reyMago(x, tipo, c){
+    var pata = function(cls, x0, k1, x1){ return '<path class="'+cls+'" d="M'+x0+' -27L'+k1+' -13L'+x1+' 0" stroke="'+c+'" stroke-width="4.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'; };
+    var cabeza = '', jinete;
+    if(tipo===1) cabeza = '<path d="M-8 -103l1.2-8 3 4.4 2.8-6.6 2.8 6.6 3-4.4 1.2 8Z" fill="'+c+'"/>';
+    if(tipo===2) cabeza = '<path d="M-8 -103q0-7 6-8 6 1 6 8Z M-3 -113l1-3 1 3Z" fill="'+c+'"/><path d="M-6 -95q4 9 9 0" fill="'+c+'"/>';
+    if(tipo===3) cabeza = '<path d="M-9 -101q1-11 8-11 8 0 8 11Z" fill="'+c+'"/><path d="M0 -111q-2-9 5-14" stroke="'+c+'" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
+    jinete = '<circle cx="-1" cy="-98" r="5.6" fill="'+c+'"/>' + cabeza +
+      '<path d="M-14 -60L-12 -84Q-1 -94 9 -84L13 -60Z" fill="'+c+'"/>' +
+      '<path d="M-12 -84Q-26 -72-28 -52L-14 -58Z" fill="'+c+'"/>' +
+      '<path d="M6 -80L22 -72" stroke="'+c+'" stroke-width="3.6" stroke-linecap="round"/>' +
+      '<path d="M22 -72Q42 -62 58 -63" stroke="'+c+'" stroke-width=".9" fill="none" stroke-opacity=".8"/>' +
+      '<path d="M-20 -58Q-6 -54 14 -56L12 -48Q-6 -46-22 -50Z" fill="'+c+'"/>';
+    return '<g transform="translate('+x+' 160) scale(.92)">' +
+      pata('pata-b', -30, -32, -27) + pata('pata-a', -24, -22, -26) + pata('pata-a', 10, 12, 8) + pata('pata-b', 16, 15, 19) +
+      '<path fill="'+c+'" d="M-36 -44C-34 -58-22 -66-10 -67C4 -68 12 -58 18 -50C26 -46 34 -46 40 -52C44 -58 46 -66 52 -68L60 -67C64 -66 66 -62 64 -60L56 -59C50 -58 48 -52 46 -46C42 -36 34 -32 26 -30C22 -28 20 -26 18 -24L-30 -26C-36 -28-40 -34-38 -42Z"/>' +
+      '<path d="M54 -67l2-5 2 4Z" fill="'+c+'"/>' +
+      '<path d="M-37 -42Q-42 -34-40 -24" stroke="'+c+'" stroke-width="2" fill="none"/><path d="M-41 -26l1 5 2-5Z" fill="'+c+'"/>' +
+      jinete + '</g>';
+  }
+  function estrellaFugaz(x, y, c){
+    return '<g transform="translate('+x+' '+y+')"><path d="M0 0L-70 -6L-58 -1L-82 4L-56 6L-74 14L-6 8Z" fill="'+c+'" fill-opacity=".85"/>' +
+      '<path class="titila" d="M0-13L3-4 13-6 5 1 11 10 1 5-4 13-3 3-13 2-4-3Z" fill="'+c+'"/></g>';
+  }
+  ESCENAS.reyes = function(){
+    var c = '#140A22';
+    return escena(
+      elip(200, 146, 250, 64, '#F2D27A', ' fill-opacity=".09"') + elip(200, 148, 170, 42, '#F2D27A', ' fill-opacity=".12"') +
+      '<path d="M0 150Q60 124 130 142T260 132T400 140V180H0Z" fill="#2A1640"/>' +
+      estrellaFugaz(150, 26, '#F2D27A') +
+      '<g class="caravana">' + reyMago(40, 1, c) + reyMago(132, 2, c) + reyMago(224, 3, c) + '</g>' +
+      '<path d="M0 162Q90 150 200 158T400 154V180H0Z" fill="#1E0F30"/>' +
+      '<g transform="translate(344 152) scale(.62)">' + rosca() + '</g>', [[146,'#2A1640'],[158,'#1E0F30']]);
+  };
+
+  /* ===== Trineo con Santa y tres renos (silueta que cruza el cielo de Nochebuena) ===== */
+  function reno(x, y, c, d){
+    var pata = function(cls, dd){ return '<path class="'+cls+'" style="animation-delay:'+d+'s" d="'+dd+'" stroke="'+c+'" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'; };
+    return '<g transform="translate('+x+' '+y+')">' +
+      pata('galope-a', 'M12 3L19 9L24 5') + pata('galope-b', 'M8 4L14 11L20 11') +
+      pata('galope-b', 'M-12 3L-21 8L-30 7') + pata('galope-a', 'M-9 5L-17 12L-26 15') +
+      '<path fill="'+c+'" d="M-17 0C-17-8 9-9 13-5C16-9 19-15 21-19L24-22L31-19L30-16L25-17C23-12 20-4 16 2C12 6-10 7-17 3Z"/>' +
+      '<path d="M-17-1l-5-4 1 5Z M22-21l-2-4 4 2Z" fill="'+c+'"/>' +
+      '<path d="M23-22l-4-10M21.5-27l-5-1M20.5-30l-1-5M25-22l3-10M26.5-27l5-2M27.5-31l3-4" stroke="'+c+'" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+      '</g>';
+  }
+  function trineoSanta(c){
+    var s = '<g transform="translate(30 30)">' +
+      /* costal con regalo */
+      '<path fill="'+c+'" d="M-36 -2C-46 -6-46 -24-36 -28L-30 -34L-24 -28C-16 -24-16 -6-24 -2Z"/>' +
+      '<rect x="-34" y="-42" width="9" height="8" fill="'+c+'"/><path d="M-30 -42q-5-6-6 0M-30 -42q5-6 6 0" stroke="'+c+'" stroke-width="1.4" fill="none"/>' +
+      /* Santa: cuerpo, cabeza con gorro y brazo saludando */
+      '<path fill="'+c+'" d="M-24 -2C-26 -16-20 -24-12 -24C-4 -24 0 -14-2 -2Z"/>' +
+      '<circle cx="-12" cy="-28" r="5.4" fill="'+c+'"/><path d="M-17 -30Q-15 -40-6 -38L-2 -33Z" fill="'+c+'"/><circle cx="-1.5" cy="-33" r="2" fill="'+c+'"/>' +
+      '<path d="M-14 -24q2 6 6 1" fill="'+c+'"/>' +
+      '<g class="saluda-s"><path d="M-6 -20L2 -30L4 -38" stroke="'+c+'" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="-39" r="2.4" fill="'+c+'"/></g>' +
+      /* trineo y patines */
+      '<path fill="'+c+'" d="M-40 -6H6Q14 -6 12 -14Q11 -18 16 -18Q20 -14 18 -6Q16 8 2 8H-36Q-42 8-40 -6Z"/>' +
+      '<path d="M-36 8V14M-6 8V14" stroke="'+c+'" stroke-width="2.2"/>' +
+      '<path d="M-46 14H10Q20 14 18 6" stroke="'+c+'" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+      '</g>';
+    var r = reno(90, 30, c, 0) + reno(140, 24, c, -.2) + reno(190, 18, c, -.4);
+    var riendas = '<path d="M44 26Q70 34 102 30T152 24T202 18" stroke="'+c+'" stroke-width="1" fill="none"/>';
+    return '<svg viewBox="0 -10 236 70">' + s + riendas + r + '</svg>';
+  }
+
+  /* ===== Engranes y personajes de trabajo ===== */
+  function pathEngrane(R, r, dientes, hueco){
+    var d = '', n = dientes*4;
+    for(var i=0; i<n; i++){
+      var ang = Math.PI*2*i/n - Math.PI/2, rad = (i%4===0 || i%4===1) ? R : r;
+      d += (i?'L':'M') + (Math.cos(ang)*rad).toFixed(2) + ' ' + (Math.sin(ang)*rad).toFixed(2);
+    }
+    d += 'Z';
+    if(hueco) d += 'M'+(-hueco)+' 0a'+hueco+' '+hueco+' 0 1 0 '+(2*hueco)+' 0a'+hueco+' '+hueco+' 0 1 0 '+(-2*hueco)+' 0Z';
+    return d;
+  }
+  var FORMA_ENGRANE = pathEngrane(10, 7.4, 8, 3);
+  var FORMA_TUERCA = 'M-8 0L-4-7H4L8 0 4 7H-4ZM-3.4 0a3.4 3.4 0 1 0 6.8 0a3.4 3.4 0 1 0-6.8 0Z';
+  /* Rollo de acero (lo que inspeccionamos): cilindro acostado visto de frente */
+  function rolloAcero(x, y, s){
+    var g = '<g transform="translate('+x+' '+y+') scale('+s+')">' +
+      elip(0, 30, 44, 6, '#000', ' fill-opacity=".25"') +
+      '<path d="M-10 -30H22A30 30 0 0 1 22 30H-10Z" fill="#8FA3B3"/><path d="M-10 -30H22" stroke="#DDE6EC" stroke-width="2"/>' +
+      '<circle cx="-10" r="30" fill="#B8C7D3"/>';
+    for(var i=0; i<6; i++) g += '<circle cx="-10" r="'+(28-i*3.2)+'" fill="none" stroke="#7F93A3" stroke-width=".9" stroke-opacity=".8"/>';
+    return g + '<circle cx="-10" r="9" fill="#2B3A47"/><path d="M-26 -18q8-8 18-8" stroke="#fff" stroke-opacity=".6" stroke-width="2" fill="none" stroke-linecap="round"/></g>';
+  }
+  /* Personaje con casco (ingeniero o trabajador) */
+  function personaje(x, casco, ropa, extra, bigote){
+    return '<g transform="translate('+x+' 0)">' +
+      '<rect x="-15" y="120" width="11" height="34" rx="4" fill="#2F3E4E"/><rect x="4" y="120" width="11" height="34" rx="4" fill="#2F3E4E"/>' +
+      elip(-10, 156, 10, 4.4, '#3E2723') + elip(10, 156, 10, 4.4, '#3E2723') +
+      '<path d="M-22 88Q-22 76-10 74H10Q22 76 22 88V124H-22Z" fill="'+ropa+'"/>' + (extra.torso||'') +
+      cir(0, 58, 18, '#F1C27D') + ojos(-6.5, 6.5, 57, 2.6) +
+      '<path d="M-6 66q6 5 12 0" stroke="#5D3A23" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+      (bigote ? '<path d="M-8 63q4-3 8 0 4-3 8 0-4 3-8 1-4 2-8-1Z" fill="#5D3A23"/>' : '') +
+      cir(-11, 63, 3, '#FF8A80', ' fill-opacity=".55"') + cir(11, 63, 3, '#FF8A80', ' fill-opacity=".55"') +
+      '<path d="M-21 52Q-20 32 0 31 20 32 21 52Z" fill="'+casco+'"/><path d="M-26 52H26V56H-26Z" fill="'+casco+'" style="filter:brightness(.88)"/>' +
+      '<path d="M-3 32h6v18h-6Z" fill="#fff" fill-opacity=".35"/>' +
+      (extra.brazo||'') + '</g>';
+  }
+  ESCENAS.ingeniero = function(){
+    /* grúa torre con viga colgando */
+    var celosia = '';
+    for(var y=30; y<150; y+=12) celosia += '<path d="M40 '+y+'L52 '+(y+12)+'M52 '+y+'L40 '+(y+12)+'" stroke="#FFC93C" stroke-width="1.6"/>';
+    var pluma = '';
+    for(var xx=46; xx<150; xx+=12) pluma += '<path d="M'+xx+' 24L'+(xx+6)+' 32L'+(xx+12)+' 24" stroke="#FFC93C" stroke-width="1.4" fill="none"/>';
+    var grua = '<path d="M40 30V156M52 30V156" stroke="#FFC93C" stroke-width="3"/>' + celosia +
+      '<path d="M20 24H160M46 32H160" stroke="#FFC93C" stroke-width="3"/>' + pluma +
+      '<path d="M46 24L46 8 30 24" stroke="#FFC93C" stroke-width="2.4" fill="none"/><rect x="18" y="20" width="16" height="14" fill="#E0A800"/>' +
+      '<rect x="40" y="34" width="12" height="10" fill="#2B3A47"/>' +
+      '<g class="mece-gancho"><path d="M140 32V70" stroke="#CFD8DC" stroke-width="1.2"/><path d="M140 70q-4 0-4 4" stroke="#CFD8DC" stroke-width="1.6" fill="none"/>' +
+        '<path d="M140 74L118 84M140 74L162 84" stroke="#CFD8DC" stroke-width="1"/>' +
+        '<path d="M112 84H168V88H142V96H168V100H112V96H138V88H112Z" fill="#90A4AE"/></g>' +
+      cir(46, 6, 2.2, '#FF5252', ' class="titila"');
+    var plano = '<g transform="translate(176 146) rotate(-6)"><rect x="-18" y="-12" width="36" height="22" rx="1.5" fill="#1565C0"/>' +
+      '<path d="M-14-8h12v10h-12ZM2-6h10M2-2h12M2 2h8" stroke="#E3F2FD" stroke-width=".9" fill="none"/></g>';
+    var brazo = '<path d="M20 90Q34 100 30 112" stroke="#FF7A1A" stroke-width="9" fill="none" stroke-linecap="round"/>' +
+      '<g transform="translate(32 112) rotate(-40)"><rect x="-4" y="-22" width="8" height="34" rx="3" fill="#BBDEFB"/><path d="M-4-22h8" stroke="#1565C0" stroke-width="2"/></g>' +
+      '<path d="M-20 90Q-30 104-24 118" stroke="#FF7A1A" stroke-width="9" fill="none" stroke-linecap="round"/>';
+    var chaleco = {torso:'<path d="M-22 96H22M-22 106H22" stroke="#E0F7FA" stroke-width="3.4"/><path d="M0 74V124" stroke="#E65100" stroke-width="1.6"/>', brazo:brazo};
+    return escena(
+      grua +
+      personaje(232, '#FFC93C', '#FF7A1A', chaleco, false) +
+      '<g transform="translate(332 104)"><g class="gira" style="animation-duration:8s"><path d="'+pathEngrane(30, 23, 12, 9)+'" fill="#7FA6C9" fill-rule="evenodd"/></g></g>' +
+      '<g transform="translate(374 70)"><g class="gira-inv"><path d="'+pathEngrane(18, 13.5, 8, 5)+'" fill="#FFC93C" fill-rule="evenodd"/></g></g>' +
+      rolloAcero(316, 128, .62) + plano, [[156,'#0A2540']]);
+  };
+  ESCENAS.trabajo = function(){
+    var montacargas = '<g transform="translate(300 0)">' +
+      '<path d="M-6 66V150M2 66V150" stroke="#37474F" stroke-width="4"/>' +
+      '<path d="M2 148H-44" stroke="#37474F" stroke-width="5" stroke-linecap="round"/>' +
+      '<path d="M4 104H40L52 120V150H4Z" fill="#FFB300"/><path d="M12 84H36V104H12Z" fill="none" stroke="#FFB300" stroke-width="4"/>' +
+      '<rect x="18" y="108" width="16" height="12" rx="2" fill="#B3E5FC"/>' +
+      '<path d="M48 104V96" stroke="#37474F" stroke-width="3"/>' + cir(48, 93, 3.4, '#FF6D00', ' class="titila" style="animation-duration:.9s"') +
+      '<g class="rueda"><circle cx="14" cy="152" r="9" fill="#263238"/><path d="M8 152h12M14 146v12" stroke="#78909C" stroke-width="2"/></g>' +
+      '<g class="rueda"><circle cx="44" cy="152" r="9" fill="#263238"/><path d="M38 152h12M44 146v12" stroke="#78909C" stroke-width="2"/></g>' +
+      '</g>' + rolloAcero(268, 131, .55);
+    var emblema = '<g class="flota"><g transform="translate(130 74)">' +
+      '<g class="gira" style="animation-duration:14s"><path d="'+pathEngrane(30, 24, 12, 11)+'" fill="#FFD08A" fill-opacity=".9" fill-rule="evenodd"/></g>' +
+      '<g transform="rotate(45)"><rect x="-3" y="-30" width="6" height="40" rx="2" fill="#8D6E63"/><rect x="-11" y="-36" width="22" height="10" rx="2" fill="#90A4AE"/></g>' +
+      '<g transform="rotate(-45)"><rect x="-3" y="-20" width="6" height="40" rx="3" fill="#B0BEC5"/><path d="M-9 -30a9 9 0 1 0 18 0l-4 0v6h-10v-6Z" fill="#B0BEC5"/></g>' +
+      '</g></g>';
+    var brazo = '<path d="M20 90Q30 80 26 66" stroke="#1E88E5" stroke-width="9" fill="none" stroke-linecap="round"/>' +
+      '<g class="mece" style="animation-duration:1.6s"><g transform="translate(26 62) rotate(20)"><rect x="-3" y="-30" width="6" height="34" rx="2" fill="#90A4AE"/><path d="M-9 -34a9 9 0 1 0 18 0l-4 0v6h-10v-6Z" fill="#90A4AE"/></g></g>' +
+      cir(26, 66, 5, '#FFCA28') +
+      '<path d="M-20 90Q-28 104-22 118" stroke="#1E88E5" stroke-width="9" fill="none" stroke-linecap="round"/>' + cir(-22, 120, 5, '#FFCA28');
+    var overol = {torso:'<path d="M-14 74V92H14V74" stroke="#1565C0" stroke-width="4" fill="none"/><rect x="-14" y="92" width="28" height="18" rx="2" fill="#1565C0"/>' + cir(-11, 80, 1.6, '#FFD54F') + cir(11, 80, 1.6, '#FFD54F'), brazo:brazo};
+    var ladrillos = '';
+    [[40,146],[66,146],[92,146],[53,134],[79,134],[66,122]].forEach(function(p){ ladrillos += '<rect x="'+p[0]+'" y="'+p[1]+'" width="24" height="11" rx="1.5" fill="#C8553D" stroke="#7A2A1A" stroke-width="1"/>'; });
+    return escena(ladrillos + emblema + personaje(200, '#FF8F00', '#EF6C00', overol, true) + montacargas, [[156,'#4A160C']]);
+  };
+  /* Regla con marcas (Día del Ingeniero) y banderines rojo-blanco (Día del Trabajo) */
+  function regla(){
+    var g = '<rect x="0" y="0" width="200" height="16" fill="#FFC93C"/><rect x="0" y="16" width="200" height="2" fill="#B8860B"/>';
+    for(var i=0;i<=40;i++) g += '<path d="M'+(i*5)+' 0V'+(i%10===0?10:i%2===0?7:4)+'" stroke="#3E2F00" stroke-width="1"/>';
+    for(var j=0;j<4;j++) g += '<text x="'+(j*50+2)+'" y="15" font-size="5" font-family="Arial" fill="#3E2F00">'+(j*10)+'</text>';
+    return svgTile(200, 20, g);
+  }
+  function banderinesTrabajo(){
+    var cols = ['#C62828','#FFFFFF','#FFB300','#C62828','#FFFFFF','#FFB300'], g = '<path d="M0 4Q60 14 120 4T240 4" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.3"/>';
+    for(var i=0;i<6;i++){ var x = 6 + i*39, y = 6 + Math.sin(i/6*Math.PI*2)*2.5 + (i%2?3:0);
+      g += '<path d="M'+x+' '+y+'h26l-13 22Z" fill="'+cols[i]+'"/>'; }
+    return svgTile(240, 40, g);
+  }
+  DECO.ingeniero = {
+    patron: svgTile(48, 48, '<path d="M0 .5H48M.5 0V48M0 24.5H48M24.5 0V48" stroke="#BBDEFB" stroke-opacity=".14"/><path d="M0 12.5H48M0 36.5H48M12.5 0V48M36.5 0V48" stroke="#BBDEFB" stroke-opacity=".06"/>' +
+      '<path transform="translate(12 12) scale(.5)" d="'+FORMA_ENGRANE+'" fill="#FFC93C" fill-opacity=".2" fill-rule="evenodd"/>'),
+    franja: 'repeating-linear-gradient(135deg,#FFC93C 0 8px,#1B1B1B 8px 16px)',
+    arriba: 22,
+    extra: function(){ return '<div class="ra-adorno-top" style="background-image:'+regla()+';background-size:auto 20px;height:20px;"></div>'; },
+    part: [{tipo:'sube', n:12, min:12, max:22, dmin:14, dmax:24, forma:svgForma('-11 -11 22 22', FORMA_ENGRANE), colores:['#FFC93C','#BBDEFB','#90A4AE']},
+           {tipo:'brilla', n:18, min:1.5, max:3, dmin:2.5, dmax:5, colores:['#FFFFFF','#BBDEFB']}]
+  };
+  DECO.trabajo = {
+    patron: svgTile(64, 56, '<g fill="#FFD08A" fill-opacity=".16"><path transform="translate(16 18) scale(.7)" d="'+FORMA_TUERCA+'" fill-rule="evenodd"/><path transform="translate(48 42) scale(.55)" d="'+FORMA_ENGRANE+'" fill-rule="evenodd"/></g>'),
+    franja: 'linear-gradient(90deg,#8C2F1B,#FFD08A 50%,#8C2F1B)',
+    arriba: 40,
+    extra: function(){ return '<div class="ra-adorno-top" style="background-image:'+banderinesTrabajo()+';background-size:auto 40px;height:40px;"></div>'; },
+    part: [{tipo:'confeti', n:16, min:9, max:14, dmin:10, dmax:17, aspecto:1, forma:svgForma('-9 -9 18 18', FORMA_TUERCA), colores:['#FFD08A','#CFD8DC','#FFB300']},
+           {tipo:'confeti', n:20, min:5, max:9, dmin:8, dmax:13, colores:['#FFFFFF','#FFB300','#C62828']}]
+  };
   /* Cada temporada suma su escena de personajes a su decoración */
   Object.keys(ESCENAS).forEach(function(k){
     if(!DECO[k]) return;

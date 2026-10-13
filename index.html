@@ -755,6 +755,17 @@
   @keyframes raGalope{from{transform:rotate(14deg);}to{transform:rotate(-12deg);}}
   .ra-trineo .saluda-s{animation:raSaluda .7s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:0 100%;}
   .ra-trineo svg{filter:drop-shadow(0 0 6px rgba(244,223,160,.45));}
+
+  /* Ventana de descarga de Excel */
+  .ra-xresumen{margin-top:14px;background:#F4F6F9;border-left:3px solid var(--accent);padding:11px 13px;font-size:13.5px;line-height:1.5;color:var(--ink);}
+  .ra-xresumen span{display:block;font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .ra-xresumen span.aviso{color:var(--defecto);}
+  .ra-xopc{display:block;text-align:left;background:#fff;border:1.5px solid var(--line-strong);border-radius:var(--radius);padding:11px 12px;cursor:pointer;font-family:inherit;color:var(--ink);}
+  .ra-xopc b{display:block;font-size:14px;}
+  .ra-xopc span{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .ra-xopc.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:#FFF8F4;}
+  html[data-oscuro="1"] .ra-xopc{background:#1B1F26;color:#E8EAED;}
+  html[data-oscuro="1"] .ra-xresumen{background:#1B1F26;color:#E8EAED;}
 </style>
 </head>
 <body>
@@ -5429,24 +5440,112 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     return ws;
   }
 
-  function exportExcel(){
+  /* ---------- Ventana para elegir periodo y si lleva fotos antes de descargar el Excel ---------- */
+  function fechaDeReg(r){ return r.fecha || (r.ts ? fechaHoy(new Date(r.ts)) : ''); }
+  function enRango(f, desde, hasta){ return !!f && (!desde || f >= desde) && (!hasta || f <= hasta); }
+  function fechaLarga(f){
+    if(!f) return '';
+    var p = f.split('-'), m = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return (+p[2])+' '+m[(+p[1])-1]+' '+p[0];
+  }
+  function abrirExportar(){
     if(!S.registros.length){ toast('No hay registros que exportar'); return; }
-    registrarAcceso('Exportó el historial de rollos a Excel');
+    var hoy = new Date(), hoyS = fechaHoy(hoy);
+    var primera = S.registros.reduce(function(m, r){ var f = fechaDeReg(r); return (f && (!m || f < m)) ? f : m; }, '') || hoyS;
+    function haceDias(n){ var d = new Date(hoy); d.setDate(d.getDate()-n); return fechaHoy(d); }
+    var iniMes = fechaHoy(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    var iniMesAnt = fechaHoy(new Date(hoy.getFullYear(), hoy.getMonth()-1, 1));
+    var finMesAnt = fechaHoy(new Date(hoy.getFullYear(), hoy.getMonth(), 0));
+    var RAPIDOS = [
+      {k:'hoy', t:'Hoy', d:hoyS, h:hoyS},
+      {k:'ayer', t:'Ayer', d:haceDias(1), h:haceDias(1)},
+      {k:'7', t:'Últimos 7 días', d:haceDias(6), h:hoyS},
+      {k:'mes', t:'Este mes', d:iniMes, h:hoyS},
+      {k:'mesant', t:'Mes pasado', d:iniMesAnt, h:finMesAnt},
+      {k:'todo', t:'Todo', d:primera, h:hoyS}
+    ];
+    var st = {desde:primera, hasta:hoyS, fotos:true};
+    var ov = el('<div class="ra-pid"><div class="ra-pid-card" role="dialog" aria-label="Descargar Excel"></div></div>');
+    document.body.appendChild(ov);
+    var card = ov.querySelector('.ra-pid-card');
+    function cuenta(){
+      var regs = S.registros.filter(function(r){ return enRango(fechaDeReg(r), st.desde, st.hasta); });
+      var fotos = regs.reduce(function(n, r){ return n + fotosDe(r).length; }, 0);
+      return {regs:regs.length, fotos:fotos};
+    }
+    function tam(c){
+      var kb = 30 + c.regs*0.4 + (st.fotos ? c.fotos*28 : 0);
+      return kb < 1024 ? Math.max(1, Math.round(kb))+' KB' : (kb/1024).toFixed(kb < 10240 ? 1 : 0)+' MB';
+    }
+    function pintar(){
+      var c = cuenta(), malo = st.desde && st.hasta && st.desde > st.hasta;
+      var chips = RAPIDOS.map(function(q){
+        return '<button class="ra-zchip'+(q.d===st.desde && q.h===st.hasta ? ' on' : '')+'" data-xr="'+q.k+'">'+q.t+'</button>';
+      }).join('');
+      card.innerHTML =
+        '<div class="ra-h1" style="font-size:18px;">Descargar Excel</div>' +
+        '<div class="ra-meta" style="margin-bottom:12px;">Elige el periodo y si quieres las fotos dentro del archivo.</div>' +
+        '<div class="ra-label">PERIODO</div><div class="ra-zchips" style="margin-bottom:10px;">'+chips+'</div>' +
+        '<div class="ra-grid">' +
+          '<div><div class="ra-meta" style="margin-bottom:4px;">Desde</div><input class="ra-input" type="date" id="xr-desde" value="'+st.desde+'" max="'+hoyS+'" style="margin-bottom:0;"></div>' +
+          '<div><div class="ra-meta" style="margin-bottom:4px;">Hasta</div><input class="ra-input" type="date" id="xr-hasta" value="'+st.hasta+'" max="'+hoyS+'" style="margin-bottom:0;"></div>' +
+        '</div>' +
+        '<div class="ra-label" style="margin-top:16px;">FOTOS</div>' +
+        '<div class="ra-grid">' +
+          '<button class="ra-xopc'+(st.fotos?' on':'')+'" data-xf="1"><b>Con fotos</b><span>Más completo, más pesado</span></button>' +
+          '<button class="ra-xopc'+(!st.fotos?' on':'')+'" data-xf="0"><b>Sin fotos</b><span>Solo datos, muy ligero</span></button>' +
+        '</div>' +
+        (malo ? '<div class="ra-warn" style="margin:14px 0 0;">La fecha “desde” es posterior a la fecha “hasta”.</div>' :
+          '<div class="ra-xresumen">' +
+            '<b>'+c.regs+'</b> inspeccion'+(c.regs===1?'':'es')+' del '+fechaLarga(st.desde)+(st.desde!==st.hasta?' al '+fechaLarga(st.hasta):'') +
+            (st.fotos ? ' · <b>'+c.fotos+'</b> foto'+(c.fotos===1?'':'s') : (c.fotos ? ' · '+(c.fotos===1 ? 'sin su foto' : 'sin sus '+c.fotos+' fotos') : '')) +
+            '<span>Tamaño aproximado: '+tam(c)+'</span>' +
+            (st.fotos && c.fotos > 150 ? '<span class="aviso">Con tantas fotos tarda un poco en prepararse.</span>' : '') +
+          '</div>') +
+        '<button class="ra-btn ra-btn-primary ra-btn-block" data-xgo style="margin-top:14px;"'+(malo||!c.regs?' disabled':'')+'>'+(c.regs?'Descargar Excel':'No hay inspecciones en ese periodo')+'</button>' +
+        '<button class="ra-link" data-xcancel style="display:block;margin:2px auto 0;">Cancelar</button>';
+      card.querySelectorAll('[data-xr]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var q = RAPIDOS.filter(function(x){ return x.k===b.getAttribute('data-xr'); })[0];
+          st.desde = q.d; st.hasta = q.h; pintar();
+        });
+      });
+      ['desde','hasta'].forEach(function(k){
+        var inp = card.querySelector('#xr-'+k);
+        inp.addEventListener('change', function(){ if(inp.value){ st[k] = inp.value; pintar(); } });
+      });
+      card.querySelectorAll('[data-xf]').forEach(function(b){
+        b.addEventListener('click', function(){ st.fotos = b.getAttribute('data-xf')==='1'; pintar(); });
+      });
+      card.querySelector('[data-xgo]').addEventListener('click', function(){
+        cerrar(); exportExcel({desde:st.desde, hasta:st.hasta, fotos:st.fotos});
+      });
+      card.querySelector('[data-xcancel]').addEventListener('click', cerrar);
+    }
+    function cerrar(){ if(ov.parentNode) ov.remove(); }
+    ov.addEventListener('click', function(e){ if(e.target===ov) cerrar(); });
+    pintar();
+  }
+
+  function exportExcel(opts){
+    opts = opts || {};
+    var desde = opts.desde || '', hasta = opts.hasta || '', incluirFotos = opts.fotos !== false;
+    var registros = S.registros.filter(function(r){ return enRango(fechaDeReg(r), desde, hasta); });
+    if(!registros.length){ toast('No hay inspecciones en ese periodo'); return; }
+    var idsPeriodo = {}; registros.forEach(function(r){ idsPeriodo[r.rolloId] = 1; });
+    registrarAcceso('Exportó el historial a Excel ('+(desde===hasta ? desde : desde+' a '+hasta)+(incluirFotos?', con fotos':', sin fotos')+')');
     var conFoto = [];
-    S.registros.forEach(function(r){
+    if(incluirFotos) registros.forEach(function(r){
       fotosDe(r).forEach(function(f, i){ conFoto.push({reg:r, foto:f, idx:i}); });
     });
-    var incluirFotos = true;
-    if(conFoto.length > 250){
-      incluirFotos = confirm('Hay ' + conFoto.length + ' fotos. Incluirlas hace el archivo más pesado y tarda más.\n\nAceptar = con fotos · Cancelar = solo los datos');
-    }
     toast('Preparando archivo…');
     loadExcelJS().then(function(){
       var wb = new window.ExcelJS.Workbook();
       wb.creator = 'Inspección de rollos · Ternium';
       wb.created = new Date();
+      wb.subject = 'Periodo: '+desde+' a '+hasta+(incluirFotos?'':' (sin fotos)');
 
-      var filas = S.registros.slice().reverse().map(function(r){
+      var filas = registros.slice().reverse().map(function(r){
         var t = S.tracking[r.rolloId];
         return {
           'Fecha':r.fecha||'','Hora':r.hora||'','Turno':r.turno||'','ID Rollo':r.rolloId||'',
@@ -5468,13 +5567,14 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       Object.keys(S.tracking).forEach(function(k){
         var t = S.tracking[k];
         (t.movimientos||[]).forEach(function(m,i){
+          if(!enRango(m.fecha || (m.ts ? fechaHoy(new Date(m.ts)) : ''), desde, hasta)) return;
           movs.push({'ID Rollo':k,'Paso':i+1,'Zona':m.zona,'Medio de transporte':m.medio||'','Fecha':m.fecha,'Hora':m.hora,'Turno':m.turno||'','Usuario':m.usuario,'Nota':m.nota||''});
         });
       });
       hojaDeFilas(wb, 'MOVIMIENTOS', movs);
 
       var ediciones=[];
-      S.registros.forEach(function(r){
+      registros.forEach(function(r){
         (r.ediciones||[]).forEach(function(ed,i){
           ediciones.push({'ID Rollo':r.rolloId,'N.º':i+1,'Fecha':ed.fecha,'Hora':ed.hora,'Turno':ed.turno||'','Usuario':ed.usuario,
             'Cambios':ed.cambios,'Motivo':ed.motivo});
@@ -5482,7 +5582,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       });
       hojaDeFilas(wb, 'MODIFICACIONES', ediciones);
 
-      hojaDeFilas(wb, 'AUDITORIA', S.auditoria.map(function(a){
+      hojaDeFilas(wb, 'AUDITORIA', S.auditoria.filter(function(a){ return enRango(a.fecha, desde, hasta); }).map(function(a){
         return {'Fecha':a.fecha,'Hora':a.hora,'Turno':a.turno||'','Usuario':a.usuario,'Tipo':a.tipo,'ID Rollo':a.rolloId,'Detalle':a.detalle,'Motivo':a.motivo};
       }));
 
@@ -5564,10 +5664,10 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         var blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'inspeccion_rollos_'+fechaHoy()+'.xlsx';
+        a.download = 'inspeccion_rollos_'+(desde===hasta ? desde : desde+'_a_'+hasta)+(incluirFotos?'':'_sin_fotos')+'.xlsx';
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
-        toast('Excel generado'+(incluirFotos&&conFoto.length?' con '+conFoto.length+' foto(s)':''));
+        toast('Excel generado: '+registros.length+' inspección(es)'+(incluirFotos&&conFoto.length?' con '+conFoto.length+' foto(s)':incluirFotos?'':' sin fotos'));
       });
     }).catch(function(e){ console.error(e); toast('No se pudo generar el Excel'); });
   }
@@ -6200,7 +6300,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     });
 
     /* historial */
-    on('#btn-export','click',function(){ if(S.isAdmin) exportExcel(); });
+    on('#btn-export','click',function(){ if(S.isAdmin) abrirExportar(); });
     on('#btn-export-auditoria','click',function(){ if(S.isAdmin) exportAuditoria(); });
     each('[data-rep-filtro]',function(b){ b.addEventListener('click',function(){ S.reporteFiltro=b.getAttribute('data-rep-filtro'); render(); }); });
     on('#btn-rep-seleccionar','click',function(){ S.repSel=[]; render(); });

@@ -820,6 +820,24 @@
   .gr-det b{display:block;font-size:13px;}
   .gr-det span{display:block;color:var(--ink-mid);}
   .gr-det .ra-link{padding:4px 0 0;font-size:12.5px;}
+
+  /* Gráficas: página propia, leyenda interactiva y animación al entrar */
+  .gr-comp{font-size:12.5px;color:var(--ink-mid);margin-top:8px;line-height:1.45;}
+  .gr-comp .mal{color:var(--scrap);} .gr-comp .bien{color:var(--conforme);}
+  .gr-ley-btn button{background:none;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-family:inherit;font-size:11.5px;color:var(--ink-mid);cursor:pointer;}
+  .gr-ley-btn button.off{opacity:.4;text-decoration:line-through;}
+  .gr-ley-btn i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;}
+  .gr-ley-btn i.gr-c{background:var(--conforme);} .gr-ley-btn i.gr-d{background:var(--defecto);} .gr-ley-btn i.gr-s{background:var(--scrap);}
+  .gr-ley-btn i.gr-l{height:3px;border-radius:2px;background:var(--ink);vertical-align:3px;}
+  .gr-anim .gr-svg rect.gr-c,.gr-anim .gr-svg rect.gr-d,.gr-anim .gr-svg rect.gr-s,.gr-anim .gr-svg rect.gr-cE{animation:raCrece .55s cubic-bezier(.2,.7,.3,1) both;transform-box:fill-box;transform-origin:50% 100%;}
+  .gr-anim .gr-svg rect.gr-cS{animation:raCrece .55s cubic-bezier(.2,.7,.3,1) both;transform-box:fill-box;transform-origin:50% 0;}
+  .gr-anim .gr-svg .gr-linea{animation:raAparece .6s .35s both;}
+  .gr-anim .gr-pista .gr-b{animation:raAncho .6s cubic-bezier(.2,.7,.3,1) both;transform-origin:0 50%;}
+  @keyframes raCrece{from{transform:scaleY(0);}to{transform:none;}}
+  @keyframes raAncho{from{transform:scaleX(0);}to{transform:none;}}
+  @keyframes raAparece{from{opacity:0;}}
+  .ra-zona-tipo{border:1px solid var(--conforme);color:var(--conforme);background:none;border-radius:999px;font-size:10.5px;padding:1px 7px;margin-left:4px;cursor:pointer;font-family:inherit;}
+  .ra-zona-tipo.paso{border-color:var(--info);color:var(--info);}
 </style>
 </head>
 <body>
@@ -2463,7 +2481,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     filtroInspector:'Todos', filtroEspMin:'', filtroEspMax:'', filtroAnMin:'', filtroAnMax:'',
     editReg:null, editErr:'',
     trackVista:'lista', trackRollo:null, trackFiltro:'', trackZona:'Todas', trackErr:'',
-    trackSeleccion:[], trackModoSel:false, trackMedio:'', trackFinal:false,
+    trackSeleccion:[], trackModoSel:false, trackMedio:'', trackFinal:true,
     reporteFiltro:'Todos', repSel:null,
     rollosMaster:{}, catalogs:null, variacionesCat:null, registros:[], tracking:{}, auditoria:[],
     trackingAnulado:{}, editFotos:[], editQuitar:[], editVolver:'',
@@ -2973,7 +2991,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     if(S.tab==='captura') body = renderCaptura();
     else if(S.tab==='rollos') body = renderTracking();
     else if(S.tab==='historial') body = renderHistorial();
-    else body = renderAjustes();
+    else if(S.tab==='graficas' && S.isAdmin) body = estadisticasCard(true);
+    else { if(S.tab==='graficas') S.tab = 'ajustes'; body = renderAjustes(); }
     root.innerHTML = renderHeader() + '<div class="ra-body">' + body + '</div>' + renderNav();
     bindEvents();
     cargarFotosPendientes();
@@ -2983,7 +3002,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   function renderHeader(){
     var order=stepOrder(), idx=order.indexOf(S.step);
     var dots = order.map(function(s,i){ return '<div class="ra-step-dot'+(i<idx?' done':(i===idx?' active':''))+'"></div>'; }).join('');
-    var sub = S.tab==='captura'?'INSPECCIÓN DE ROLLOS':S.tab==='rollos'?'UBICACIÓN DE ROLLOS':S.tab==='historial'?'HISTORIAL':'AJUSTES';
+    var sub = S.tab==='captura'?'INSPECCIÓN DE ROLLOS':S.tab==='rollos'?'UBICACIÓN DE ROLLOS':S.tab==='historial'?'HISTORIAL':S.tab==='graficas'?'GRÁFICAS':'AJUSTES';
     return '<div class="ra-header">' +
         '<button class="ra-home" id="btn-home" aria-label="Ir al inicio">' + logoSVG() + '<div class="sub">' + sub + '</div></button>' +
         '<button class="ra-user" id="btn-user">' + escHtml(usuarioActual()) + '</button>' +
@@ -2997,6 +3016,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       '<button data-tab="captura" class="'+(S.tab==='captura'?'active':'')+'"><span class="ico">▣</span>CAPTURAR</button>' +
       '<button data-tab="rollos" class="'+(S.tab==='rollos'?'active':'')+'"><span class="ico">◎</span>UBICACIÓN</button>' +
       '<button data-tab="historial" class="'+(S.tab==='historial'?'active':'')+'"><span class="ico">▤</span>HISTORIAL</button>' +
+      (S.isAdmin ? '<button data-tab="graficas" class="'+(S.tab==='graficas'?'active':'')+'"><span class="ico"><svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true" style="display:block;margin:0 auto;"><rect x="1" y="9" width="3" height="6"/><rect x="6.5" y="5" width="3" height="10"/><rect x="12" y="1" width="3" height="14"/></svg></span>GRÁFICAS</button>' : '') +
       '<button data-tab="ajustes" class="'+(S.tab==='ajustes'?'active':'')+'"><span class="ico">▨</span>AJUSTES</button>' +
     '</div>';
   }
@@ -3155,15 +3175,20 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 
   /* Interruptor "es su destino final", al registrar un movimiento.
      La zona de contingencia nunca puede ser destino final: de ahí deben salir. */
+  /* Zonas de paso: las que el administrador marca en Ajustes como "no es destino final" */
+  function zonasPaso(){ return (S.catalogs && S.catalogs.zonasPaso) || []; }
+  function esZonaPaso(z){ return zonasPaso().indexOf(z) >= 0; }
   function chipsDestinoFinal(){
     var utiles = zonas().filter(function(z){ return z!==ZONA_ORIGEN; });
     if(!utiles.length) return '';
+    var paso = utiles.filter(esZonaPaso);
     return '<div class="ra-meta" style="margin:12px 0 8px;">¿Ese es su destino final?</div>' +
       '<div class="ra-zchips">' +
         '<button class="ra-zchip'+(S.trackFinal?'':' on')+'" data-final-sw="0">No, sigue en tránsito</button>' +
         '<button class="ra-zchip'+(S.trackFinal?' on':'')+'" data-final-sw="1">Sí, es su destino final</button>' +
       '</div>' +
-      (S.trackFinal ? '<div class="ra-meta" style="margin-top:6px;color:var(--conforme);">Quedará marcado como destino final y dejará de aparecer en las alertas.</div>' : '');
+      (S.trackFinal ? '<div class="ra-meta" style="margin-top:6px;color:var(--conforme);">Quedará marcado como destino final y dejará de aparecer en las alertas.</div>' : '') +
+      (S.trackFinal && paso.length ? '<div class="ra-meta" style="margin-top:4px;">Excepto si va a '+escHtml(paso.join(', '))+' (zona'+(paso.length===1?'':'s')+' de paso): ahí sigue en tránsito.</div>' : '');
   }
 
   function rolloExistenteCard(t, previos){
@@ -3743,11 +3768,11 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     var now = new Date();
     var mov = nuevoMovimiento(zona, nota, medio, now);
     var datos = aplicarMovimiento(t, mov);
-    var final = !!esFinal && zona!==ZONA_ORIGEN;
+    var final = !!esFinal && zona!==ZONA_ORIGEN && !esZonaPaso(zona);
     if(final) datos = marcarFinalEnMovimiento(t, datos, now);
     escribir(setDoc(ref(COL.tracking, rolloIdVal), datos, {merge:true}));
     auditar('movimiento', rolloIdVal, 'Movido a '+zona+(medio?' en '+medio:'')+(final?' · destino final':''), nota||'');
-    S.trackMedio=''; S.trackFinal=false;
+    S.trackMedio=''; S.trackFinal=true;
     toast('Rollo movido a '+zona+(final?' · destino final':(medio?' en '+medio:'')));
     if(esFinal && zona===ZONA_ORIGEN) toast(ZONA_ORIGEN+' no puede ser destino final');
     render();
@@ -3755,7 +3780,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 
   function moverLote(ids, zona, nota, medio, esFinal){
     var now=new Date(), ops=[];
-    var final = !!esFinal && zona!==ZONA_ORIGEN;
+    var final = !!esFinal && zona!==ZONA_ORIGEN && !esZonaPaso(zona);
     ids.forEach(function(id){
       var t=S.tracking[id];
       if(!t || t.zona===zona) return;
@@ -3767,7 +3792,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     if(!ops.length){ toast('Esos rollos ya están en '+zona); return; }
     escribir(commitEnLotes(ops));
     auditar('movimiento','('+ops.length+' rollos)','Movimiento en lote a '+zona+(medio?' en '+medio:'')+(final?' · destino final':'')+': '+ids.join(', '), nota||'');
-    S.trackModoSel=false; S.trackSeleccion=[]; S.trackMedio=''; S.trackFinal=false;
+    S.trackModoSel=false; S.trackSeleccion=[]; S.trackMedio=''; S.trackFinal=true;
     toast(ops.length+' rollo(s) movidos a '+zona+(final?' · destino final':''));
     if(esFinal && zona===ZONA_ORIGEN) toast(ZONA_ORIGEN+' no puede ser destino final');
     render();
@@ -4064,7 +4089,6 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     var re = limiteRango('rangoEspesor'), ra = limiteRango('rangoAncho');
     var hayRango = re.min!=null || re.max!=null || ra.min!=null || ra.max!=null;
     return out + '<div class="ra-section-title" style="margin:22px 2px 10px;">PANEL DE ADMINISTRADOR</div>' +
-           estadisticasCard() +
            plegar('reporte', 'Altas, cambios, traslados y eliminaciones', reporteCard()) + accesosCard() +
            plegar('admins', 'Segundo administrador y su acceso', adminsCard()) +
            plegar('inspectores', nInsp + (nInsp===1 ? ' inspector registrado' : ' inspectores registrados'), inspectoresCard()) +
@@ -4247,7 +4271,8 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     var unidad = tc.modo==='dia' ? 'día' : tc.modo==='semana' ? 'semana' : 'mes';
     var prom = n ? (totalRollos / n) : 0;
     var W = 340, H = 160, x0 = 26, x1 = W-30, yB = 140, alto = 120;
-    var max = escalaBonita(Math.max(1, Math.max.apply(null, datos.map(function(v){ return v.t; }))));
+    var oc = S.grOcultos || {};
+    var max = escalaBonita(Math.max(1, Math.max.apply(null, datos.map(function(v){ return (oc.c?0:v.c)+(oc.d?0:v.d)+(oc.s?0:v.s); }))));
     var paso = (x1-x0)/n, bw = Math.max(1.5, Math.min(22, paso*.72)), g = '';
     [0, .5, 1].forEach(function(f){
       var y = yB - alto*f;
@@ -4259,12 +4284,14 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     datos.forEach(function(v, i){
       var x = x0 + paso*i + (paso-bw)/2, y = yB, k = tc.cubetas[i].key;
       [['c','gr-c'],['d','gr-d'],['s','gr-s']].forEach(function(p){
+        if(oc[p[0]]) return;
         var h = v[p[0]]/max*alto; if(!h) return;
         y -= h; g += '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" class="'+p[1]+'"/>';
       });
       if(sel===k && v.t) g += '<rect x="'+(x-1.5).toFixed(1)+'" y="'+(y-1.5).toFixed(1)+'" width="'+(bw+3).toFixed(1)+'" height="'+(yB-y+1.5).toFixed(1)+'" class="gr-sel"/>';
-      if(v.t && n <= 16) g += '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-4).toFixed(1)+'" class="gr-tx gr-tot" text-anchor="middle">'+v.t+'</text>';
-      if(v.p != null){
+      var vis = (oc.c?0:v.c)+(oc.d?0:v.d)+(oc.s?0:v.s);
+      if(vis && n <= 16) g += '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-4).toFixed(1)+'" class="gr-tx gr-tot" text-anchor="middle">'+vis+'</text>';
+      if(v.p != null && !oc.l){
         var cx = x0 + paso*i + paso/2, cy = yB - alto*v.p/100;
         linea += (linea ? 'L' : 'M') + cx.toFixed(1) + ' ' + cy.toFixed(1);
         if(n <= 31) puntos += '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="2.3" class="gr-pt"/>';
@@ -4287,7 +4314,9 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div class="gr-kpis"><div><b>'+totalRollos+'</b><span>rollos en el periodo</span></div>' +
           '<div><b>'+(prom >= 10 ? Math.round(prom) : prom.toFixed(1))+'</b><span>promedio por '+unidad+'</span></div>' +
           (mejor && datos[mejor.i].t ? '<div><b>'+datos[mejor.i].t+'</b><span>máximo · '+escHtml(tc.cubetas[mejor.i].etq)+'</span></div>' : '') + '</div>' +
-        '<div class="gr-ley"><span><i class="gr-c"></i>Aceptado</span><span><i class="gr-d"></i>Defecto</span><span><i class="gr-s"></i>Scrap</span><span><i class="gr-l"></i>% con defecto o scrap</span></div>' +
+        '<div class="gr-ley gr-ley-btn">' + [['c','Aceptado'],['d','Defecto'],['s','Scrap'],['l','% con defecto o scrap']].map(function(x){
+          return '<button class="'+(oc[x[0]]?'off':'')+'" data-gr-ley="'+x[0]+'" aria-pressed="'+(!oc[x[0]])+'"><i class="gr-'+x[0]+'"></i>'+x[1]+'</button>';
+        }).join('') + '</div><div class="ra-meta" style="font-size:11px;margin:-2px 0 4px;">Toca la leyenda para ocultar o mostrar una serie.</div>' +
         (conDatos.length ? '<svg class="gr-svg" viewBox="0 0 '+W+' '+(H+16)+'" role="img" aria-label="Histórico de rollos inspeccionados">' + g + ejeX(tc, x0, paso, H+12) + '</svg>' +
           (det || '<div class="ra-meta" style="text-align:center;">Toca una barra para ver el detalle.</div>')
           : '<div class="ra-meta">Sin rollos inspeccionados en este periodo.</div>') +
@@ -4351,14 +4380,18 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     return '<div class="gr-bloque"><div class="gr-tit">DEFECTOS POR ORIGEN</div><div class="ra-zchips" style="margin-bottom:10px;">'+chips+'</div>'+cuerpo+'</div>';
   }
 
+  function regsPeriodo(per){
+    var t = S.statsTurno || '';
+    return S.registros.filter(function(r){ return enRango(fechaDeReg(r), per.desde, per.hasta) && (!t || (r.turno||'')===t); });
+  }
   function graficasHTML(){
     var per = periodoStats(), tc = cubetasTiempo(per.desde, per.hasta);
-    var regs = S.registros.filter(function(r){ return enRango(fechaDeReg(r), per.desde, per.hasta); });
+    var regs = regsPeriodo(per);
     return zonaContingenciaHTML(per, tc) + historicoHTML(per, tc, regs) + paretoHTML(per, regs) + porOrigenHTML(per, regs);
   }
   /* Lleva al historial con el periodo de la gráfica y un filtro de texto opcional */
   function verEnHistorial(desde, hasta, texto){
-    S.filtroResultado = 'Todos'; S.filtroTurno = 'Todos'; S.filtroInspector = 'Todos';
+    S.filtroResultado = 'Todos'; S.filtroTurno = S.statsTurno || 'Todos'; S.filtroInspector = 'Todos';
     S.filtroEspMin = S.filtroEspMax = S.filtroAnMin = S.filtroAnMax = '';
     S.filtroFecha = 'Rango'; S.filtroDesde = desde; S.filtroHasta = hasta; S.filtro = texto || '';
     S.tab = 'historial'; render(); window.scrollTo(0, 0);
@@ -4371,6 +4404,10 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     each('[data-gr-ver]', function(b){ b.addEventListener('click', function(){ var p = b.getAttribute('data-gr-ver').split('|'); verEnHistorial(p[0], p[1]); }); });
     each('[data-gr-defecto]', function(b){ b.addEventListener('click', function(){ var per = periodoStats(); verEnHistorial(per.desde, per.hasta, b.getAttribute('data-gr-defecto')); }); });
     each('[data-gr-origen]', function(b){ b.addEventListener('click', function(){ var per = periodoStats(); verEnHistorial(per.desde, per.hasta, b.getAttribute('data-gr-origen')); }); });
+    each('[data-gr-ley]', function(b){ b.addEventListener('click', function(){
+      var k = b.getAttribute('data-gr-ley'); S.grOcultos = S.grOcultos || {}; S.grOcultos[k] = !S.grOcultos[k]; render();
+    }); });
+    each('[data-stats-turno]', function(b){ b.addEventListener('click', function(){ S.statsTurno = b.getAttribute('data-stats-turno'); S.statsSel = null; S.grAnim = true; render(); }); });
     each('[data-gr-grupo]', function(b){ b.addEventListener('click', function(){ S.statsGrupo = b.getAttribute('data-gr-grupo'); render(); }); });
     each('[data-gr-zona]', function(b){ b.addEventListener('click', function(){
       S.trackZona = b.getAttribute('data-gr-zona')==='detenidos' ? 'Detenidos' : ZONA_ORIGEN;
@@ -4382,13 +4419,21 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
   }
 
   function estadisticasCard(){
-    var head = '<button class="ra-fold-head" id="btn-estadisticas" aria-expanded="'+(S.estadisticas?'true':'false')+'">' +
-        '<span><span class="t">Estadísticas y gráficas</span><span class="m">Zona de contingencia, histórico, defectos y su origen</span></span>' +
-        '<span class="ra-fold-prev"><span class="chev">▾</span></span>' +
-      '</button>';
-    if(!S.estadisticas) return '<div class="ra-card ra-fold">'+head+'</div>';
+    var head = '<div class="ra-h1">Gráficas</div><div class="ra-h2" style="margin-bottom:0;">Zona de contingencia, histórico de rollos, defectos y su origen. Toca las barras para ver el detalle.</div>';
     var per = periodoStats(), periodo = S.statsPeriodo || '30';
-    var regs = S.registros.filter(function(r){ return enRango(fechaDeReg(r), per.desde, per.hasta); });
+    var regs = regsPeriodo(per);
+    /* comparación contra el periodo anterior de la misma duración */
+    var dur = Math.round((fDate(per.hasta) - fDate(per.desde))/86400000) + 1;
+    var ant = null;
+    if(periodo!=='todo'){
+      var a1 = new Date(fDate(per.desde)); a1.setDate(a1.getDate()-1);
+      var a0 = new Date(a1); a0.setDate(a0.getDate()-dur+1);
+      var rAnt = regsPeriodo({desde:fechaHoy(a0), hasta:fechaHoy(a1)});
+      if(rAnt.length) ant = {n:rAnt.length, p:Math.round(rAnt.filter(hallazgo).length/rAnt.length*100)};
+    }
+    var turnos = [['','Todos los turnos'],['1','Turno 1'],['2','Turno 2']].map(function(t){
+      return '<button class="ra-zchip'+((S.statsTurno||'')===t[0]?' on':'')+'" data-stats-turno="'+t[0]+'">'+t[1]+'</button>';
+    }).join('');
     var total = regs.length;
     var conf = regs.filter(function(r){ return r.resultado==='Conforme'; }).length;
     var def = regs.filter(function(r){ return r.resultado==='Defecto'; }).length;
@@ -4417,11 +4462,19 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         '<div><div class="ra-meta" style="margin-bottom:4px;">Hasta</div><input class="ra-input" type="date" id="st-hasta" value="'+escAttr(per.hasta)+'" max="'+fechaHoy()+'" style="margin-bottom:0;"></div></div>' : '';
     var hayRango = S.catalogs.rangoEspesorMin || S.catalogs.rangoEspesorMax || S.catalogs.rangoAnchoMin || S.catalogs.rangoAnchoMax;
     function stat(n,l){ return '<div class="ra-stat"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
-    return '<div class="ra-card ra-fold open">' + head +
-        '<div class="ra-fold-body">' +
+    var pHal = pct(def+scr), comp = '';
+    if(ant && total){
+      var dif = pHal - ant.p;
+      comp = '<div class="gr-comp">Contra los '+dur+' días anteriores: <b class="'+(dif>2?'mal':dif<-2?'bien':'')+'">'+(dif>0?'▲ ':dif<0?'▼ ':'')+Math.abs(dif)+' pts</b> de hallazgo ('+ant.p+'% antes) · '+
+        '<b>'+(total>=ant.n?'+':'−')+Math.abs(total-ant.n)+'</b> inspecciones ('+ant.n+' antes)</div>';
+    }
+    var anim = S.grAnim; S.grAnim = false;
+    return '<div class="ra-card'+(anim?' gr-anim':'')+'">' + head +
+        '<div>' +
           '<div class="ra-zchips" style="margin-top:14px;">'+chipsPeriodo+'</div>' + rangoSt +
+          '<div class="ra-zchips" style="margin-top:8px;">'+turnos+'</div>' +
           '<div class="ra-meta" style="margin-top:8px;">Periodo: '+escHtml(fechaLarga(per.desde))+(per.desde!==per.hasta?' al '+escHtml(fechaLarga(per.hasta)):'')+'</div>' +
-          '<div class="ra-stats" style="margin-top:12px;">'+stat(total,'INSPECCIONES')+stat(pct(conf)+'%','ACEPTADO')+stat(pct(def+scr)+'%','CON HALLAZGO')+'</div>' +
+          '<div class="ra-stats" style="margin-top:12px;">'+stat(total,'INSPECCIONES')+stat(pct(conf)+'%','ACEPTADO')+stat(pHal+'%','CON HALLAZGO')+'</div>' + comp +
           (hayRango ? '<div class="ra-meta" style="margin-top:8px;">'+fr+' de '+total+' rollos ('+pct(fr)+'%) tuvieron una medida fuera del rango esperado.</div>' : '') +
           graficasHTML() +
           '<div class="gr-bloque"><div class="gr-tit">POR INSPECTOR</div>' + rankHtml + '</div>' +
@@ -4530,13 +4583,14 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 
   function zonasCard(){
     var tags=(S.catalogs.zonas||[]).map(function(z,i){
-      var esOrigen = z===ZONA_ORIGEN;
-      return '<div class="ra-tag">'+escHtml(z)+(esOrigen?' <span style="color:var(--ink-soft);font-size:11px;">origen</span>':'')+
+      var esOrigen = z===ZONA_ORIGEN, paso = esZonaPaso(z);
+      return '<div class="ra-tag">'+escHtml(z)+(esOrigen?' <span style="color:var(--ink-soft);font-size:11px;">origen</span>':
+          ' <button class="ra-zona-tipo'+(paso?' paso':'')+'" data-zona-paso="'+escAttr(z)+'" title="Cambiar">'+(paso?'de paso':'destino final')+'</button>')+
         (esOrigen?'':'<button data-del-zona="'+i+'" aria-label="Quitar">✕</button>')+'</div>';
     }).join('');
     return '<div class="ra-card">' +
         '<div class="ra-h1">Zonas de ubicación</div>' +
-        '<div class="ra-h2">Todo rollo nace en «'+ZONA_ORIGEN+'» y desde ahí los inspectores lo mueven a cualquiera de estas zonas.</div>' +
+        '<div class="ra-h2">Todo rollo nace en «'+ZONA_ORIGEN+'» y desde ahí los inspectores lo mueven a cualquiera de estas zonas. Al moverlo a una zona marcada como <b>destino final</b> queda finalizado en automático; las zonas <b>de paso</b> lo dejan en tránsito. Toca la etiqueta de cada zona para cambiarla.</div>' +
         '<div class="ra-tag-list">'+tags+'</div>' +
         '<div class="ra-inline-form" style="margin-bottom:0;"><input class="ra-input" id="new-zona" placeholder="Nueva zona" style="margin-bottom:0;" autocomplete="off"><button class="ra-small-btn" id="btn-add-zona">Agregar</button></div>' +
       '</div>';
@@ -6233,6 +6287,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       b.addEventListener('click',function(){
         S.tab=b.getAttribute('data-tab');
         if(S.tab!=='rollos'){ S.trackVista='lista'; S.trackRollo=null; }
+        if(S.tab==='graficas') S.grAnim = true;
         render();
       });
     });
@@ -6240,7 +6295,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     on('#btn-home','click',function(){
       resetCaptureFlow();
       S.editReg=null; S.editErr=''; S.editFotos=[]; S.editQuitar=[]; S.editDraft=null; S.editVolver='';
-      S.trackVista='lista'; S.trackRollo=null; S.trackModoSel=false; S.trackSeleccion=[]; S.trackMedio=''; S.trackFinal=false;
+      S.trackVista='lista'; S.trackRollo=null; S.trackModoSel=false; S.trackSeleccion=[]; S.trackMedio=''; S.trackFinal=true;
       S.trackFiltro=''; S.trackZona='Todas';
       S.showChangePin=false; S.resetUid=null;
       document.body.classList.remove('ra-cam-abierta'); galAbierta=null;
@@ -6575,7 +6630,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
         var n=S.trackSeleccion.length;
         if(!n) return;
         if(medios().length && !S.trackMedio){ toast('Selecciona el medio de transporte'); return; }
-        if(!confirm('¿Mover '+n+' rollo(s) a '+zona+(S.trackMedio?' en '+S.trackMedio:'')+(S.trackFinal&&zona!==ZONA_ORIGEN?' y marcarlos como destino final':'')+'?')) return;
+        if(!confirm('¿Mover '+n+' rollo(s) a '+zona+(S.trackMedio?' en '+S.trackMedio:'')+(S.trackFinal&&zona!==ZONA_ORIGEN&&!esZonaPaso(zona)?' y marcarlos como destino final':'')+'?')) return;
         var nota=root.querySelector('#mover-nota-lote');
         moverLote(S.trackSeleccion.slice(), zona, nota?nota.value.trim():'', S.trackMedio, S.trackFinal);
       });
@@ -6661,7 +6716,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       b.addEventListener('click',function(){
         var p = b.getAttribute('data-stats-periodo');
         if(p==='rango' && !(S.statsDesde && S.statsHasta)){ var a = periodoStats(); S.statsDesde = a.desde; S.statsHasta = a.hasta; }
-        S.statsPeriodo = p; S.statsSel = null; render();
+        S.statsPeriodo = p; S.statsSel = null; S.grAnim = true; render();
       });
     });
     enlazarGraficas();
@@ -7055,6 +7110,16 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       try{ set('catalogs',S.catalogs); }catch(e){ toast('No se pudo guardar'); }
       auditar('edicion','','Zona agregada: '+z,'');
       render();
+    });
+    each('[data-zona-paso]',function(b){
+      b.addEventListener('click',function(){
+        if(!S.isAdmin) return;
+        var z = b.getAttribute('data-zona-paso'), lista = zonasPaso().slice(), i = lista.indexOf(z);
+        if(i >= 0) lista.splice(i, 1); else lista.push(z);
+        S.catalogs.zonasPaso = lista; set('catalogs', S.catalogs);
+        auditar('edicion','', 'Zona '+z+': '+(i>=0?'destino final':'de paso'), '');
+        toast(z+': '+(i>=0?'destino final':'zona de paso')); render();
+      });
     });
     each('[data-del-zona]',function(b){
       b.addEventListener('click',function(){

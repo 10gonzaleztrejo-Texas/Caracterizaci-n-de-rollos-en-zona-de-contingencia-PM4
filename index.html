@@ -766,6 +766,60 @@
   .ra-xopc.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:#FFF8F4;}
   html[data-oscuro="1"] .ra-xopc{background:#1B1F26;color:#E8EAED;}
   html[data-oscuro="1"] .ra-xresumen{background:#1B1F26;color:#E8EAED;}
+
+  /* ===== Gráficas de estadísticas ===== */
+  .gr-bloque{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);}
+  .gr-tit{font-size:11.5px;font-weight:700;letter-spacing:.1em;color:var(--ink-soft);margin-bottom:10px;}
+  .gr-nota{font-size:12.5px;color:var(--ink-mid);line-height:1.45;margin-bottom:10px;}
+  .gr-kpis{display:flex;gap:8px;margin-bottom:12px;}
+  .gr-kpis > div{flex:1;background:var(--bg);border-radius:var(--radius);padding:9px 10px;min-width:0;}
+  .gr-kpis b{display:block;font-size:21px;line-height:1.1;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .gr-kpis span{display:block;font-size:11px;color:var(--ink-soft);margin-top:2px;line-height:1.3;}
+  .gr-kpis .mal b{color:var(--scrap);}
+  .gr-fila{display:grid;grid-template-columns:minmax(0,38%) 1fr 34px 38px;align-items:center;gap:8px;width:100%;background:none;border:none;
+    padding:6px 0;font-family:inherit;color:var(--ink);text-align:left;cursor:pointer;border-radius:4px;}
+  .gr-fila:active{background:var(--bg);}
+  .gr-fila[disabled]{cursor:default;opacity:.8;}
+  .gr-fila .gr-et{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .gr-fila.vital .gr-et,.gr-fila.alerta .gr-et{font-weight:700;}
+  .gr-pista{position:relative;height:14px;background:var(--bg);border-radius:3px;overflow:visible;}
+  .gr-pista .gr-b{position:absolute;left:0;top:0;bottom:0;border-radius:3px;min-width:2px;}
+  .gr-pista .gr-b.poco{opacity:.35;}
+  .gr-pista .gr-prom{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink);opacity:.55;border-radius:1px;}
+  .gr-fila .gr-n{font-size:13px;text-align:right;font-variant-numeric:tabular-nums;}
+  .gr-fila .gr-acum{font-size:11.5px;color:var(--ink-soft);text-align:right;font-variant-numeric:tabular-nums;}
+  .gr-zona-solo .gr-fila{grid-template-columns:minmax(0,38%) 1fr 34px;}
+  .gr-cab{display:grid;grid-template-columns:minmax(0,38%) 1fr 34px 38px;gap:8px;font-size:10.5px;color:var(--ink-soft);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;}
+  .gr-cab span:nth-child(2){text-align:right;grid-column:3;}
+  .gr-cab span:nth-child(3){text-align:right;grid-column:4;}
+  .gr-b.g1{background:#8FA3B3;} .gr-b.g2{background:#D9A441;} .gr-b.g3{background:#D9772B;} .gr-b.g4{background:var(--scrap);}
+  .gr-b.gr-d{background:var(--defecto);} .gr-b.gr-s{background:var(--scrap);} .gr-b.gr-g{background:#9AA3AE;}
+  .gr-viejo{display:flex;justify-content:space-between;width:100%;background:var(--bg);border:none;border-left:3px solid var(--scrap);
+    padding:8px 10px;margin-bottom:5px;font-family:inherit;font-size:12.5px;color:var(--ink);cursor:pointer;border-radius:0 4px 4px 0;}
+  .gr-viejo span{color:var(--scrap);font-weight:600;}
+  .gr-ley{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--ink-mid);margin-bottom:6px;}
+  .gr-ley i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;}
+  .gr-ley .mal{color:var(--scrap);font-weight:700;} .gr-ley .bien{color:var(--conforme);font-weight:700;}
+  .gr-ley i.gr-c{background:var(--conforme);} .gr-ley i.gr-d{background:var(--defecto);} .gr-ley i.gr-s{background:var(--scrap);}
+  .gr-ley i.gr-l{height:3px;border-radius:2px;background:var(--ink);vertical-align:3px;}
+  .gr-ley i.gr-cE{background:var(--info);} .gr-ley i.gr-cS{background:var(--conforme);}
+  .gr-svg{display:block;width:100%;height:auto;overflow:visible;}
+  .gr-svg .gr-c{fill:var(--conforme);} .gr-svg .gr-d{fill:var(--defecto);} .gr-svg .gr-s{fill:var(--scrap);}
+  .gr-svg .gr-cE{fill:var(--info);} .gr-svg .gr-cS{fill:var(--conforme);}
+  .gr-svg .gr-eje{stroke:var(--line-strong);stroke-width:1;}
+  .gr-svg .gr-red{stroke:var(--line);stroke-width:1;stroke-dasharray:3 3;}
+  .gr-svg .gr-tx{fill:var(--ink-soft);font-size:9.5px;font-family:inherit;}
+  .gr-svg .gr-txp{fill:var(--ink-mid);}
+  .gr-svg .gr-tot{fill:var(--ink-mid);font-weight:700;font-size:9px;}
+  .gr-svg .gr-linea{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;opacity:.8;}
+  .gr-svg .gr-pt{fill:var(--surface);stroke:var(--ink);stroke-width:1.3;}
+  .gr-svg *{pointer-events:none;}
+  .gr-svg .gr-hit{fill:transparent;cursor:pointer;pointer-events:all;}
+  .gr-svg .gr-sel{fill:none;stroke:var(--ink);stroke-width:1.6;}
+  .gr-det{margin-top:6px;background:var(--bg);border-radius:var(--radius);padding:10px 12px;font-size:12.5px;line-height:1.45;}
+  .gr-det b{display:block;font-size:13px;}
+  .gr-det span{display:block;color:var(--ink-mid);}
+  .gr-det .ra-link{padding:4px 0 0;font-size:12.5px;}
 </style>
 </head>
 <body>
@@ -3841,7 +3895,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       if(!isNaN(aMax) && !(parseFloat(r.ancho)<=aMax)) return false;
       if(!pasaFiltroFecha(r)) return false;
       if(!q) return true;
-      return [r.rolloId,r.defecto,r.defectoCode,r.familia,r.inspector,r.ubicacion,r.comentario,r.grado,r.familiaSGF]
+      return [r.rolloId,r.defecto,r.defectoCode,r.familia,r.inspector,r.ubicacion,r.comentario,r.grado,r.familiaSGF,r.enrollador]
         .filter(Boolean).join(' ').toLowerCase().indexOf(q)!==-1;
     });
   }
@@ -4060,16 +4114,281 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       '</div>';
   }
 
+  /* ============ ESTADÍSTICAS CON GRÁFICAS ============
+     Zona de contingencia (antigüedad, entradas y salidas), histórico de rollos por día,
+     Pareto de defectos y tasa de defectos por enrollador o grado. Todo se dibuja aquí
+     mismo (SVG y barras HTML), sin descargar nada, y respeta el periodo elegido. */
+  var MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var DIAS_C = ['dom','lun','mar','mié','jue','vie','sáb'];
+  function fDate(s){ var p = s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function etqDia(s){ var d = fDate(s); return d.getDate()+' '+MESES_C[d.getMonth()]; }
+  function hallazgo(r){ return r.resultado==='Defecto' || r.resultado==='Scrap'; }
+  function periodoStats(){
+    var p = S.statsPeriodo || '30', hoyS = fechaHoy();
+    if(p==='rango' && S.statsDesde && S.statsHasta) return {desde:S.statsDesde <= S.statsHasta ? S.statsDesde : S.statsHasta, hasta:S.statsDesde <= S.statsHasta ? S.statsHasta : S.statsDesde, p:p};
+    if(p==='todo'){
+      var primera = S.registros.reduce(function(m, r){ var f = fechaDeReg(r); return (f && (!m || f < m)) ? f : m; }, '') || hoyS;
+      return {desde:primera, hasta:hoyS, p:p};
+    }
+    var n = p==='7' ? 7 : p==='90' ? 90 : 30;
+    return {desde:restarDias(n-1), hasta:hoyS, p:(p==='rango' ? '30' : p)};
+  }
+  /* Cubetas del eje de tiempo: por día hasta ~6 semanas, luego por semana, luego por mes */
+  function cubetasTiempo(desde, hasta){
+    var d0 = fDate(desde), d1 = fDate(hasta), dias = Math.round((d1 - d0)/86400000) + 1;
+    var modo = dias <= 45 ? 'dia' : dias <= 210 ? 'semana' : 'mes', out = [], d = new Date(d0);
+    if(modo==='semana'){ var dw = (d.getDay()+6)%7; d.setDate(d.getDate()-dw); }
+    if(modo==='mes') d.setDate(1);
+    while(d <= d1){
+      var ini = new Date(d), fin = new Date(d);
+      if(modo==='dia') d.setDate(d.getDate()+1);
+      else if(modo==='semana'){ fin.setDate(fin.getDate()+6); d.setDate(d.getDate()+7); }
+      else { fin = new Date(d.getFullYear(), d.getMonth()+1, 0); d.setMonth(d.getMonth()+1); }
+      var a = fechaHoy(ini) < desde ? desde : fechaHoy(ini), b = fechaHoy(fin) > hasta ? hasta : fechaHoy(fin);
+      out.push({desde:a, hasta:b, key:a,
+        etq: modo==='mes' ? MESES_C[ini.getMonth()]+(ini.getFullYear()!==new Date().getFullYear() ? ' '+String(ini.getFullYear()).slice(2) : '') : etqDia(a),
+        largo: modo==='dia' ? DIAS_C[ini.getDay()]+' '+etqDia(a)+' '+ini.getFullYear()
+             : modo==='semana' ? 'Semana del '+etqDia(a)+' al '+etqDia(b)
+             : MESES_C[ini.getMonth()]+' '+ini.getFullYear()});
+    }
+    return {modo:modo, cubetas:out};
+  }
+  function cubetaDe(cub, f){
+    for(var i=0;i<cub.length;i++) if(f >= cub[i].desde && f <= cub[i].hasta) return i;
+    return -1;
+  }
+  function escalaBonita(max){
+    if(max <= 4) return 4;
+    var p = Math.pow(10, Math.floor(Math.log10(max))), m = max/p;
+    return (m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+  }
+
+  /* --- 1. Zona de contingencia --- */
+  function zonaContingenciaHTML(per, tc){
+    var enZona = Object.keys(S.tracking).map(function(k){ return S.tracking[k]; })
+      .filter(function(t){ return t && t.zona===ZONA_ORIGEN && !t.finalizado && !t.anulado; });
+    var grupos = [{t:'Menos de 1 día', max:24, n:0, cls:'g1'},{t:'1 a 3 días', max:72, n:0, cls:'g2'},{t:'3 a 7 días', max:168, n:0, cls:'g3'},{t:'Más de 7 días', max:1e9, n:0, cls:'g4'}];
+    enZona.forEach(function(t){ var h = horasSinMover(t); for(var i=0;i<grupos.length;i++) if(h < grupos[i].max){ grupos[i].n++; break; } });
+    var maxG = Math.max(1, grupos.reduce(function(m,g){ return Math.max(m,g.n); }, 0));
+    var detenidos = enZona.filter(function(t){ return horasSinMover(t) >= HORAS_DETENIDO; }).length;
+    var barras = grupos.map(function(g, i){
+      return '<button class="gr-fila" data-gr-zona="'+(i===0?'zona':'detenidos')+'"><span class="gr-et">'+g.t+'</span>' +
+        '<span class="gr-pista"><i class="gr-b '+g.cls+'" style="width:'+(g.n/maxG*100).toFixed(1)+'%"></i></span><b class="gr-n">'+g.n+'</b></button>';
+    }).join('');
+    var viejos = enZona.slice().sort(function(a,b){ return (a.ultimoTs||0)-(b.ultimoTs||0); }).slice(0,3).filter(function(t){ return horasSinMover(t) >= HORAS_DETENIDO; });
+    var listaViejos = viejos.length ? '<div class="ra-meta" style="margin:10px 0 4px;">Los que llevan más tiempo:</div>' + viejos.map(function(t){
+      return '<button class="gr-viejo" data-track-open="'+escAttr(t.rolloId)+'"><b>'+escHtml(t.rolloId)+'</b><span>'+escHtml(textoAntiguedad(t).replace('hace ',''))+'</span></button>';
+    }).join('') : '';
+    /* entradas y salidas de la zona por cubeta del periodo */
+    var ent = tc.cubetas.map(function(){ return 0; }), sal = tc.cubetas.map(function(){ return 0; });
+    Object.keys(S.tracking).forEach(function(k){
+      var t = S.tracking[k], movs = (t && t.movimientos) || [];
+      movs.forEach(function(m, i){
+        var f = m.fecha || (m.ts ? fechaHoy(new Date(m.ts)) : ''); if(!f) return;
+        var c = cubetaDe(tc.cubetas, f); if(c < 0) return;
+        var antes = i ? movs[i-1].zona : null;
+        if(m.zona===ZONA_ORIGEN && antes!==ZONA_ORIGEN) ent[c]++;
+        else if(antes===ZONA_ORIGEN && m.zona!==ZONA_ORIGEN) sal[c]++;
+      });
+    });
+    var tE = ent.reduce(function(a,b){ return a+b; }, 0), tS = sal.reduce(function(a,b){ return a+b; }, 0), bal = tE - tS;
+    return '<div class="gr-bloque">' +
+        '<div class="gr-tit">ZONA DE CONTINGENCIA · AHORA</div>' +
+        '<div class="gr-kpis"><div><b>'+enZona.length+'</b><span>rollos en la zona</span></div>' +
+          '<div class="'+(detenidos?'mal':'')+'"><b>'+detenidos+'</b><span>con más de '+HORAS_DETENIDO+' h sin moverse</span></div></div>' +
+        (enZona.length ? '<div class="gr-zona-solo">'+barras+'</div>' + listaViejos : '<div class="ra-meta">La zona está vacía.</div>') +
+        '<div class="gr-tit" style="margin-top:18px;">ENTRADAS Y SALIDAS DE LA ZONA</div>' +
+        '<div class="gr-ley"><span><i class="gr-cE"></i>Entraron '+tE+'</span><span><i class="gr-cS"></i>Salieron '+tS+'</span>' +
+          '<span class="'+(bal>0?'mal':'bien')+'">'+(bal>0 ? 'La zona creció '+bal : bal<0 ? 'La zona bajó '+(-bal) : 'Sin cambio')+'</span></div>' +
+        svgEntradasSalidas(tc, ent, sal) +
+      '</div>';
+  }
+  function svgEntradasSalidas(tc, ent, sal){
+    var W = 340, H = 150, x0 = 26, x1 = W-4, yMid = 75, alto = 62, n = tc.cubetas.length;
+    var max = escalaBonita(Math.max(1, Math.max.apply(null, ent.concat(sal))));
+    var paso = (x1-x0)/n, bw = Math.max(1.5, Math.min(18, paso*.7)), g = '';
+    g += '<line x1="'+x0+'" x2="'+x1+'" y1="'+yMid+'" y2="'+yMid+'" class="gr-eje"/>';
+    g += '<text x="'+(x0-4)+'" y="'+(yMid-alto+4)+'" class="gr-tx" text-anchor="end">'+max+'</text><text x="'+(x0-4)+'" y="'+(yMid+alto+3)+'" class="gr-tx" text-anchor="end">'+max+'</text>';
+    g += '<line x1="'+x0+'" x2="'+x1+'" y1="'+(yMid-alto)+'" y2="'+(yMid-alto)+'" class="gr-red"/><line x1="'+x0+'" x2="'+x1+'" y1="'+(yMid+alto)+'" y2="'+(yMid+alto)+'" class="gr-red"/>';
+    tc.cubetas.forEach(function(c, i){
+      var x = x0 + paso*i + (paso-bw)/2, he = ent[i]/max*alto, hs = sal[i]/max*alto;
+      if(he) g += '<rect x="'+x.toFixed(1)+'" y="'+(yMid-he).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+he.toFixed(1)+'" rx="1.5" class="gr-cE"/>';
+      if(hs) g += '<rect x="'+x.toFixed(1)+'" y="'+yMid+'" width="'+bw.toFixed(1)+'" height="'+hs.toFixed(1)+'" rx="1.5" class="gr-cS"/>';
+    });
+    return '<svg class="gr-svg" viewBox="0 0 '+W+' '+(H+16)+'" role="img" aria-label="Entradas y salidas de la zona de contingencia">' + g + ejeX(tc, x0, paso, H+12) + '</svg>';
+  }
+  function ejeX(tc, x0, paso, y){
+    var n = tc.cubetas.length, cada = Math.max(1, Math.ceil(n/6)), g = '';
+    tc.cubetas.forEach(function(c, i){
+      if(i % cada && i !== n-1) return;
+      if(i === n-1 && i % cada && (n-1) % cada < cada*.6) return;
+      g += '<text x="'+(x0 + paso*i + paso/2).toFixed(1)+'" y="'+y+'" class="gr-tx" text-anchor="middle">'+escHtml(c.etq)+'</text>';
+    });
+    return g;
+  }
+
+  /* --- 2. Histórico de rollos por día --- */
+  function historicoHTML(per, tc, regs){
+    var n = tc.cubetas.length;
+    var porC = tc.cubetas.map(function(){ return {}; });
+    regs.forEach(function(r){
+      var c = cubetaDe(tc.cubetas, fechaDeReg(r)); if(c < 0) return;
+      var prev = porC[c][r.rolloId];
+      if(!prev || (r.ts||0) > (prev.ts||0)) porC[c][r.rolloId] = r;   /* un rollo cuenta una vez por día; vale su última inspección */
+    });
+    var datos = porC.map(function(m){
+      var v = {c:0, d:0, s:0};
+      Object.keys(m).forEach(function(k){ var r = m[k]; if(r.resultado==='Scrap') v.s++; else if(r.resultado==='Defecto') v.d++; else v.c++; });
+      v.t = v.c + v.d + v.s; v.p = v.t ? Math.round((v.d+v.s)/v.t*100) : null; return v;
+    });
+    var totalRollos = datos.reduce(function(a,v){ return a+v.t; }, 0);
+    var conDatos = datos.filter(function(v){ return v.t; });
+    var mejor = datos.reduce(function(m, v, i){ return v.t > (m ? datos[m.i].t : -1) ? {i:i} : m; }, null);
+    var unidad = tc.modo==='dia' ? 'día' : tc.modo==='semana' ? 'semana' : 'mes';
+    var prom = n ? (totalRollos / n) : 0;
+    var W = 340, H = 160, x0 = 26, x1 = W-30, yB = 140, alto = 120;
+    var max = escalaBonita(Math.max(1, Math.max.apply(null, datos.map(function(v){ return v.t; }))));
+    var paso = (x1-x0)/n, bw = Math.max(1.5, Math.min(22, paso*.72)), g = '';
+    [0, .5, 1].forEach(function(f){
+      var y = yB - alto*f;
+      g += '<line x1="'+x0+'" x2="'+x1+'" y1="'+y+'" y2="'+y+'" class="'+(f?'gr-red':'gr-eje')+'"/>' +
+        '<text x="'+(x0-4)+'" y="'+(y+3)+'" class="gr-tx" text-anchor="end">'+Math.round(max*f)+'</text>' +
+        '<text x="'+(x1+4)+'" y="'+(y+3)+'" class="gr-tx gr-txp">'+Math.round(100*f)+'%</text>';
+    });
+    var sel = S.statsSel, linea = '', puntos = '';
+    datos.forEach(function(v, i){
+      var x = x0 + paso*i + (paso-bw)/2, y = yB, k = tc.cubetas[i].key;
+      [['c','gr-c'],['d','gr-d'],['s','gr-s']].forEach(function(p){
+        var h = v[p[0]]/max*alto; if(!h) return;
+        y -= h; g += '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" class="'+p[1]+'"/>';
+      });
+      if(sel===k && v.t) g += '<rect x="'+(x-1.5).toFixed(1)+'" y="'+(y-1.5).toFixed(1)+'" width="'+(bw+3).toFixed(1)+'" height="'+(yB-y+1.5).toFixed(1)+'" class="gr-sel"/>';
+      if(v.t && n <= 16) g += '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-4).toFixed(1)+'" class="gr-tx gr-tot" text-anchor="middle">'+v.t+'</text>';
+      if(v.p != null){
+        var cx = x0 + paso*i + paso/2, cy = yB - alto*v.p/100;
+        linea += (linea ? 'L' : 'M') + cx.toFixed(1) + ' ' + cy.toFixed(1);
+        if(n <= 31) puntos += '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="2.3" class="gr-pt"/>';
+      }
+      g += '<rect x="'+(x0+paso*i).toFixed(1)+'" y="0" width="'+paso.toFixed(1)+'" height="'+(H+16)+'" class="gr-hit" data-gr-dia="'+k+'"/>';
+    });
+    if(linea) g += '<path d="'+linea+'" class="gr-linea"/>' + puntos;
+    /* detalle de la barra tocada */
+    var det = '';
+    var iSel = tc.cubetas.map(function(c){ return c.key; }).indexOf(sel);
+    if(iSel >= 0){
+      var v = datos[iSel], c = tc.cubetas[iSel];
+      det = '<div class="gr-det"><b>'+escHtml(c.largo)+'</b>' +
+        (v.t ? '<span>'+v.t+' rollo'+(v.t===1?'':'s')+' · '+v.c+' aceptado'+(v.c===1?'':'s')+' · '+v.d+' con defecto · '+v.s+' scrap · '+v.p+'% con defecto o scrap</span>' +
+          '<button class="ra-link" data-gr-ver="'+c.desde+'|'+c.hasta+'">Ver estos rollos en el historial ›</button>'
+             : '<span>Sin rollos inspeccionados.</span>') + '</div>';
+    }
+    return '<div class="gr-bloque">' +
+        '<div class="gr-tit">HISTÓRICO DE ROLLOS POR '+unidad.toUpperCase()+'</div>' +
+        '<div class="gr-kpis"><div><b>'+totalRollos+'</b><span>rollos en el periodo</span></div>' +
+          '<div><b>'+(prom >= 10 ? Math.round(prom) : prom.toFixed(1))+'</b><span>promedio por '+unidad+'</span></div>' +
+          (mejor && datos[mejor.i].t ? '<div><b>'+datos[mejor.i].t+'</b><span>máximo · '+escHtml(tc.cubetas[mejor.i].etq)+'</span></div>' : '') + '</div>' +
+        '<div class="gr-ley"><span><i class="gr-c"></i>Aceptado</span><span><i class="gr-d"></i>Defecto</span><span><i class="gr-s"></i>Scrap</span><span><i class="gr-l"></i>% con defecto o scrap</span></div>' +
+        (conDatos.length ? '<svg class="gr-svg" viewBox="0 0 '+W+' '+(H+16)+'" role="img" aria-label="Histórico de rollos inspeccionados">' + g + ejeX(tc, x0, paso, H+12) + '</svg>' +
+          (det || '<div class="ra-meta" style="text-align:center;">Toca una barra para ver el detalle.</div>')
+          : '<div class="ra-meta">Sin rollos inspeccionados en este periodo.</div>') +
+      '</div>';
+  }
+
+  /* --- 3. Pareto de defectos --- */
+  function paretoHTML(per, regs){
+    var cuenta = {}, total = 0;
+    regs.forEach(function(r){ if(!hallazgo(r) || !r.defecto) return; var k = (r.defectoCode ? r.defectoCode+' ' : '')+r.defecto; cuenta[k] = (cuenta[k]||{n:0, nom:r.defecto}); cuenta[k].n++; total++; });
+    var lista = Object.keys(cuenta).map(function(k){ return {k:k, n:cuenta[k].n, nom:cuenta[k].nom}; }).sort(function(a,b){ return b.n-a.n; });
+    if(!lista.length) return '<div class="gr-bloque"><div class="gr-tit">PARETO DE DEFECTOS</div><div class="ra-meta">Sin defectos en este periodo.</div></div>';
+    var top = lista.slice(0, 8), resto = lista.slice(8).reduce(function(a, x){ return a + x.n; }, 0);
+    if(resto) top.push({k:'Otros ('+(lista.length-8)+')', n:resto, otros:true});
+    var acum = 0, vitales = 0, max = top[0].n;
+    var pctVit = 0;
+    var filas = top.map(function(x){
+      var antes = acum; acum += x.n; var pa = Math.round(acum/total*100);
+      var vital = !x.otros && antes/total < .8; if(vital){ vitales++; pctVit = pa; }
+      return '<button class="gr-fila'+(vital?' vital':'')+'"'+(x.otros?' disabled':' data-gr-defecto="'+escAttr(x.nom)+'"')+'>' +
+        '<span class="gr-et">'+escHtml(x.k)+'</span>' +
+        '<span class="gr-pista"><i class="gr-b '+(vital?'gr-d':'gr-g')+'" style="width:'+(x.n/max*100).toFixed(1)+'%"></i></span>' +
+        '<b class="gr-n">'+x.n+'</b><span class="gr-acum">'+pa+'%</span></button>';
+    }).join('');
+    return '<div class="gr-bloque">' +
+        '<div class="gr-tit">PARETO DE DEFECTOS</div>' +
+        '<div class="gr-nota">'+(vitales===1 ? 'Un solo defecto, <b>'+escHtml(top[0].k)+'</b>, suma' : 'Los primeros <b>'+vitales+' defectos</b> suman')+' el <b>'+pctVit+'%</b> de los '+total+' hallazgos del periodo. Atacar '+(vitales===1?'ese':'esos')+' primero da el mayor resultado.</div>' +
+        '<div class="gr-cab"><span>Defecto</span><span>Veces</span><span>Acum.</span></div>' + filas +
+      '</div>';
+  }
+
+  /* --- 4. Defectos por enrollador o por grado --- */
+  function porOrigenHTML(per, regs){
+    var modo = S.statsGrupo === 'grado' ? 'grado' : 'enrollador';
+    var grupos = {}, tot = 0, hal = 0;
+    regs.forEach(function(r){
+      var k = (modo==='grado' ? r.grado : r.enrollador) || ''; if(!k) return;
+      grupos[k] = grupos[k] || {n:0, h:0}; grupos[k].n++; tot++;
+      if(hallazgo(r)){ grupos[k].h++; hal++; }
+    });
+    var prom = tot ? hal/tot*100 : 0;
+    var lista = Object.keys(grupos).map(function(k){ var g = grupos[k]; return {k:k, n:g.n, h:g.h, p:g.n ? g.h/g.n*100 : 0}; })
+      .sort(function(a,b){ return (b.n>=3)-(a.n>=3) || b.p-a.p || b.n-a.n; }).slice(0, 10);
+    var chips = [['enrollador','Por enrollador'],['grado','Por grado de acero']].map(function(x){
+      return '<button class="ra-zchip'+(modo===x[0]?' on':'')+'" data-gr-grupo="'+x[0]+'">'+x[1]+'</button>';
+    }).join('');
+    var cuerpo;
+    if(!lista.length) cuerpo = '<div class="ra-meta">Las inspecciones de este periodo no tienen '+(modo==='grado'?'grado de acero':'enrollador')+' capturado.</div>';
+    else {
+      var alto = lista.filter(function(x){ return x.n >= 3 && x.p - prom >= 7 && x.p >= prom*1.2; });
+      cuerpo = '<div class="gr-nota">Promedio general: <b>'+Math.round(prom)+'%</b> de rollos con defecto o scrap.' +
+          (alto.length ? ' Arriba del promedio: <b>'+alto.map(function(x){ return escHtml(x.k); }).join(', ')+'</b>.' : ' Ninguno se separa mucho del promedio.') + '</div>' +
+        lista.map(function(x){
+          var poco = x.n < 3, malo = !poco && x.p - prom >= 7 && x.p >= prom*1.2;
+          return '<button class="gr-fila'+(malo?' alerta':'')+'" data-gr-origen="'+escAttr(x.k)+'"><span class="gr-et">'+escHtml(x.k)+'</span>' +
+            '<span class="gr-pista"><i class="gr-b '+(malo?'gr-s':'gr-d')+(poco?' poco':'')+'" style="width:'+x.p.toFixed(1)+'%"></i><i class="gr-prom" style="left:'+prom.toFixed(1)+'%"></i></span>' +
+            '<b class="gr-n">'+Math.round(x.p)+'%</b><span class="gr-acum">'+x.h+'/'+x.n+'</span></button>';
+        }).join('') +
+        '<div class="ra-meta" style="margin-top:6px;">La rayita marca el promedio. Con menos de 3 rollos el dato es poco confiable y se ve más claro.</div>';
+    }
+    return '<div class="gr-bloque"><div class="gr-tit">DEFECTOS POR ORIGEN</div><div class="ra-zchips" style="margin-bottom:10px;">'+chips+'</div>'+cuerpo+'</div>';
+  }
+
+  function graficasHTML(){
+    var per = periodoStats(), tc = cubetasTiempo(per.desde, per.hasta);
+    var regs = S.registros.filter(function(r){ return enRango(fechaDeReg(r), per.desde, per.hasta); });
+    return zonaContingenciaHTML(per, tc) + historicoHTML(per, tc, regs) + paretoHTML(per, regs) + porOrigenHTML(per, regs);
+  }
+  /* Lleva al historial con el periodo de la gráfica y un filtro de texto opcional */
+  function verEnHistorial(desde, hasta, texto){
+    S.filtroResultado = 'Todos'; S.filtroTurno = 'Todos'; S.filtroInspector = 'Todos';
+    S.filtroEspMin = S.filtroEspMax = S.filtroAnMin = S.filtroAnMax = '';
+    S.filtroFecha = 'Rango'; S.filtroDesde = desde; S.filtroHasta = hasta; S.filtro = texto || '';
+    S.tab = 'historial'; render(); window.scrollTo(0, 0);
+    toast('Historial filtrado: '+(desde===hasta ? etqDia(desde) : etqDia(desde)+' al '+etqDia(hasta))+(texto ? ' · '+texto : ''));
+  }
+  function enlazarGraficas(){
+    each('[data-gr-dia]', function(r){
+      r.addEventListener('click', function(){ var k = r.getAttribute('data-gr-dia'); S.statsSel = S.statsSel===k ? null : k; render(); });
+    });
+    each('[data-gr-ver]', function(b){ b.addEventListener('click', function(){ var p = b.getAttribute('data-gr-ver').split('|'); verEnHistorial(p[0], p[1]); }); });
+    each('[data-gr-defecto]', function(b){ b.addEventListener('click', function(){ var per = periodoStats(); verEnHistorial(per.desde, per.hasta, b.getAttribute('data-gr-defecto')); }); });
+    each('[data-gr-origen]', function(b){ b.addEventListener('click', function(){ var per = periodoStats(); verEnHistorial(per.desde, per.hasta, b.getAttribute('data-gr-origen')); }); });
+    each('[data-gr-grupo]', function(b){ b.addEventListener('click', function(){ S.statsGrupo = b.getAttribute('data-gr-grupo'); render(); }); });
+    each('[data-gr-zona]', function(b){ b.addEventListener('click', function(){
+      S.trackZona = b.getAttribute('data-gr-zona')==='detenidos' ? 'Detenidos' : ZONA_ORIGEN;
+      S.trackVista = 'lista'; S.trackRollo = null; S.tab = 'rollos'; render(); window.scrollTo(0, 0);
+    }); });
+    var d = root.querySelector('#st-desde'), h = root.querySelector('#st-hasta');
+    if(d) d.addEventListener('change', function(){ if(d.value){ S.statsDesde = d.value; S.statsSel = null; render(); } });
+    if(h) h.addEventListener('change', function(){ if(h.value){ S.statsHasta = h.value; S.statsSel = null; render(); } });
+  }
+
   function estadisticasCard(){
     var head = '<button class="ra-fold-head" id="btn-estadisticas" aria-expanded="'+(S.estadisticas?'true':'false')+'">' +
-        '<span><span class="t">Estadísticas</span><span class="m">Tendencias e inspectores</span></span>' +
+        '<span><span class="t">Estadísticas y gráficas</span><span class="m">Zona de contingencia, histórico, defectos y su origen</span></span>' +
         '<span class="ra-fold-prev"><span class="chev">▾</span></span>' +
       '</button>';
     if(!S.estadisticas) return '<div class="ra-card ra-fold">'+head+'</div>';
-    var periodo = S.statsPeriodo || '7';
-    var dias = periodo==='30' ? 30 : periodo==='todo' ? null : 7;
-    var corte = dias!=null ? (Date.now() - dias*86400000) : null;
-    var regs = S.registros.filter(function(r){ return corte==null || r.ts>=corte; });
+    var per = periodoStats(), periodo = S.statsPeriodo || '30';
+    var regs = S.registros.filter(function(r){ return enRango(fechaDeReg(r), per.desde, per.hasta); });
     var total = regs.length;
     var conf = regs.filter(function(r){ return r.resultado==='Conforme'; }).length;
     var def = regs.filter(function(r){ return r.resultado==='Defecto'; }).length;
@@ -4090,24 +4409,22 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
       return '<div class="ra-summary-line"><span>'+escHtml(x.nombre)+'</span><b>'+x.total+
         ' <span style="color:var(--ink-soft);font-weight:400;">('+x.tasa+'% con hallazgo)</span></b></div>';
     }).join('') : '<div class="ra-meta">Sin datos en este periodo.</div>';
-    var defectos={};
-    regs.forEach(function(r){ if(r.defecto){ var k=r.defectoCode+' '+r.defecto; defectos[k]=(defectos[k]||0)+1; } });
-    var topDef = Object.keys(defectos).sort(function(a,b){ return defectos[b]-defectos[a]; }).slice(0,5);
-    var topHtml = topDef.length ? topDef.map(function(k){
-      return '<div class="ra-summary-line"><span>'+escHtml(k)+'</span><b>'+defectos[k]+'</b></div>';
-    }).join('') : '<div class="ra-meta">Sin defectos en este periodo.</div>';
-    var chipsPeriodo = [['7','7 días'],['30','30 días'],['todo','Todo']].map(function(p){
-      return '<button class="ra-btn ra-btn-sm '+(periodo===p[0]?'ra-btn-primary':'ra-btn-outline')+'" data-stats-periodo="'+p[0]+'" style="font-size:12px;margin-bottom:0;">'+p[1]+'</button>';
+    var chipsPeriodo = [['7','7 días'],['30','30 días'],['90','90 días'],['todo','Todo'],['rango','Fechas']].map(function(p){
+      return '<button class="ra-zchip'+(periodo===p[0]?' on':'')+'" data-stats-periodo="'+p[0]+'">'+p[1]+'</button>';
     }).join('');
+    var rangoSt = periodo==='rango' ? '<div class="ra-grid" style="margin-top:10px;">' +
+        '<div><div class="ra-meta" style="margin-bottom:4px;">Desde</div><input class="ra-input" type="date" id="st-desde" value="'+escAttr(per.desde)+'" max="'+fechaHoy()+'" style="margin-bottom:0;"></div>' +
+        '<div><div class="ra-meta" style="margin-bottom:4px;">Hasta</div><input class="ra-input" type="date" id="st-hasta" value="'+escAttr(per.hasta)+'" max="'+fechaHoy()+'" style="margin-bottom:0;"></div></div>' : '';
     var hayRango = S.catalogs.rangoEspesorMin || S.catalogs.rangoEspesorMax || S.catalogs.rangoAnchoMin || S.catalogs.rangoAnchoMax;
     function stat(n,l){ return '<div class="ra-stat"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
     return '<div class="ra-card ra-fold open">' + head +
         '<div class="ra-fold-body">' +
-          '<div class="ra-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;margin-top:14px;">'+chipsPeriodo+'</div>' +
-          '<div class="ra-stats" style="margin-top:14px;">'+stat(total,'TOTAL')+stat(pct(conf)+'%','ACEPTADO')+stat(pct(def+scr)+'%','CON HALLAZGO')+'</div>' +
+          '<div class="ra-zchips" style="margin-top:14px;">'+chipsPeriodo+'</div>' + rangoSt +
+          '<div class="ra-meta" style="margin-top:8px;">Periodo: '+escHtml(fechaLarga(per.desde))+(per.desde!==per.hasta?' al '+escHtml(fechaLarga(per.hasta)):'')+'</div>' +
+          '<div class="ra-stats" style="margin-top:12px;">'+stat(total,'INSPECCIONES')+stat(pct(conf)+'%','ACEPTADO')+stat(pct(def+scr)+'%','CON HALLAZGO')+'</div>' +
           (hayRango ? '<div class="ra-meta" style="margin-top:8px;">'+fr+' de '+total+' rollos ('+pct(fr)+'%) tuvieron una medida fuera del rango esperado.</div>' : '') +
-          '<div class="ra-label" style="margin-top:14px;">POR INSPECTOR</div>' + rankHtml +
-          '<div class="ra-label" style="margin-top:14px;">DEFECTOS MÁS FRECUENTES</div>' + topHtml +
+          graficasHTML() +
+          '<div class="gr-bloque"><div class="gr-tit">POR INSPECTOR</div>' + rankHtml + '</div>' +
         '</div>' +
       '</div>';
   }
@@ -6341,8 +6658,13 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
     on('#btn-estadisticas','click',function(){ S.estadisticas=!S.estadisticas; render(); });
     on('#btn-accesos','click',function(){ S.accesos=!S.accesos; render(); });
     each('[data-stats-periodo]',function(b){
-      b.addEventListener('click',function(){ S.statsPeriodo=b.getAttribute('data-stats-periodo'); render(); });
+      b.addEventListener('click',function(){
+        var p = b.getAttribute('data-stats-periodo');
+        if(p==='rango' && !(S.statsDesde && S.statsHasta)){ var a = periodoStats(); S.statsDesde = a.desde; S.statsHasta = a.hasta; }
+        S.statsPeriodo = p; S.statsSel = null; render();
+      });
     });
+    enlazarGraficas();
     function guardarCfgTema(cfg, aviso){
       aplicarConfigTema(cfg); lset('tema', temaCfg);
       var doc = {tema:temaCfg.tema, auto:temaCfg.auto, por:S.inspector||'', ts:Date.now()}; if(temaCfg.color) doc.color = temaCfg.color;
